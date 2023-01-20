@@ -19,28 +19,8 @@ The keys are generated with `./bin/generate_keys.sh` but default development key
 # Getting started
 Currently, the infrastructure (vault and postgres) need to be started separately with:
 ```
-docker-compose -f docker-compose-infrastructure.yaml up --force-recreate
-
-docker-compose -f docker-compose.yaml -f docker-compose-api-wrapper.yaml up --force-recreate
-
+./start_infrastructure.sh
+# wait a few seconds and run
+./start_edc.sh
 ```
 Consider using `-V, --renew-anon-volumes` or `docker-compose volumes --down` (using `-f ...` for the individual docker-compose files)
-
-# Tests
-`tests` create assets (and friends) with the `provider` instance and fetch it via the `consumer` instance. Currently, including the `api-wrapper` and of course the `daps` (mocked daps) in the background. All this with the official `product-edc` images.
-
-## Test execution
-```
-# prepare virtual env if required
-#python3 -m venv venv
-#source ./venv/bin/activate
-
-# install all dependencies
-pip install -r ./daps-mock/requirements.txt
-# run the actual test - make sure, the EDC instances are running...
-python ./tests/test_assets.py
-```
-
-# Dev Notes
-`pip install pyjwt[crypto]` required for RSA.
-
