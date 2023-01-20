@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  api-wrapper:
+    image: ghcr.io/catenax-ng/catenax-at-home/consumer-api-wrapper:0.1.3
+    ports:
+      - "8193:9191" # default
+      #- "5007:5007" # debugging
+      #- "9192" # callback
+    environment:
+      EDC_FS_CONFIG: /config/configuration.properties
+    volumes:
+      - ${API_WRAPPER_CONFIG_FILE:-./configs/consumer/api-wrapper.properties}:/config/configuration.properties
+      #- ${LOGGING_CONFIGURATION_FILE:-./configs_default/logging.properties}:/config/logging.properties

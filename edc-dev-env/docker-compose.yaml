@@ -1,0 +1,43 @@
+version: "3.9"
+
+
+services:
+
+  # Infrastructure
+  # start separately for now
+  
+  # Provider
+  provider-control-plane:
+    extends:
+      file: docker-compose-edc.yaml
+      service: control-plane
+    ports:
+      - "8186:9193" # data management api - should be private later on
+    volumes:
+      - ${PROVIDER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/provider/control-plane.properties}:/app/configuration.properties
+  provider-data-plane:
+    extends:
+      file: docker-compose-edc.yaml
+      service: data-plane
+    volumes:
+      - ${PROVIDER_DATA_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/provider/data-plane.properties}:/app/configuration.properties
+
+  # Consumer
+  consumer-control-plane:
+    extends:
+      file: docker-compose-edc.yaml
+      service: control-plane
+    volumes:
+      - ${CONSUMER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/consumer/control-plane.properties}:/app/configuration.properties
+  consumer-data-plane:
+    extends:
+      file: docker-compose-edc.yaml
+      service: data-plane
+    volumes:
+      - ${CONSUMER_DATA_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/consumer/data-plane.properties}:/app/configuration.properties
+
+  # API Wrapper
+  #api-wrapper:
+  #  extends:
+  #    file: docker-compose-api-wrapper.yaml
+  #    service: api-wrapper

@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  daps-mock:
+    build: ./daps-mock/
+    volumes:
+      - ./daps-mock/daps.crt:/code/daps.crt
+      - ./daps-mock/daps.key:/code/daps.key
+
+  vault:
+    build: ./docker/vault/
+    ports:
+      - 127.0.0.1:8200:8200
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN:-dontuseinpublic}
+      # set env to the mounted volume below
+      VAULT_INITIAL_DATA_DIR: /vault_init_data
+    volumes:
+      # needs to match the env part above
+      - ${VAULT_INITIAL_DATA_DIR:-./vault_secrets}:/vault_init_data
+
+    
+  db:
+    # start separately before the provider-control-plane.
+    # Currently there is no database availability check in place
+    # TODO: https://docs.docker.com/compose/startup-order/
+    image: postgres
+    environment:
+      # password also visible in the EDC config files
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    volumes:
+      # use docker-compose down --volumes to kill db volume
+      # only then, changes to the script are executed!
+      - ./docker/postgres/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+
+  #adminer:
+  #  image: adminer
+  #  ports:
+      # bound to localhost
+      # do ssh -L 6082:localhost:6082 <host>
+      # to forward the port
+      # In most cases, don't start adminer at all
+  #    - 127.0.0.1:6082:8080
