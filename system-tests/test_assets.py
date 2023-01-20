@@ -20,7 +20,7 @@ def test_create_and_delete():
     nr_of_contractdefinitions = get_number_of_elements(f"{PROVIDER_EDC_BASE_URL}/contractdefinitions")
 
     # we create a new asset (and friends)
-    asset_id = create_asset(base_url='https://verkehr.autobahn.de/o/autobahn/')
+    asset_id = create_asset(base_url='http://daps-mock:8000/.well-known/jwks.json')
     policy_id = create_policy(asset_id=asset_id)
     contract_id = create_contract_definition(policy_id=policy_id, asset_id=asset_id)
     cd = get_contract_definition(id=contract_id)
@@ -42,7 +42,7 @@ def test_create_and_delete():
     print(r.content)
 
     j = r.json()
-    assert 'roads' in j
+    assert 'keys' in j
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
