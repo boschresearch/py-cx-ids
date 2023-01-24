@@ -2,31 +2,19 @@ import os
 from uuid import uuid4
 import requests
 import pytest
-
-
-PROVIDER_EDC_BASE_URL = os.getenv('PROVIDER_EDC_BASE_URL', 'http://provider-control-plane:9193/api/v1/data')
-assert PROVIDER_EDC_BASE_URL
-
-PROVIDER_EDC_API_KEY = os.getenv('PROVIDER_EDC_API_KEY', 'dontuseinpublic')
-assert PROVIDER_EDC_API_KEY
-
-# consumer side
-API_WRAPPER_BASE_URL = os.getenv('API_WRAPPER_BASE_URL', 'http://api-wrapper:9191/api/service')
-assert API_WRAPPER_BASE_URL
-
-API_WRAPPER_USER = os.getenv('API_WRAPPER_USER', 'someuser')
-assert API_WRAPPER_USER
-
-API_WRAPPER_PASSWORD = os.getenv('API_WRAPPER_PASSWORD', 'somepassword')
-assert API_WRAPPER_PASSWORD
-
-NR_OF_ASSETS = int(os.getenv('NR_OF_ASSETS', '1'))
+from pycxids.edc.settings import NR_OF_ASSETS, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, CONSUMER_EDC_API_KEY
 
 
 def prepare_data_management_auth():
     return {
         'X-Api-Key': PROVIDER_EDC_API_KEY
     }
+
+def prepare_consumer_data_management_auth():
+    return {
+        'X-Api-Key': CONSUMER_EDC_API_KEY
+    }
+
 
 def get_number_of_elements(endpoint):
     """
@@ -40,7 +28,7 @@ def get_number_of_elements(endpoint):
         return None
 
 
-def create_asset(base_url: str = 'http://localhost'):
+def create_asset(base_url: str = 'http://localhost', proxyPath=False, proxyQueryParams=False, proxyBody=False, proxyMethod=False):
     asset_id = str(uuid4())
     data = {
         "asset": {
@@ -53,9 +41,10 @@ def create_asset(base_url: str = 'http://localhost'):
         "dataAddress": {
             "properties": {
                 "type": "HttpData",
-                #"proxyPath": True,
-                "proxyMethod": True,
-                "proxyBody": True,
+                "proxyPath": proxyPath,
+                "proxyQueryParams": proxyQueryParams,
+                "proxyMethod": proxyMethod,
+                "proxyBody": proxyBody,
                 "baseUrl": base_url,
             }
         }
