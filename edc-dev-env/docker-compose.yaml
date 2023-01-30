@@ -12,7 +12,7 @@ services:
       file: docker-compose-edc.yaml
       service: control-plane
     ports:
-      - "8186:9193" # data management api - should be private later on
+      - "9193:9193" # data management api - should be private later on
     volumes:
       - ${PROVIDER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/provider/control-plane.properties}:/app/configuration.properties
   provider-data-plane:
