@@ -1,3 +1,9 @@
+# Copyright (c) 2023 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# https://github.com/boschresearch/py-cx-ids
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import os
 
 PROVIDER_EDC_BASE_URL = os.getenv('PROVIDER_EDC_BASE_URL', 'http://provider-control-plane:9193/api/v1/data')
