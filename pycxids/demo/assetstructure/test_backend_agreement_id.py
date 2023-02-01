@@ -10,6 +10,7 @@ from uuid import uuid4
 from tests.helper import create_asset, create_policy, create_contract_definition
 from pycxids.edc.api import EdcConsumer
 from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL
+from pycxids.core.daps import get_daps_access_token
 
 
 # actual test case
@@ -50,11 +51,15 @@ def test_backend_agreement_id():
     j = r.json()
     print(j)
 
+    daps_access_token = get_daps_access_token(audience='')
     # use the regular (consumer) EDR and add the agreement_id to the query param
     r = requests.get(
             j['consumer_edr']['endpoint'],
             headers={j['consumer_edr']['authKey']: j['consumer_edr']['authCode']},
-            params={'agreementId': agreement_id},
+            params={
+                'agreementId': agreement_id,
+                'token': daps_access_token,
+            },
         )
     if not r.ok:
         print(f"{r.reason} - {r.content}")

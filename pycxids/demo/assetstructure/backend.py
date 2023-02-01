@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request, Header, Body, HTTPException, Query
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
 from pycxids.edc.api import EdcDataManagement
 from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY
+from pycxids.core.jwt_decode import decode
 
 app = FastAPI(title="Data Source / Backend System")
 
@@ -31,7 +32,10 @@ def get_data(request: Request, authorization = Header(default=None)):
     return {'hello': 'world'}
 
 @app.get('/datawithagreementid')
-def get_data_with_agreement_id(agreement_id: str = Query('', alias='agreementId')):
+def get_data_with_agreement_id(agreement_id: str = Query('', alias='agreementId'), daps_token: str = Query('', alias='token')):
+    print(daps_token)
+    decoded = decode(data=daps_token) # does not check the signature of the token!
+    print(decoded)
     edc = EdcDataManagement(edc_data_managment_base_url=PROVIDER_EDC_BASE_URL, auth_key=PROVIDER_EDC_API_KEY)
     agreement = edc.get(f"/contractagreements/{agreement_id}")
     if not agreement:

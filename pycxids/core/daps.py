@@ -10,7 +10,8 @@ from datetime import datetime
 import requests
 
 from pycxids.core import jwt_decode
-from pycxids.core.settings import CLIENT_ID, DAPS_ENDPOINT, PRIVATE_KEY_FN, SCOPE, ASSERTION_TYPE, CONSUMER_CONNECTOR_URL
+from pycxids.core.settings import CLIENT_ID, DAPS_ENDPOINT, SCOPE, ASSERTION_TYPE, CONSUMER_CONNECTOR_URL
+from pycxids.core.settings import settings
 
 MINIMUM_TOKEN_VALIDITY_SECONDS = 10
 _last_daps_token = None
@@ -44,7 +45,7 @@ def get_daps_token(audience: str):
         #"exp": now + 36000,
     }
     private_key= ''
-    with open(PRIVATE_KEY_FN, 'br') as f:
+    with open(settings.PRIVATE_KEY_FN, 'br') as f:
         private_key = f.read()
     client_assertion = jwt.encode(daps_claim_set, algorithm='RS256', key=private_key)
 
