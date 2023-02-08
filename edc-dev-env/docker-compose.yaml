@@ -29,6 +29,10 @@ services:
       service: control-plane
     volumes:
       - ${CONSUMER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/consumer/control-plane.properties}:/app/configuration.properties
+    environment:
+        # the default (api-wrapper) is set here, or change for your local development with a .env file
+      - EDC_RECEIVER_HTTP_ENDPOINT=${EDC_RECEIVER_HTTP_ENDPOINT:-http://api-wrapper:9192/callback/endpoint-data-reference}
+
   consumer-data-plane:
     extends:
       file: docker-compose-edc.yaml
