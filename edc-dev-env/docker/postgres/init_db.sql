@@ -10,3 +10,5 @@ CREATE DATABASE "edc_consumer_contractdefinition";
 CREATE DATABASE "edc_consumer_contractnegotiation";
 CREATE DATABASE "edc_consumer_policy";
 CREATE DATABASE "edc_consumer_transferprocess";
+
+CREATE DATABASE "registry"

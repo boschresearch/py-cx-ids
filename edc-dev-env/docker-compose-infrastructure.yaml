@@ -19,6 +19,25 @@ services:
       # needs to match the env part above
       - ${VAULT_INITIAL_DATA_DIR:-./vault_secrets}:/vault_init_data
 
+  registry:
+    build: ./docker/registry
+    ports:
+      - 127.0.0.1:4243:4243
+    environment:
+      # H2 database is currently not supported with the compiled jar file!
+      #SPRING_DATASOURCE_URL: jdbc:h2:mem:registry
+      #SPRING_DATASOURCE_DRIVERCLASSNAME: org.h2.Driver
+      #SPRING_DATASOURCE_USERNAME: sa
+      #SPRING_DATASOURCE_PASSWORD: password
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postgres
+      SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 0
+      # disable security
+      SPRING_PROFILES_ACTIVE: local
+      IDP_ISSUER_URI: ""
     
   db:
     # start separately before the provider-control-plane.
