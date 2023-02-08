@@ -19,8 +19,10 @@ The keys are generated with `./bin/generate_keys.sh` but default development key
 # Getting started
 Currently, the infrastructure (vault and postgres) need to be started separately with:
 ```
+# build is only required once or after changes
+./build.sh
+# now start the infrastructure, e.g. a daps (mocked version of it) and the vault with the secrets
 ./start_infrastructure.sh
 # wait a few seconds and run
 ./start_edc.sh
 ```
-Consider using `-V, --renew-anon-volumes` or `docker-compose volumes --down` (using `-f ...` for the individual docker-compose files)
