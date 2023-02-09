@@ -50,6 +50,17 @@ def get_data_with_agreement_id(agreement_id: str = Query('', alias='agreementId'
 
     return agreement    # return this for demo purposes only!
 
+@app.get('/returnparams/{sub_path:path}')
+def get_return_params(request: Request, sub_path: str = None):
+    """
+    Used for testing what information is passed through the data plane towards the backend
+    """
+    return {
+        'query_params': request.query_params,
+        'headers': request.headers,
+        'sub_path': sub_path,
+    }
+
 if __name__ == '__main__':
     import uvicorn
     port = os.getenv('PORT', '8000')
