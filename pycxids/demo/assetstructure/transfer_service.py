@@ -16,39 +16,17 @@ from starlette.status import HTTP_400_BAD_REQUEST, HTTP_500_INTERNAL_SERVER_ERRO
 from pycxids.edc.settings import CONSUMER_EDC_VALIDATION_ENDPOINT, CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY
 from pycxids.edc.api import EdcConsumer
 
+from pycxids.utils.storage import FileStorageEngine
+
 # TODO: not thread / process safe. Don't use with multiple uvicorn workers for now
 STORAGE_FN = os.getenv('STORAGE_FN', 'transfer_service_storage.json')
+
+storage = FileStorageEngine(storage_fn=STORAGE_FN)
 
 app = FastAPI(
         title="EDC Consumer Transfer Service",
         description="Workaround for EDC limitations with a single endpoint to receive EDR tokens.",
     )
-
-
-def put(key, value):
-    storage = {}
-    if os.path.exists(STORAGE_FN):
-        # at startup, file doesn't exist
-        with open(STORAGE_FN, 'r') as f:
-            content = f.read()
-            try:
-                storage = json.loads(content)
-            except Exception as ex:
-                print(ex)
-    storage[key] = value
-    with open(STORAGE_FN, 'w') as f:
-        f.write(json.dumps(storage, indent=4))
-
-def get(key):
-    storage = {}
-    if os.path.exists(STORAGE_FN):
-        with open(STORAGE_FN, 'r') as f:
-            content = f.read()
-            try:
-                storage = json.loads(content)
-            except Exception as ex:
-                print(ex)
-    return storage.get(key, None)
 
 
 @app.get('/transfer/{asset_id}/{contract_negotiation_id}')
@@ -67,7 +45,7 @@ def get_transfer(request: Request, asset_id: str, contract_negotiation_id: str):
     agreement_id = contract_negotiation.get('contractAgreementId')
     provider_endpoint = contract_negotiation.get('counterPartyAddress')
 
-    data = get(key=agreement_id)
+    data = storage.get(key=agreement_id)
     if data:
         return data
 
@@ -80,7 +58,7 @@ def get_transfer(request: Request, asset_id: str, contract_negotiation_id: str):
     TRANSFER_SERVICE_TIMEOUT = int(os.getenv('TRANSFER_SERVICE_TIMEOUT', '30'))
     counter = 0
     while True:
-        data = get(key=agreement_id)
+        data = storage.get(key=agreement_id)
         if data:
             return data
         
@@ -108,7 +86,7 @@ def post_datareference(request: Request, body = Body(...)):
         'consumer_edr': body,
         'provider_edr': provider_edr['properties'],
     }
-    put(key=cid, value=edr_combined)
+    storage.put(key=cid, value=edr_combined)
     return {}
 
 if __name__ == '__main__':
