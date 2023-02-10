@@ -128,7 +128,7 @@ class SubmodelDescriptor(Descriptor):
         None, alias='idShort'
     )
     identification: constr(min_length=1, max_length=200)
-    semantic_id: GlobalReference = Field(..., alias='semanticId')
+    semantic_id: Optional[GlobalReference] = Field(..., alias='semanticId')
     endpoints: List[Endpoint] = Field(..., max_items=10000)
 
 
