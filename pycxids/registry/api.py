@@ -11,9 +11,21 @@ class Registry(GeneralApi):
     def __init__(self, base_url: str, headers=None, username=None, password=None) -> None:
         super().__init__(base_url, headers, username, password)
     
-    def get_shell_descriptors(self):
+    def get_shell_descriptors(self) -> AssetAdministrationShellDescriptorCollection:
         data = self.get(path="/registry/shell-descriptors")
-        result = AssetAdministrationShellDescriptorCollection.parse_obj(data)
+        # dirty workaround for pagination vs non-pagination issue
+        data_pages = None
+        if isinstance(data, List):
+            data_pages = {
+                'items': data,
+                'total_items': len(data),
+                'current_page': 1, # I think CX registry pages started with 1
+                'total_pages': 1,
+                'item_count': len(data),
+            }
+        else:
+            data_pages = data
+        result = AssetAdministrationShellDescriptorCollection.parse_obj(data_pages)
         return result
 
     def _create_shell_descriptor(self, aas: AssetAdministrationShellDescriptor):
