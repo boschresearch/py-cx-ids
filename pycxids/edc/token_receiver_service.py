@@ -7,6 +7,7 @@
 import os
 from pathlib import Path
 from time import sleep
+from datetime import datetime
 import json
 from uuid import uuid4
 import requests
@@ -17,6 +18,7 @@ from pycxids.edc.settings import CONSUMER_EDC_VALIDATION_ENDPOINT, CONSUMER_EDC_
 from pycxids.edc.api import EdcConsumer
 
 from pycxids.utils.storage import FileStorageEngine
+from pycxids.core.jwt_decode import decode
 
 # TODO: not thread / process safe. Don't use with multiple uvicorn workers for now
 STORAGE_FN = os.getenv('STORAGE_FN', 'token_receiver_service.json')
@@ -34,6 +36,7 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
     """
     Waits until timeout and checks every second if an EDR token has been received.
     Returns the consumer EDR token
+    Raises an expetion if token is no longer valid. A new transfer needs to be started in such cases.
     """
 
     # Since the mapping is done via contract_id, we need to find this first
@@ -48,6 +51,18 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
     while True:
         data = storage.get(key=contract_id)
         if data:
+            # once there is data, we should check if the token is still valid before we return it
+            decoded_data = decode(data.get('authCode'))
+            #print(decoded_data)
+            exp = decoded_data.get('payload', {}).get('exp', None)
+            if not exp:
+                raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not find exp in token.")
+            now = datetime.now().timestamp()
+            if now > exp:
+                error_msg = f"Token no longer valid. exp: {exp} now: {now}"
+                print(error_msg)
+                raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg)
+
             return data
         
         if counter < timeout:
