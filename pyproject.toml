@@ -17,6 +17,8 @@ urls.homepage = "https://github.com/boschresearch/py-cx-ids"
 dependencies = [
     "fastapi",
     "requests",
+    "PyJWT",
+    "uvicorn",
 ]
 
 [tool.setuptools]
