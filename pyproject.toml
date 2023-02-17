@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+
+[project]
+name = "pycxids"
+version = "0.0.1"
+description = "An alternative IDS protocol implementation that aims to be CX product-edc compatible. Also provides some helper for using the EDC."
+requires-python = ">= 3.7"
+license.file = "LICENSE"
+
+authors = [
+  { name = "Matthias Binzer", email = "matthias.binzer@de.bosch.com" },
+]
+
+urls.homepage = "https://github.com/boschresearch/py-cx-ids"
+
+dependencies = [
+    "fastapi",
+    "requests",
+]
+
+[tool.setuptools]
+packages = ["pycxids"]
