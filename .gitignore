@@ -1,0 +1,14 @@
+.*
+__pycache__
+*.json
+*.txt
+*.bak
+archive/
+*.key
+*.pubkey
+*.pem
+logs/
+aas-registry-openapi.yaml
+build/
+pycxids.egg-info/
+tmpvenv/
