@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  receiver-service:
+    build: ./docker/receiver-service
+    ports:
+      - "127.0.0.1:8003:8000"
+
+  dummy-backend:
+    build: ./docker/dummy-backend
+    ports:
+      - "127.0.0.1:8002:8000"
