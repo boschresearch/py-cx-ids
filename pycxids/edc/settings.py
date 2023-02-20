@@ -35,5 +35,6 @@ API_WRAPPER_PASSWORD = os.getenv('API_WRAPPER_PASSWORD', 'somepassword')
 assert API_WRAPPER_PASSWORD
 
 NR_OF_ASSETS = int(os.getenv('NR_OF_ASSETS', '1'))
+NR_OF_CALLS = int(os.getenv('NR_OF_CALLS', '100'))
 
 DAPS_JWKS = os.getenv('DAPS_JWKS', 'http://daps-mock:8000/.well-known/jwks.json')
