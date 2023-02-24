@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     CONSUMER_CONNECTOR_URN = 'urn:uuid:consumer'
     CONSUMER_WEBHOOK = ""
     WEBHOOK_PORT = 6060
-    DAPS_ENDPOINT = 'https://daps1.int.demo.catena-x.net/token'
-    DAPS_JWKS_URL = 'https://daps1.int.demo.catena-x.net/.well-known/jwks.json'
+    DAPS_ENDPOINT = 'http://daps-mock:8000/token'
+    DAPS_JWKS_URL = 'http://daps-mock:8000/.well-known/jwks.json'
     SCOPE = "idsc:IDS_CONNECTOR_ATTRIBUTES_ALL"
     ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
     PROVIDER_CONNECTOR_URL = ""
