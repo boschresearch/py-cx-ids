@@ -46,9 +46,18 @@ class EdcProvider(EdcDataManagement):
         contract_id = self.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
         return(asset_id, policy_id, contract_id)
 
-    def create_asset(self, base_url: str, asset_id: str = '', proxyPath=False, proxyQueryParams=False, proxyBody=False, proxyMethod=False):
+    def create_asset(self, base_url: str, asset_id: str = '', proxyPath=False, proxyQueryParams=False, proxyBody=False, proxyMethod=False, try_delete_before_create=False):
         if not asset_id:
             asset_id = str(uuid4())
+        else:
+            if try_delete_before_create:
+                # this makes only sense if asset_id was given
+                pass
+                # disable for now, since after an negotiated contract,
+                # the asset can NOT be deleted anymore.
+                # optional: delete the contract definition to not let it appear in the catalog anymore
+                #r = self.delete(path=f"/assets/{asset_id}")
+                # just try and do nothing else here
 
         data = {
             "asset": {
