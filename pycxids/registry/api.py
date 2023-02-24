@@ -16,6 +16,16 @@ class Registry(GeneralApi):
         # dirty workaround for pagination vs non-pagination issue
         data_pages = None
         if isinstance(data, List):
+            # PCF registry items bug workaround
+            # remove after it is fixed in the registry
+            mydata = []
+            for el in data:
+                if el.get('identification') == 'string':
+                    continue
+                mydata.append(el)
+            data = mydata
+            # bug end
+
             data_pages = {
                 'items': data,
                 'total_items': len(data),
@@ -25,6 +35,9 @@ class Registry(GeneralApi):
             }
         else:
             data_pages = data
+
+        if not data_pages:
+            return None
         result = AssetAdministrationShellDescriptorCollection.parse_obj(data_pages)
         return result
 
