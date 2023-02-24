@@ -6,40 +6,11 @@
 
 from uuid import uuid4
 from time import sleep
-import requests
+from pycxids.utils.api import GeneralApi
 
-class EdcDataManagement():
+class EdcDataManagement(GeneralApi):
     def __init__(self, edc_data_managment_base_url: str, auth_key: str) -> None:
-        self.base_url = edc_data_managment_base_url
-        self.auth_key = auth_key
-
-    def get(self, path: str, params = None):
-        """
-        Generic EDC API GET request
-        """
-        r = requests.get(f"{self.base_url}{path}", params=params, headers=self._prepare_auth_header())
-
-        if not r.ok:
-            print(f"{r.status_code} - {r.reason} - {r.content}")
-            return None
-        
-        j = r.json()
-        return j
-    
-    def post(self, path: str, data = None, json_content = True):
-        """
-        Generic EDC API POST request
-        """
-        r = requests.post(f"{self.base_url}{path}", json=data, headers=self._prepare_auth_header())
-
-        if not r.ok:
-            print(f"{r.status_code} - {r.reason} - {r.content}")
-            return None
-        
-        if not json_content:
-            return r.content
-        j = r.json()
-        return j
+        super().__init__(base_url=edc_data_managment_base_url, headers={'X-Api-Key': auth_key})
 
     def wait_for_state(self, path: str, final_state: str, timeout = 30):
         """
@@ -57,10 +28,6 @@ class EdcDataManagement():
 
             sleep(1)
 
-    def _prepare_auth_header(self):
-        return {
-            'X-Api-Key': self.auth_key
-        }
 
 class EdcProvider(EdcDataManagement):
     def __init__(self, edc_data_managment_base_url: str, auth_key: str) -> None:
