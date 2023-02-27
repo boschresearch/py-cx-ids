@@ -19,6 +19,7 @@ dependencies = [
     "requests",
     "PyJWT",
     "cryptography",
+    "jwcrypto",
     "uvicorn",
 ]
 
