@@ -1,14 +1,7 @@
 FROM python:3
 
-# Fastapi deployment
-# https://fastapi.tiangolo.com/deployment/docker/
+# install from git, because source is up in the hierarchy
+# that can't be reached from within edc-dev-env
+RUN pip install --no-cache-dir --upgrade git+https://github.com/boschresearch/py-cx-ids.git@dev
 
-WORKDIR /code
-
-COPY ./requirements.txt ./requirements.txt
-
-RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
-
-COPY *.py ./
-
-CMD ["python", "./main.py"]
+CMD ["python", "-m", "pycxids.services.daps_mock_service"]
