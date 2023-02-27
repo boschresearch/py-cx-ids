@@ -46,7 +46,7 @@ def test_create_and_fetch_i40_pcf():
 
         # fetch data and pass a 'token' query param
         url = f"{API_WRAPPER_BASE_URL}/{asset_id}/xxx"
-        params['token'] = token
+        params['daps'] = token['access_token']
         r = requests.get(url, auth=auth, params=params)
 
         if not r.ok:
