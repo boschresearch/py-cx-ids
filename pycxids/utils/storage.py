@@ -24,7 +24,7 @@ class FileStorageEngine():
         with open(self.storage_fn, 'w') as f:
             f.write(json.dumps(storage, indent=4))
 
-    def get(self, key):
+    def get(self, key, default=None):
         storage = {}
         if os.path.exists(self.storage_fn):
             with open(self.storage_fn, 'r') as f:
@@ -33,5 +33,5 @@ class FileStorageEngine():
                     storage = json.loads(content)
                 except Exception as ex:
                     print(ex)
-        return storage.get(key, None)
+        return storage.get(key, default)
 
