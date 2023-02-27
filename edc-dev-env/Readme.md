@@ -21,6 +21,11 @@ Currently, the infrastructure (vault and postgres) need to be started separately
 ```
 # build is only required once or after changes
 ./build.sh
+# to rebuild from latest source use
+./build.sh --no-cache
+# or specify a dedicated service, e.g.
+./build.sh --no-cache pycxids
+
 # now start the infrastructure, e.g. a daps (mocked version of it) and the vault with the secrets
 ./start_infrastructure.sh
 # wait a few seconds and run

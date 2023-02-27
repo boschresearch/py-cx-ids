@@ -21,3 +21,7 @@ services:
       - CLIENT_ID=${DAPS_TOKEN_SERVICE_CLIENT_ID:-consumer} # used also in EDC settings
     volumes:
       - ${DAPS_TOKEN_SERVICE_PRIVATE_KEY_FN:-./vault_secrets/consumer.key}:/private.key
+
+  pycxids:
+    # dummy container with installed pycxids
+    build: ./docker/pycxids
