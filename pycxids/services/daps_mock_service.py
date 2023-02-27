@@ -8,11 +8,16 @@ from jwcrypto.jwt import JWT
 import jwt
 from datetime import datetime, timedelta
 
+from pycxids.utils.storage import FileStorageEngine
+
 
 app = FastAPI(title="DAPS Mock")
 
 DAPS_CERT_FN = os.getenv('DAPS_CERT_FN', './daps.crt')
 DAPS_PRIVATE_KEY_FN = os.getenv('DAPS_PRIVATE_KEY_FN', './daps.key')
+DAPS_STORAGE_FN = os.getenv('DAPS_STORAGE_FN', 'daps_storage.json')
+
+storage = FileStorageEngine(storage_fn=DAPS_STORAGE_FN)
 
 
 @app.get('/.well-known/jwks.json')
@@ -52,12 +57,28 @@ async def post_token(
         params = request.query_params
         resource = params.get('resource', '')
 
+    audience = []
+    if resource:
+        audience.append(resource)
+
     # preparte private key
     private_key = JWK()
     private_key_content = None
     with open(DAPS_PRIVATE_KEY_FN, 'rb') as f:
         private_key_content = f.read()
     private_key.import_from_pem(data=private_key_content)
+
+    subject = decoded['sub']
+
+    # we read out this information (the only one) from the storage
+    # because there is no other way, the client would transfer this kind of information
+    # without changing the behavior of how the EDC would get a token
+    referringConnector = ""
+    try:
+        referringConnector = storage.get(subject, default={}).get('referringConnector', '')
+    except Exception as ex:
+        print(ex)
+        # continue without this field information
 
     now = datetime.now()
     header = {
@@ -68,13 +89,10 @@ async def post_token(
     payload = {
         "scope": "idsc:IDS_CONNECTOR_ATTRIBUTES_ALL",
         "iss": "http://daps-mock",
-        "sub": decoded['sub'],
-        "aud": [
-            #decoded['aud']
-            resource
-        ],
+        "sub": subject,
+        "aud": audience,
         "jti": str(uuid4()),
-        "client_id": decoded['sub'],
+        "client_id": subject,
 
         "exp" : int((now + timedelta(minutes=10)).timestamp()),
         "nbf": int(now.timestamp()),
@@ -82,7 +100,7 @@ async def post_token(
         "@type": "ids:DatPayload",
         "@context": "https://w3id.org/idsa/contexts/context.jsonld",
         "securityProfile": "idsc:BASIC_SECURITY_PROFILE",
-        "referringConnector": "", # TODO: this is used to parse out the BPN in some cases
+        "referringConnector": referringConnector,
     }
     token = JWT(header=header, claims=payload)
     #print(token)
@@ -101,4 +119,4 @@ if __name__ == '__main__':
     port = os.getenv('PORT', '8000')
     host = os.getenv('HOST', "0.0.0.0")
     workers = os.getenv('WORKERS', '1')
-    uvicorn.run("main:app", host=host, port=int(port), workers=int(workers), reload=False)
+    uvicorn.run("pycxids.services.daps_mock_service:app", host=host, port=int(port), workers=int(workers), reload=False)
