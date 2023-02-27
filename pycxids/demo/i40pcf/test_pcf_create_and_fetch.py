@@ -15,7 +15,7 @@ from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, AP
 
 DAPS_TOKEN_SERVICE_ENDPOINT = os.getenv('DAPS_TOKEN_SERVICE_ENDPOINT', "http://localhost:8004/token")
 BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', 'admin')
-BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', 'admin')
+BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', 'dontuseinpublic')
 
 
 def test_create_and_fetch_i40_pcf():

@@ -14,7 +14,7 @@ from pycxids.core.daps import get_daps_access_token, get_daps_token
 from pycxids.core.jwt_decode import decode
 
 BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', 'admin')
-BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', None)
+BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', 'dontuseinpublic')
 assert BASIC_AUTH_USERNAME, "BASIC_AUTH_PASSWORD must be set"
 assert BASIC_AUTH_PASSWORD, "BASIC_AUTH_PASSWORD must be set"
 
