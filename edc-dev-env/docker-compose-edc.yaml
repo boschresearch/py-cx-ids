@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   control-plane:
-    image: ghcr.io/catenax-ng/product-edc/edc-controlplane-postgresql-hashicorp-vault:${EDC_VERSION:-0.1.2}
+    image: ghcr.io/catenax-ng/product-edc/edc-controlplane-postgresql-hashicorp-vault:${EDC_VERSION:-0.1.6}
     #ports:
       #- "8181:9191" # default
       #- "8185:8282" # ids
@@ -15,7 +15,7 @@ services:
       - ${LOGGING_CONFIGURATION_FILE:-./configs/default/logging.properties}:/app/logging.properties
 
   data-plane:
-    image: ghcr.io/catenax-ng/product-edc/edc-dataplane-hashicorp-vault:${EDC_VERSION:-0.1.2}
+    image: ghcr.io/catenax-ng/product-edc/edc-dataplane-hashicorp-vault:${EDC_VERSION:-0.1.6}
     #ports:
       #- "8182:9191" # default
       #- "8183:9192" # public
