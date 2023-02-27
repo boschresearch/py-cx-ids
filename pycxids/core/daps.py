@@ -93,3 +93,7 @@ def _daps_token_still_valid(token) -> bool:
         return True
     
     return False
+
+if __name__ == '__main__':
+    token = get_daps_token(audience='')
+    print(token)
