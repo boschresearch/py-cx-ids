@@ -4,8 +4,8 @@ services:
   daps-mock:
     build: ./daps-mock/
     volumes:
-      - ./daps-mock/daps.crt:/code/daps.crt
-      - ./daps-mock/daps.key:/code/daps.key
+      - ./daps-mock/daps.crt:/app/daps.crt
+      - ./daps-mock/daps.key:/app/daps.key
 
   vault:
     build: ./docker/vault/

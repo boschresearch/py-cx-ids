@@ -18,6 +18,6 @@ services:
     environment:
       - BASIC_AUTH_PASSWORD=${DAPS_TOKEN_SERVICE_BASIC_AUTH_PASSWORD:-dontuseinpublic}
       - PRIVATE_KEY_FN=/private.key
-      - CLIENT_ID=${CLIENT_ID:-consumer} # used also in EDC settings
+      - CLIENT_ID=${DAPS_TOKEN_SERVICE_CLIENT_ID:-consumer} # used also in EDC settings
     volumes:
       - ${DAPS_TOKEN_SERVICE_PRIVATE_KEY_FN:-./vault_secrets/consumer.key}:/private.key
