@@ -42,11 +42,11 @@ def test_create_and_fetch_i40_pcf():
         r = requests.get(DAPS_TOKEN_SERVICE_ENDPOINT, auth=HTTPBasicAuth(username=BASIC_AUTH_USERNAME, password=BASIC_AUTH_PASSWORD))
         if not r.ok:
             assert False, "Could not fetch DAPS token"
-        token = r.content
+        token_data = r.json()
 
         # fetch data and pass a 'token' query param
         url = f"{API_WRAPPER_BASE_URL}/{asset_id}/xxx"
-        params['daps'] = token['access_token']
+        params['daps'] = token_data['access_token']
         r = requests.get(url, auth=auth, params=params)
 
         if not r.ok:
