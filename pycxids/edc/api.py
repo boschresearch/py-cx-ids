@@ -126,6 +126,19 @@ class EdcProvider(EdcDataManagement):
             return None
         return cd_id
 
+    def get_number_of_elements(self, path: str, limit = 1000000):
+        """
+        Returns the number of elements for a requested path, e.g. assets, policydefinitions, contractdefinitions
+        """
+        try:
+            j = self.get(path=path, params={ 'limit': limit })
+            return len(j)
+        except Exception as ex:
+            print(ex)
+
+        return None
+
+
 
 
 class EdcConsumer(EdcDataManagement):
