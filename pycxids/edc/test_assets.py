@@ -35,6 +35,13 @@ def test_create_and_delete():
     contract_id = provider.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
     #cd = get_contract_definition(id=contract_id)
 
+    assert asset_id, "Could not create asset"
+    assert policy_id, "Could not create policy"
+    assert contract_id, "Could not crate contract definition"
+
+    nr_of_assets_after = provider.get_number_of_elements("/assets")
+    assert nr_of_assets_after == nr_of_assets + 1, "Not exactly 1 more asset after creating 1"
+
     sleep(1)
     
     auth = HTTPBasicAuth(username=API_WRAPPER_USER, password=API_WRAPPER_PASSWORD)
