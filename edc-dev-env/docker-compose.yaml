@@ -32,6 +32,8 @@ services:
     environment:
         # the default (api-wrapper) is set here, or change for your local development with a .env file
       - EDC_RECEIVER_HTTP_ENDPOINT=${EDC_RECEIVER_HTTP_ENDPOINT:-http://api-wrapper:9192/callback/endpoint-data-reference}
+      # renamed in 0.3.0
+      - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${EDC_RECEIVER_HTTP_ENDPOINT:-http://api-wrapper:9192/callback/endpoint-data-reference}
 
   consumer-data-plane:
     extends:
