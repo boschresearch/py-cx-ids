@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 import requests
 from pycxids.core.daps import get_daps_token
 
+POLICY_HEADER = "Policy"
+
 daps_token = get_daps_token(audience='')
 #print(daps_token)
 
@@ -28,7 +30,7 @@ if not r.ok:
 
 print(r.content)
 # the usage policy is given in the header
-policy = r.headers['Policy-IDS']
+policy = r.headers[POLICY_HEADER]
 print(policy)
 
 # if we want, we can request the policy
