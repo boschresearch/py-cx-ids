@@ -9,9 +9,9 @@ from pydantic import BaseSettings, PrivateAttr, Field
 import os
 
 class Settings(BaseSettings):
-    CLIENT_ID = ''
+    CLIENT_ID = 'consumer'
     CERT_FN = ''
-    PRIVATE_KEY_FN = ''
+    PRIVATE_KEY_FN = './edc-dev-env/vault_secrets/consumer.key'
     CONSUMER_CONNECTOR_URL = ""
     CONSUMER_CONNECTOR_URN = 'urn:uuid:consumer'
     CONSUMER_WEBHOOK = ""
