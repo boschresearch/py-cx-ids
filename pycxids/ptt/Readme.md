@@ -18,4 +18,8 @@ The solution is based on typicall HTTP. A GET request transfers the policy infor
 To get the policy without any data first, a simple HTTP HEAD is used. In case the provider want a signed agreement / policy, the consumer needs to fetch the policy first (HEAD request), understand the policy, sign it and send it as part of the HTTP header with the GET request. By doing this, also one policy out of a selction could be selected and used for the actual data request, meaning the consumer has the choice under which policy they want to fetch the data.
 
 ## Flow
+### via DAPS
+![DAPS Flow](./client_daps_signed_policy.png)
+
+### via SSI
 TODO
