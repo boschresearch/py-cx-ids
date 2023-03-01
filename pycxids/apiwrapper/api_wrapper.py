@@ -6,15 +6,17 @@
 
 import os
 from typing import Optional
+import requests
+from requests.auth import HTTPBasicAuth
 from fastapi import FastAPI, HTTPException, Query, Security, status, Request, Path, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-
-BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', 'someuser')
-BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', 'somepassword')
-assert BASIC_AUTH_USERNAME, "BASIC_AUTH_PASSWORD must be set"
-assert BASIC_AUTH_PASSWORD, "BASIC_AUTH_PASSWORD must be set"
+from pycxids.edc.api import EdcConsumer
+from pycxids.edc.settings import CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY, IDS_PATH, CONSUMER_EDC_VALIDATION_ENDPOINT
+from pycxids.edc.settings import API_WRAPPER_USER, API_WRAPPER_PASSWORD
+from pycxids.edc.settings import RECEIVER_SERVICE_BASE_URL
+from pycxids.utils.storage import FileStorageEngine
 
 
 app = FastAPI(title="api-wrapper compatible re-implementation")
@@ -31,7 +33,7 @@ def check_access(credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
     Simple Basic Auth as with the original api-wrapper
     """
     try:
-        if credentials.username == BASIC_AUTH_USERNAME and credentials.password == BASIC_AUTH_PASSWORD:
+        if credentials.username == API_WRAPPER_USER and credentials.password == API_WRAPPER_PASSWORD:
             return True
     except Exception as ex:
         print(ex)
@@ -40,7 +42,11 @@ def check_access(credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
 
 
 @app.get('/api/service/{full_path:path}', dependencies=[Security(check_access)])
-def get_endpoint(request: Request, full_path: str = Path('', description='{asset_id}/{sub_url}* - sub_url is optional'), provider_connector_url: str = Query(..., alias="provider-connector-url")):
+def get_endpoint(
+        request: Request,
+        full_path: str = Path('', description='{asset_id}/{sub_url}* - sub_url is optional'),
+        provider_connector_url: str = Query(default="http://provider-control-plane:8282", alias="provider-connector-url"),
+    ):
     """
     To receive all possible sub_urls (path behind the asset_id) and still make it optional,
     it seems we need to parse / split ourselve.
@@ -53,10 +59,43 @@ def get_endpoint(request: Request, full_path: str = Path('', description='{asset
         pos = full_path.find('/')
         sub_url = full_path[pos+1:]
 
-    #print(params)
+    params = dict(request.query_params)
+    del params['provider-connector-url'] # this one we handle separately and don't want to forward
+    print(params)
     print(f"asset_id: {asset_id}")
     print(f"sub_url: {sub_url}")
     try:
+        consumer = EdcConsumer(edc_data_managment_base_url=CONSUMER_EDC_BASE_URL, auth_key=CONSUMER_EDC_API_KEY)
+        provider_ids_endpoint = provider_connector_url
+        if not IDS_PATH in provider_ids_endpoint:
+            # TODO: where to get reliable IDS_PATH from? or is this standardized?
+            provider_ids_endpoint = provider_ids_endpoint + IDS_PATH
+        catalog = consumer.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
+        offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
+        negotiation = consumer.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint, contract_offer=offer)
+        agreement_id = negotiation.get('contractAgreementId')
+        transfer_id = consumer.transfer(provider_ids_endpoint=provider_ids_endpoint, asset_id=asset_id, agreement_id=agreement_id)
+
+        r = requests.get(f"{RECEIVER_SERVICE_BASE_URL}/{transfer_id}/token/consumer")
+        if not r.ok:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not get EDR token in time.")
+
+        j = r.json()
+        consumer_endpoint = j.get('endpoint')
+        auth_code = j.get('authCode')
+        auth_key = j.get('authKey')
+
+        url = f"{consumer_endpoint}{sub_url}"
+        if sub_url and not sub_url.startswith('/') and not consumer_endpoint.endswith('/'):
+            # fix / issues
+            url = f"{consumer_endpoint}/{sub_url}"
+
+        r = requests.get(url, headers={auth_key: f"{auth_code}"}, params=params)
+        if not r.ok:
+            print(f"{r.status_code} - {r.reason} - {r.content}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not fetch data.")
+        j = r.json()
+        return j
 
     except Exception as ex:
         print(ex)

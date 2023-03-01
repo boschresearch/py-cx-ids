@@ -38,3 +38,5 @@ NR_OF_ASSETS = int(os.getenv('NR_OF_ASSETS', '1'))
 NR_OF_CALLS = int(os.getenv('NR_OF_CALLS', '100'))
 
 DAPS_JWKS = os.getenv('DAPS_JWKS', 'http://daps-mock:8000/.well-known/jwks.json')
+
+RECEIVER_SERVICE_BASE_URL = os.getenv('RECEIVER_SERVICE_BASE_URL', 'http://receiver-service:8000/transfer')
