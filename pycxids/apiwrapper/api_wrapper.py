@@ -27,6 +27,15 @@ origins = [
 ]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"])
 
+API_WRAPPER_STORAGE_FN = os.getenv('API_WRAPPER_STORAGE_FN', 'api_wrapper_storage.json')
+
+try:
+    # 'cleaning' the cache database - dirty way of doing it
+    os.remove(API_WRAPPER_STORAGE_FN)
+except:
+    pass
+storage = FileStorageEngine(storage_fn=API_WRAPPER_STORAGE_FN)
+
 
 def check_access(credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
     """
@@ -70,10 +79,16 @@ def get_endpoint(
         if not IDS_PATH in provider_ids_endpoint:
             # TODO: where to get reliable IDS_PATH from? or is this standardized?
             provider_ids_endpoint = provider_ids_endpoint + IDS_PATH
-        catalog = consumer.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
-        offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
-        negotiation = consumer.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint, contract_offer=offer)
-        agreement_id = negotiation.get('contractAgreementId')
+        # already have an agreement?
+        agreement_id = storage.get(key=asset_id)
+        if not agreement_id:
+            # we need to negotiate
+            catalog = consumer.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
+            offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
+            negotiation = consumer.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint, contract_offer=offer)
+            agreement_id = negotiation.get('contractAgreementId')
+            storage.put(key=asset_id, value=agreement_id)
+        # for now let's fetch a new EDR token everytime. We could also check if we're still in the 10 minutes lifetime of it
         transfer_id = consumer.transfer(provider_ids_endpoint=provider_ids_endpoint, asset_id=asset_id, agreement_id=agreement_id)
 
         r = requests.get(f"{RECEIVER_SERVICE_BASE_URL}/{transfer_id}/token/consumer")
