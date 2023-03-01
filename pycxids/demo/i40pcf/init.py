@@ -115,13 +115,13 @@ def create_edc_assets_from_list(endpoints:list, edc_data_managment_base_url: str
 
 
 if __name__ == '__main__':
-    """
+
     create_edc_assets_from_registry_submodesl(
         registry_base_url=REGISTRY_ENDPOINT,
         edc_data_managment_base_url=PROVIDER_EDC_BASE_URL,
         edc_auth_key=PROVIDER_EDC_API_KEY
     )
-    """
+
     server_name_asset_ids = create_edc_assets_for_server_names(
         registry_base_url=REGISTRY_ENDPOINT,
         edc_data_managment_base_url=PROVIDER_EDC_BASE_URL,

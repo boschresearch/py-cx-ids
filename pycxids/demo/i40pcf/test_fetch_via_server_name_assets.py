@@ -22,6 +22,12 @@ REGISTRY_ENDPOINT= os.getenv('REGISTRY_ENDPOINT', 'https://registry.dpp40-2-v2.i
 
 
 def test_fetch_i40_pcf():
+    """
+    Fetch all endpoints via EDC assets created for each individual server name (not the entire endpoint address)!
+    This makes the process muc faster, because existing agreements can be reused.
+    
+    If using the api-wrapper, make sure it is configured with: wrapper.cache.agreement.enabled=true
+    """
     api_wrapper_auth = HTTPBasicAuth(username=API_WRAPPER_USER, password=API_WRAPPER_PASSWORD)
     params = {
         "provider-connector-url": "http://provider-control-plane:8282",

@@ -21,6 +21,9 @@ REGISTRY_ENDPOINT= os.getenv('REGISTRY_ENDPOINT', 'https://registry.dpp40-2-v2.i
 
 
 def test_fetch_i40_pcf():
+    """
+    Fetches every endpoint via a its individual EDC asset_id
+    """
     api_wrapper_auth = HTTPBasicAuth(username=API_WRAPPER_USER, password=API_WRAPPER_PASSWORD)
     params = {
         "provider-connector-url": "http://provider-control-plane:8282",
