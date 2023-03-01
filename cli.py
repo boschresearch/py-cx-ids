@@ -21,16 +21,20 @@ from pycxids.core.models import NotFoundException
 from pycxids.core.daps import get_daps_token
 from pycxids.core.settings import PROVIDER_CONNECTOR_URL, PROVIDER_CONNECTOR_IDS_ENDPOINT, endpoint_check, CONSUMER_WEBHOOK
 
+from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
+
 @click.group('A cli to interact with IDS / EDC data providers')
 def cli():
     pass
 
 @cli.command('catalog')
-def fetch_catalog_cli():
-    catalog = fetch_catalog(PROVIDER_CONNECTOR_URL)
+@click.option('-o', '--out-fn', default='')
+@click.argument('provider_connector_url', default=PROVIDER_IDS_BASE_URL)
+def fetch_catalog_cli(provider_connector_url: str, out_fn):
+    catalog = fetch_catalog(endpoint=provider_connector_url, out_fn=out_fn)
     print(json.dumps(catalog, indent=4))
 
-def fetch_catalog(endpoint: str):
+def fetch_catalog(endpoint: str, out_fn: str):
     """
     Fetch the catalog from the given endpoint.
 
@@ -40,15 +44,13 @@ def fetch_catalog(endpoint: str):
     daps_token = get_daps_token(audience=ids_endpoint) # TODO: handle daps error
     catalog_header, catalog = get_catalog(daps_token=daps_token, provider_connector_ids_endpoint=ids_endpoint)
     # TODO: check catalog_header for e.g. RejectionMessage, catalog is None in this case
-    """
-    with open('catalog_result_raw.txt', 'w') as f:
-        f.write(json.dumps(catalog))
-    catalog_str = json.dumps(catalog, indent=4)
-    catalog_result_fn = 'catalog_result.json'
-    with open(catalog_result_fn, 'w') as f:
-        f.write(catalog_str)
-    #print(f"Catalog result written to: {catalog_result_fn}")
-    """
+
+    if out_fn:
+        os.makedirs(os.path.dirname(out_fn), exist_ok=True)
+        catalog_str = json.dumps(catalog, indent=4)
+        with open(out_fn, 'w') as f:
+            f.write(catalog_str)
+
     return catalog
 
 @cli.command('assets', help="List asset:prop:id list from a given catalog via filename or stdin")
