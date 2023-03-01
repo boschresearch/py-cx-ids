@@ -10,14 +10,9 @@ from fastapi import FastAPI, HTTPException, Query, Security, status, Request, Pa
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from pycxids.core import webhook_fastapi
-from pycxids.core.models import NotFoundException
-import pycxids.core.jwt_decode
-from pycxids.core.webhook_queue import wait_for_message
-from pycxids.cli.cli import fetch_asset, fetch_catalog
 
-BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', None)
-BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', None)
+BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', 'someuser')
+BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', 'somepassword')
 assert BASIC_AUTH_USERNAME, "BASIC_AUTH_PASSWORD must be set"
 assert BASIC_AUTH_PASSWORD, "BASIC_AUTH_PASSWORD must be set"
 
@@ -29,9 +24,7 @@ origins = [
     "*",
 ]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"])
-app.include_router(webhook_fastapi.app.router)
 
-#security = HTTPBasic()
 
 def check_access(credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
     """
@@ -64,12 +57,7 @@ def get_endpoint(request: Request, full_path: str = Path('', description='{asset
     print(f"asset_id: {asset_id}")
     print(f"sub_url: {sub_url}")
     try:
-        data = fetch_asset(asset_id=asset_id, raw_data=False, start_webhook=False, test_webhook=False, connector_url=provider_connector_url, suburl=sub_url)
-        print(data)
-        return data
-    except NotFoundException as ex:
-        print(ex)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ex))
+
     except Exception as ex:
         print(ex)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex))
@@ -78,16 +66,10 @@ def get_endpoint(request: Request, full_path: str = Path('', description='{asset
 def post_endpoint(path: str):
     pass
 
-@app.get('/catalog')
-def get_catalog(provider_connector_url: str):
-    print(provider_connector_url)
-    catalog = fetch_catalog(endpoint=provider_connector_url)
-    return catalog
 
 if __name__ == '__main__':
-    #server_startup() # only run once, not for every worker
     import uvicorn
     port = os.getenv('PORT', '8080')
     host = os.getenv('HOST', "0.0.0.0")
     workers = os.getenv('WORKERS', '1')
-    uvicorn.run("pycxids.wrapper.api_wrapper:app", host=host, port=int(port), workers=int(workers), reload=False)
+    uvicorn.run("pycxids.apiwrapper.api_wrapper:app", host=host, port=int(port), workers=int(workers), reload=False)
