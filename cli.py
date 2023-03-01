@@ -11,7 +11,9 @@ import os
 import json
 import sys
 from datetime import datetime
+from threading import Thread
 import requests
+import uvicorn
 
 from pycxids.core.ids_multipart.ids import negotiate, request_data, transfer, get_catalog
 from pycxids.core.ids_multipart import webhook_fastapi
@@ -19,7 +21,7 @@ from pycxids.core import jwt_decode
 from pycxids.core.ids_multipart.webhook_queue import wait_for_message
 from pycxids.core.models import NotFoundException
 from pycxids.core.daps import get_daps_token
-from pycxids.core.settings import PROVIDER_CONNECTOR_URL, PROVIDER_CONNECTOR_IDS_ENDPOINT, endpoint_check, CONSUMER_WEBHOOK
+from pycxids.core.settings import PROVIDER_CONNECTOR_URL, PROVIDER_CONNECTOR_IDS_ENDPOINT, endpoint_check, CONSUMER_WEBHOOK, settings
 
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
 
@@ -34,7 +36,7 @@ def fetch_catalog_cli(provider_connector_url: str, out_fn):
     catalog = fetch_catalog(endpoint=provider_connector_url, out_fn=out_fn)
     print(json.dumps(catalog, indent=4))
 
-def fetch_catalog(endpoint: str, out_fn: str):
+def fetch_catalog(endpoint: str, out_fn: str = ''):
     """
     Fetch the catalog from the given endpoint.
 
@@ -76,11 +78,12 @@ def list_assets_from_catalog(catalog_filename: str):
 @cli.command('fetch', help="Fetch a given asset id")
 @click.option('-r', '--raw-data', default=False, is_flag=True)
 @click.option('--out-dir', default='', help='Directory in which the results should be stored under the asset_id filename.')
+@click.option('--provider-connector-url', default=PROVIDER_IDS_BASE_URL)
 @click.argument('asset_id', default='')
-def fetch_asset_cli(asset_id: str, raw_data:bool, out_dir:str):
+def fetch_asset_cli(provider_connector_url, asset_id: str, raw_data:bool, out_dir:str):
     before = datetime.now().timestamp()
     try:
-        data_result = fetch_asset(asset_id=asset_id, raw_data=raw_data, connector_url=PROVIDER_CONNECTOR_URL)
+        data_result = fetch_asset(asset_id=asset_id, raw_data=raw_data, connector_url=provider_connector_url)
     except Exception as ex:
         print(ex)
         os._exit(1) # this is a first class cli function, here we can immediately exit
@@ -104,13 +107,13 @@ def fetch_asset_cli(asset_id: str, raw_data:bool, out_dir:str):
     print(f"request duration in seconds: {duration}")
     os._exit(1) # this does also stop the webhook thread
 
-def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_webhook=True, connector_url=None, suburl=None, query_params=None):
+def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_webhook=False, connector_url=None, suburl=None, query_params=None):
     """
     Starts the webhook to receive async messages
     Does the negotiation with the provider control plane and the actual data fetch from the provider data plane.
     """
     if start_webhook:
-        server_thread = Thread(target=uvicorn.run, args=[webhook_fastapi.app], kwargs={'host': '0.0.0.0', 'port': WEBHOOK_PORT})
+        server_thread = Thread(target=uvicorn.run, args=[webhook_fastapi.app], kwargs={'host': '0.0.0.0', 'port': settings.WEBHOOK_PORT})
         server_thread.start()
 
     if test_webhook:

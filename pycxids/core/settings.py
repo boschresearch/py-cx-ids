@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     PRIVATE_KEY_FN = './edc-dev-env/vault_secrets/consumer.key'
     CONSUMER_CONNECTOR_URL = ""
     CONSUMER_CONNECTOR_URN = 'urn:uuid:consumer'
-    CONSUMER_WEBHOOK = ""
+    CONSUMER_WEBHOOK = "http://dev:6060/webhook"
     WEBHOOK_PORT = 6060
     DAPS_ENDPOINT = 'http://daps-mock:8000/token'
     DAPS_JWKS_URL = 'http://daps-mock:8000/.well-known/jwks.json'
