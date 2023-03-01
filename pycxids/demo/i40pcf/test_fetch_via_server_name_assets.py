@@ -9,9 +9,10 @@ from time import sleep
 import pytest
 import requests
 from requests.auth import HTTPBasicAuth
-from pycxids.demo.i40pcf.init import get_endpoint_hashes
+from pycxids.demo.i40pcf.init import get_endpoints, get_servername, hashed_asset_id
 from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD
 from pycxids.utils.helper import print_red
+
 
 DAPS_TOKEN_SERVICE_ENDPOINT = os.getenv('DAPS_TOKEN_SERVICE_ENDPOINT', "http://daps-token-service:8000/token")
 BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', 'admin')
@@ -27,25 +28,20 @@ def test_fetch_i40_pcf():
         "Email": "@phoenixcontact",
     }
 
-    hashed_endpoints = get_endpoint_hashes(registry_base_url=REGISTRY_ENDPOINT)
+
+    endpoints = get_endpoints(registry_base_url=REGISTRY_ENDPOINT)
+
     good = []
     bad = []
     counter = 0
-    for asset_id in hashed_endpoints:
+    for endpoint in endpoints:
 
-        """
-        # get a fresh DAPS token
-        r = requests.get(DAPS_TOKEN_SERVICE_ENDPOINT, auth=HTTPBasicAuth(username=BASIC_AUTH_USERNAME, password=BASIC_AUTH_PASSWORD))
-        if not r.ok:
-            assert False, "Could not fetch DAPS token"
-        token_data = r.json()
-        #optionally pass a 'daps' token query param
-        params['daps'] = token_data['access_token']
-        """
+        server = get_servername(url=endpoint)
+        path = endpoint.replace(server, '')
+        asset_id = hashed_asset_id(value=server)
 
-        # fetch data
-        url = f"{API_WRAPPER_BASE_URL}/{asset_id}/xxx"
-        
+        # fetch data and pass a 'token' query param
+        url = f"{API_WRAPPER_BASE_URL}/{asset_id}{path}"
         r = requests.get(url, auth=api_wrapper_auth, params=params)
 
         if not r.ok:
@@ -56,9 +52,9 @@ def test_fetch_i40_pcf():
         print(r.content)
         print("")
         counter = counter + 1
-        print_red(f"{counter}/{len(hashed_endpoints)}")
+        print_red(f"{counter}/{len(endpoints)}")
 
-    assert len(hashed_endpoints) == len(good), "Not all created assets could be fetched."
+    assert len(endpoints) == len(good), "Not all created assets could be fetched."
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
