@@ -15,7 +15,7 @@ from threading import Thread
 import requests
 import uvicorn
 
-from pycxids.core.ids_multipart.ids import negotiate, request_data, transfer, get_catalog
+from pycxids.core.ids_multipart.ids_multipart import negotiate, request_data, transfer, get_catalog
 from pycxids.core.ids_multipart import webhook_fastapi
 from pycxids.core import jwt_decode
 from pycxids.core.ids_multipart.webhook_queue import wait_for_message
