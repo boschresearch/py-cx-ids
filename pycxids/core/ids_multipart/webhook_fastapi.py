@@ -12,7 +12,8 @@ from requests_toolbelt import MultipartEncoder
 import requests
 import time
 
-import pycxids.core.ids_multipart.multipart_helper as mh
+from pycxids.core.settings import CONSUMER_CONNECTOR_URN, CONSUMER_WEBHOOK
+from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer, IdsMultipartBase
 from pycxids.core import daps
 from pycxids.core.ids_multipart.webhook_queue import add_message, wait_for_message
 
@@ -32,7 +33,7 @@ async def webhook(request: Request): #, body: dict = Body(...)
         add_message(key=TEST_MSG_KEY, header=TEST_MSG, payload=TEST_MSG)
         return ''
     content_type = request.headers['Content-Type']
-    header, payload = mh.parse_multipart_result(r_content=body, content_type=content_type)
+    header, payload = IdsMultipartBase.parse_multipart_result(r_content=body, content_type=content_type)
     #print(json.dumps(header, indent=4))
     #print(json.dumps(payload, indent=4))
 
@@ -67,7 +68,9 @@ async def webhook(request: Request): #, body: dict = Body(...)
     "If instead, the agreement is accepted, and the processing is successful, the Consumer returns an ids:ContractAgreementMessage including the ids:ContractAgreement to the Provider to confirm the validity."
 
     """
-    response_header = mh.prepare_default_header(msg_type='ids:MessageProcessedNotificationMessage', daps_access_token=daps_token['access_token'], provider_connector_ids_endpoint=ids_endpoint)
+
+    consumer = IdsMultipartBase(consumer_connector_urn=CONSUMER_CONNECTOR_URN, consumer_connector_webhook_url=CONSUMER_WEBHOOK)
+    response_header = consumer.prepare_default_header(msg_type='ids:MessageProcessedNotificationMessage', daps_access_token=daps_token['access_token'], provider_connector_ids_endpoint=ids_endpoint)
     response_payload = json.dumps(payload)
 
     fields = {

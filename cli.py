@@ -112,6 +112,7 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
     Starts the webhook to receive async messages
     Does the negotiation with the provider control plane and the actual data fetch from the provider data plane.
     """
+
     if start_webhook:
         server_thread = Thread(target=uvicorn.run, args=[webhook_fastapi.app], kwargs={'host': '0.0.0.0', 'port': settings.WEBHOOK_PORT})
         server_thread.start()

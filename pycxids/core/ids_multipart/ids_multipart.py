@@ -22,18 +22,26 @@ import uvicorn
 from pycxids.core.ids import IdsBase
 from pycxids.core import jwt_decode
 from pycxids.core.ids_multipart import message_templates
-from pycxids.core.ids_multipart.multipart_helper import parse_multipart_result, prepare_default_header, prepare_multipart_msg, prepare_multipart_msg_by_str, send_message
+from pycxids.core.ids_multipart.multipart_helper import IdsMultipartBase
 from pycxids.core.settings import ASSERTION_TYPE, CERT_FN, CLIENT_ID, CONSUMER_CONNECTOR_URL, CONSUMER_CONNECTOR_URN, CONSUMER_WEBHOOK, DAPS_ENDPOINT, SCOPE, settings, endpoint_check
 from pycxids.core.daps import get_daps_token
 from pycxids.core.ids_multipart.webhook_queue import wait_for_message
 
 
-class IdsMultipartConsumer(IdsBase):
+class IdsMultipartConsumer(IdsMultipartBase):
     """
     A IDS Multipart consumer that is able to communicate with a fixed, given Provider
     """
-    def __init__(self, private_key_fn: str, provider_connector_ids_endpoint: str, debug_messages=False, debug_out_dir='') -> None:
-        super().__init__(debug_messages=debug_messages, debug_out_dir=debug_out_dir)
+    def __init__(self, private_key_fn: str, provider_connector_ids_endpoint: str,
+            consumer_connector_urn=CONSUMER_CONNECTOR_URN, consumer_connector_webhook_url=CONSUMER_WEBHOOK,
+            debug_messages=False, debug_out_dir=''
+        ) -> None:
+        super().__init__(
+            consumer_connector_urn=consumer_connector_urn,
+            consumer_connector_webhook_url=consumer_connector_webhook_url,
+            debug_messages=debug_messages,
+            debug_out_dir=debug_out_dir
+        )
         self.private_key_fn = private_key_fn
         provider_connector_ids_endpoint = endpoint_check(provider_connector_ids_endpoint) # TODO: find a better solution
         self.connector_ids_endpoint = provider_connector_ids_endpoint
@@ -57,13 +65,13 @@ class IdsMultipartConsumer(IdsBase):
             header_msg = json.dumps(header)
         """
         daps_token = self._get_daps_token()
-        header_msg = prepare_default_header(msg_type='ids:DescriptionRequestMessage', daps_access_token=daps_token['access_token'], provider_connector_ids_endpoint=self.connector_ids_endpoint)
+        header_msg = self.prepare_default_header(msg_type='ids:DescriptionRequestMessage', daps_access_token=daps_token['access_token'], provider_connector_ids_endpoint=self.connector_ids_endpoint)
 
 
         if self.debug_messages:
             self._debug_message(msg=header_msg, fn='request.json')
 
-        header_received, payload_received = send_message(header_msg=header_msg, provider_connector_ids_endpoint=self.connector_ids_endpoint)
+        header_received, payload_received = self._send_message(header_msg=header_msg, provider_connector_ids_endpoint=self.connector_ids_endpoint)
         return header_received, payload_received
 
 
@@ -88,7 +96,7 @@ class IdsMultipartConsumer(IdsBase):
         daps_token = self._get_daps_token()
         access_token = daps_token['access_token']
         transfer_contract_id = str(uuid4())
-        header_msg = prepare_default_header(msg_type='ids:ContractRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint, transfer_contract_id=transfer_contract_id)
+        header_msg = self.prepare_default_header(msg_type='ids:ContractRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint, transfer_contract_id=transfer_contract_id)
 
         contract_request = {
             '@type': 'ids:ContractRequest',
@@ -100,7 +108,7 @@ class IdsMultipartConsumer(IdsBase):
 
         payload = json.dumps(contract_request)
         #print(json.dumps(contract_request, indent=4))
-        header_received, payload_received = send_message(header_msg=header_msg, payload=payload, provider_connector_ids_endpoint=self.connector_ids_endpoint)
+        header_received, payload_received = self._send_message(header_msg=header_msg, payload=payload, provider_connector_ids_endpoint=self.connector_ids_endpoint)
 
         correlation_id = transfer_contract_id
         # now, wait for what's coming in on the webhook
@@ -112,12 +120,12 @@ class IdsMultipartConsumer(IdsBase):
         access_token = daps_token['access_token']
 
         # first step is the same as with fetching the catalog for 1 resource!!!
-        header_msg = prepare_default_header(msg_type='ids:DescriptionRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint)
+        header_msg = self.prepare_default_header(msg_type='ids:DescriptionRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint)
         header = json.loads(header_msg)
         header['ids:requestedElement'] = resource_uri # TODO: further ivestigation needed. 'r' vs 'R' is different
 
         header_msg = json.dumps(header)
-        header_received, payload_received = send_message(header_msg=header_msg, payload='', provider_connector_ids_endpoint=self.connector_ids_endpoint)
+        header_received, payload_received = self._send_message(header_msg=header_msg, payload='', provider_connector_ids_endpoint=self.connector_ids_endpoint)
         if self.debug_messages:
             self._debug_message(msg=header_received, fn='transfer_header.json')
             self._debug_message(msg=payload_received, fn='transfer_payload.json')
@@ -130,7 +138,7 @@ class IdsMultipartConsumer(IdsBase):
         access_token = daps_token['access_token']
 
         # actual data request
-        header_msg = prepare_default_header(msg_type='ids:ArtifactRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint, transfer_contract_id=contract_agreement_message['ids:transferContract']['@id'])
+        header_msg = self.prepare_default_header(msg_type='ids:ArtifactRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint, transfer_contract_id=contract_agreement_message['ids:transferContract']['@id'])
         header = json.loads(header_msg)
         header['ids:requestedArtifact'] = artifact_uri
         header['ids:transferContract'] = agreement['@id']
@@ -148,7 +156,7 @@ class IdsMultipartConsumer(IdsBase):
             }
         }
         payload = json.dumps(artifact_request_message_payload)
-        header_received, payload_received = send_message(header_msg=header_msg, payload=payload, provider_connector_ids_endpoint=self.connector_ids_endpoint)
+        header_received, payload_received = self._send_message(header_msg=header_msg, payload=payload, provider_connector_ids_endpoint=self.connector_ids_endpoint)
         if self.debug_messages:
             self._debug_message(msg=header_received, fn='transfer_artifact_header.json')
             self._debug_message(msg=payload_received, fn='transfer_artifact_payload.json')
