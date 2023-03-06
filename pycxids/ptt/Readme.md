@@ -18,10 +18,17 @@ The solution is based on typicall HTTP. A GET request transfers the policy infor
 To get the policy without any data first, a simple HTTP HEAD is used. In case the provider want a signed agreement / policy, the consumer needs to fetch the policy first (HEAD request), understand the policy, sign it and send it as part of the HTTP header with the GET request. By doing this, also one policy out of a selction could be selected and used for the actual data request, meaning the consumer has the choice under which policy they want to fetch the data.
 
 ## Flows
+The general flow is very simple:
+![General Flow](./ptt_general_flow.png)
+
+The details depend on the different variations of how the authenticity of the signed policy is verified.
+
 ### via DAPS
+'daps signing' is rather an indirect signing. The signature that is verified on the server is from the DAPS (easier because it is only 1), but the clients did authenticate at the DAPS.
 ![DAPS Flow](./client_daps_signed_policy.png)
 
 ### via 'pinned' x509 certificate
+The certificate is uploaded to the server and thus, kown to the server. The registration process needs to be carefully designed to make sure the server can trust the certificates.
 ![x509 pinned Flow](./client_x509_signed_policy.png)
 
 ### via CA signed x509 certificate
