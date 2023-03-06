@@ -27,10 +27,7 @@ certificate_upload_url = f"{base_url}/x509upload"
 
 r = requests.get(url)
 
-if not r.ok:
-    # we expect this
-    #print(f"reason: {r.reason} content: {r.content}")
-    pass
+assert r.ok == False, "We should not be able to get data without providing a signed policy."
 
 
 # now let's fetch the policy information from the header
