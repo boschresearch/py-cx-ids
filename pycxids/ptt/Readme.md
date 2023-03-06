@@ -17,9 +17,14 @@ A midterm approach can be called *trust based policy execution*. Still, no enfor
 The solution is based on typicall HTTP. A GET request transfers the policy information in its headers.
 To get the policy without any data first, a simple HTTP HEAD is used. In case the provider want a signed agreement / policy, the consumer needs to fetch the policy first (HEAD request), understand the policy, sign it and send it as part of the HTTP header with the GET request. By doing this, also one policy out of a selction could be selected and used for the actual data request, meaning the consumer has the choice under which policy they want to fetch the data.
 
-## Flow
+## Flows
 ### via DAPS
 ![DAPS Flow](./client_daps_signed_policy.png)
 
+### via 'pinned' x509 certificate
+![x509 pinned Flow](./client_x509_signed_policy.png)
+
+### via CA signed x509 certificate
+TODO
 ### via SSI
 TODO

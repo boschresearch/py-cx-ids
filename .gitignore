@@ -12,3 +12,5 @@ aas-registry-openapi.yaml
 build/
 pycxids.egg-info/
 tmpvenv/
+*.log
+certificates/
