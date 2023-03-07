@@ -7,6 +7,7 @@
 import os
 import json
 import base64
+import base58
 from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, Security, status, Depends, Response, Header, File
 from fastapi.responses import FileResponse
@@ -17,6 +18,7 @@ from jwt import PyJWKClient
 from jwt.exceptions import InvalidSignatureError
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from pycxids.core.settings import settings
 
@@ -168,6 +170,35 @@ def get_requiresx509signedpolicy(x509_signed_policy: str = Depends(check_x509_si
     Checks whether the policy has been signed with a x509 certificate
     """
     return get_signed_policy_content(signed_policy=x509_signed_policy)
+
+
+def check_ssi_signed_policy(policy_token: str = Header(..., alias='policy')):
+    if not policy_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No policy given.")
+
+    try:    
+        decoded_header = jwt.get_unverified_header(jwt=policy_token)
+        print(decoded_header)
+        public_key_b58 = b'JCB7SVh2bQSauqq827MzuyQPqYhqqvxvqCmUZ1DUtZqV' # TODO: fetch from ledger
+        #public_key_b58 = b'JCB7SVh2bQSauqq827MzuyQPqYhqqvxvqCmUZ1DUtZqq' # wrong key for testing
+        public_key_raw = base58.b58decode(public_key_b58)
+        public_key = Ed25519PublicKey.from_public_bytes(public_key_raw)
+
+        decoded = jwt.decode(jwt=policy_token, algorithms=['EdDSA'], key=public_key, verify=True)
+        print(decoded)
+        policy = decoded.get('policy')
+        return policy
+    except InvalidSignatureError as sigex:
+        print(sigex)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Policy signature not valid.")
+    except Exception as ex:
+        print(ex)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something wrong with the policy token signature.")
+
+
+@app.get('/requiresSSIsignedpolicy')
+def get_requiresSSIsignedpolicy(signed_policy: str = Depends(check_ssi_signed_policy)):
+    return get_signed_policy_content(signed_policy=signed_policy)
 
 def get_signed_policy_content(signed_policy: str):
     policy_for_this_endpoint = f"http://localhost:8080/policy/{POLICY_HASH}"
