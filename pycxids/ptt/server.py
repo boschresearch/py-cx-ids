@@ -136,8 +136,11 @@ def check_x509_signed_policy(policy_token: str = Header(..., alias='policy')):
 
 
 
-@app.head('/')
-def head_hello_world():
+@app.head('/{path:path}')
+def head_catch_all(path:str):
+    """
+    We have only 1 policy, so we use a catchall method for all HEAD requests.
+    """
     headers = {
         POLICY_HEADER: f"http://localhost:8080/policy/{POLICY_HASH}"
     }
@@ -152,23 +155,12 @@ def get_hello_world(bpn: dict = Depends(check_authorization)):
     r = Response(content=f'BPN verified via DAPS token: {bpn}', status_code=status.HTTP_200_OK, headers=headers)
     return r
 
-@app.head('/requiressignedpolicy')
-def head_requiressignedpolicy():
-    headers = {
-        POLICY_HEADER: f"http://localhost:8080/policy/{POLICY_HASH}"
-    }
-    return Response(status_code=status.HTTP_200_OK, headers=headers)
-
 @app.get('/requiressignedpolicy')
 def get_requiressignedpolicy(daps_signed_policy: str = Depends(check_daps_signed_policy)):
     """
     Checks whether the policy has been signed via consumer -> DAPS interaction
     """
     return get_signed_policy_content(signed_policy=daps_signed_policy)
-
-@app.head('/requiresx509signedpolicy')
-def head_requiresx509signedpolicy():
-    return head_requiressignedpolicy()
 
 @app.get('/requiresx509signedpolicy')
 def get_requiresx509signedpolicy(x509_signed_policy: str = Depends(check_x509_signed_policy)):
