@@ -18,6 +18,7 @@ from jwt import PyJWKClient
 from jwt.exceptions import InvalidSignatureError
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from pycxids.core.settings import settings
@@ -31,6 +32,8 @@ POLICY_HEADER = "Policy"
 CERTIFICATES_DIR = 'certificates'
 if not os.path.exists(CERTIFICATES_DIR):
     os.makedirs(CERTIFICATES_DIR)
+
+TRUSTED_CA_CRT_FILE = os.getenv('TRUSTED_CA_CRT_FILE', "./pycxids/ptt/demokeys/ca_1.crt")
 
 app = FastAPI(title="PTT - Policy Transfer Token Demo")
 
@@ -168,6 +171,70 @@ def get_requiressignedpolicy(daps_signed_policy: str = Depends(check_daps_signed
 def get_requiresx509signedpolicy(x509_signed_policy: str = Depends(check_x509_signed_policy)):
     """
     Checks whether the policy has been signed with a x509 certificate
+    """
+    return get_signed_policy_content(signed_policy=x509_signed_policy)
+
+
+def check_x509_ca_signed_policy(policy_token: str = Header(..., alias='policy')):
+    """
+    """
+    if not policy_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No policy given.")
+
+    decoded_header = jwt.get_unverified_header(jwt=policy_token)
+    print(decoded_header)
+
+    x5c = decoded_header.get('x5c')
+    if not x5c:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No x5c header given in the token. Please provide the x509 certificate.")
+    try:
+        # singer crt must always be the first in the list
+        # https://www.rfc-editor.org/rfc/rfc7515#section-4.1.6
+        signer_crt = x5c[0]
+        der_crt = base64.b64decode(signer_crt)
+        # it is DER serilized according to the spec
+        certificate = x509.load_der_x509_certificate(der_crt)
+    except Exception as ex:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Could not load certificate from x5c header.")
+
+
+    if not os.path.isfile(TRUSTED_CA_CRT_FILE):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"No root CA file configured / exists on the server: {TRUSTED_CA_CRT_FILE}")
+    ca_crt_data = ''
+    with open(TRUSTED_CA_CRT_FILE, 'rb') as f:
+        ca_crt_data = f.read()
+    ca_certificate = x509.load_pem_x509_certificate(ca_crt_data)
+
+    ca_pub_key = ca_certificate.public_key()
+    # verify, that we can trust the certificate itself
+    # by checking the signature of the certificate with our trusted CA certificate public key
+    # in cyrptography 40.0.0 this is a single call, but until then, we need to do the manual work
+    try:
+        # padding as documented here:
+        # https://cryptography.io/en/latest/hazmat/primitives/asymmetric/rsa/#verification
+        ca_pub_key.verify(certificate.signature, certificate.tbs_certificate_bytes, algorithm=hashes.SHA256(), padding=padding.PKCS1v15())
+    except Exception as ex:
+        print(ex)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Signing certificate seems not to be signed by a trusted CA.")
+
+    # and now, check the signature of the token
+    try:
+        public_key = certificate.public_key()
+        decoded_token = jwt.decode(jwt=policy_token, key=public_key, algorithms=["RS256"], options={'verify_aud': False})
+
+        return decoded_token.get('policy')
+    except InvalidSignatureError as sigex:
+        print(sigex)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Policy signature not valid.")
+    except Exception as ex:
+        print(ex)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something wrong with the policy token signature.")
+
+
+@app.get('/requiresx509casignedpolicy')
+def get_requiresx509casignedpolicy(x509_signed_policy: str = Depends(check_x509_ca_signed_policy)):
+    """
+    Checks whether the policy has been signed with a x509 CA-cross-signed certificate
     """
     return get_signed_policy_content(signed_policy=x509_signed_policy)
 
