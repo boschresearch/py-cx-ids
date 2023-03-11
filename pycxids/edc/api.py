@@ -6,7 +6,12 @@
 
 from uuid import uuid4
 from time import sleep
+import requests
 from pycxids.utils.api import GeneralApi
+
+class TokenReceiverServiceNotGiven(Exception):
+    pass
+
 
 class EdcDataManagement(GeneralApi):
     def __init__(self, edc_data_managment_base_url: str, auth_key: str) -> None:
@@ -144,11 +149,15 @@ class EdcProvider(EdcDataManagement):
 class EdcConsumer(EdcDataManagement):
     """
     Process description:
-    https://github.com/catenax-ng/product-edc/blob/0.1.1/docs/data-transfer/Transfer%20Data.md    
+    https://github.com/catenax-ng/product-edc/blob/0.1.1/docs/data-transfer/Transfer%20Data.md
+
+    token_receiver_service_base_url: pycxids.edc.token_receiver_service that is used with EDC_RECEIVER_HTTP_ENDPOINT
+        where the EDC sends its received token to.
     """
 
-    def __init__(self, edc_data_managment_base_url: str, auth_key: str) -> None:
+    def __init__(self, edc_data_managment_base_url: str, auth_key: str, token_receiver_service_base_url: str = None) -> None:
         super().__init__(edc_data_managment_base_url=edc_data_managment_base_url, auth_key=auth_key)
+        self.token_receiver_service_base_url = token_receiver_service_base_url
 
     @staticmethod
     def catalog_contract_offer_into_negotiation_contract_offer(catalog_contract_offer, connector_address: str):
@@ -214,3 +223,62 @@ class EdcConsumer(EdcDataManagement):
         }
         data = self.post("/transferprocess", data=transfer_request)
         return data['id']
+
+    def transfer_and_wait_consumer_edr(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str, timeout = 30):
+        """
+        Fetches the EDR token from the token_receiver_service.
+
+        """
+        if not self.token_receiver_service_base_url:
+            raise TokenReceiverServiceNotGiven()
+        transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint, asset_id=asset_id, agreement_id=agreement_id)
+        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/consumer", timeout=timeout)
+
+    def transfer_and_wait_provider_edr(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str, timeout = 30):
+        """
+        Fetches the EDR token from the token_receiver_service.
+
+        """
+        if not self.token_receiver_service_base_url:
+            raise TokenReceiverServiceNotGiven()
+        transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint, asset_id=asset_id, agreement_id=agreement_id)
+        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/provider", timeout=timeout)
+
+    def edr_provider_wait(self, transfer_id: str, timeout = 30):
+        if not self.token_receiver_service_base_url:
+            raise TokenReceiverServiceNotGiven()
+        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/provider", timeout=timeout)
+
+    def edr_consumer_wait(self, transfer_id: str, timeout = 30):
+        if not self.token_receiver_service_base_url:
+            raise TokenReceiverServiceNotGiven()
+        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/consumer", timeout=timeout)
+
+    def _transfer_and_wait_url(self, token_receiver_service_url: str, timeout = 30):
+        params = {
+            'timeout' : timeout,
+        }
+        r = requests.get(token_receiver_service_url, params=params) # no authentication at the service required
+
+        if not r.ok:
+            print(f"{r.status_code} - {r.reason} - {r.content}")
+            return None
+
+        j = r.json()
+        return j
+
+    def negotiate_and_transfer(self, provider_ids_endpoint: str, asset_id: str) -> str:
+        """
+        Returns the transer_id
+        """
+        catalog = self.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
+        contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
+        negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint,
+            contract_offer=contract_offer)
+        negotiated_contract_id = negotiated_contract.get('id', '')
+        agreement_id = negotiated_contract.get('contractAgreementId', '')
+        print(f"agreementId: {agreement_id}")
+
+        transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint,
+            asset_id=asset_id, agreement_id=agreement_id)
+        return agreement_id, transfer_id
