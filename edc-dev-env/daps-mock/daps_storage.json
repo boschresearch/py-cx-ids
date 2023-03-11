@@ -4,5 +4,9 @@
     },
     "provider": {
         "referringConnector": "http://never-used-anywhere-url:8000/BPNLprovider"
+    },
+    "third": {
+        "referringConnector": "http://never-used-anywhere-url:8000/BPNLthird"
     }
+
 }

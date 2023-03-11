@@ -2,9 +2,17 @@ version: "3.9"
 
 services:
   receiver-service:
+    # token_receiver_service for 'consumer' EDC instance
     build: ./docker/receiver-service
     ports:
       - "127.0.0.1:8003:8000"
+
+  third-receiver-service:
+    # token_receiver_service for 'third' EDC instance
+    build: ./docker/receiver-service
+    environment:
+      - CONSUMER_EDC_BASE_URL=http://third-control-plane:9193/api/v1/data
+      - CONSUMER_EDC_VALIDATION_ENDPOINT=http://third-control-plane:9192/validation/token
 
   dummy-backend:
     build: ./docker/dummy-backend
