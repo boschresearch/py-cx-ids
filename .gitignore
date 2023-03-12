@@ -14,3 +14,4 @@ pycxids.egg-info/
 tmpvenv/
 *.log
 certificates/
+agreementcache/

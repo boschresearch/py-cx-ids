@@ -10,12 +10,19 @@ import click
 import os
 import json
 from datetime import datetime
+import base64
 import requests
 
 from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer
 from pycxids.core.settings import endpoint_check, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
 
+from pycxids.utils.storage import FileStorageEngine
+
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
+
+AGREEMENT_CACHE_DIR = os.getenv('AGREEMENT_CACHE_DIR', 'agreementcache')
+os.makedirs(AGREEMENT_CACHE_DIR, exist_ok=True)
+
 
 @click.group('A cli to interact with IDS / EDC data providers')
 def cli():
@@ -124,6 +131,9 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
     """
 
     ids_endpoint = endpoint_check(endpoint=connector_url)
+    ids_endpoint_b64 = base64.urlsafe_b64encode(ids_endpoint.encode()).decode()
+    cache_fn = os.path.join(AGREEMENT_CACHE_DIR, ids_endpoint_b64)
+    cache = FileStorageEngine(storage_fn=cache_fn)
 
     consumer = IdsMultipartConsumer(
         private_key_fn=settings.PRIVATE_KEY_FN,
@@ -136,11 +146,16 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
     )
 
     if not agreement_id:
-        # find offers from the catalog
-        offers = consumer.get_offers(asset_id=asset_id)
-        offer = offers[0] # TODO: check which offer to use
-        # negotiate
-        agreement_id = consumer.negotiate(contract_offer=offer)
+        # if not given, next lookup in cache
+        agreement_id = cache.get(key=asset_id, default=None)
+        if not agreement_id:
+            # find offers from the catalog
+            offers = consumer.get_offers(asset_id=asset_id)
+            offer = offers[0] # TODO: check which offer to use
+            # negotiate
+            agreement_id = consumer.negotiate(contract_offer=offer)
+            # and cache it for later
+            cache.put(key=asset_id, value=agreement_id)
     # transfer
     provider_edr = consumer.transfer(asset_id=asset_id, agreement_id=agreement_id)
 
