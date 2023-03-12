@@ -80,12 +80,11 @@ def test():
     print(j)
     assert 'headers' in j
 
-    # now let's look into the received provider token
-    r = requests.get(PROVIDER_EDC_VALIDATION_ENDPOINT, headers={'Authorization': auth_code})
-    j = r.json()
-    print(j)
-    
-    # TODO: use 0.3.0 and check what is the agreement_id in the header transferred to the backend!
+    edc_contract_agreement_id = j.get('headers', {}).get('edc-contract-agreement-id', None)
+    if edc_contract_agreement_id:
+        # only possible in 0.3.0. first version in which the agreement ID is sent to the backend in the http header
+        non_urn_agreement_id = agreement_id.replace('urn:contractagreement:', '')
+        assert edc_contract_agreement_id != non_urn_agreement_id, "It should not be possible to fetch data under someone elses agreement_id!"
 
 
 if __name__ == '__main__':
