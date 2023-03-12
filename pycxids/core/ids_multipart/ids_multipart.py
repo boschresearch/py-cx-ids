@@ -79,7 +79,18 @@ class IdsMultipartConsumer(IdsMultipartBase):
             self._debug_message(msg=header_msg, fn='request.json')
 
         header_received, payload_received = self._send_message(header_msg=header_msg, provider_connector_ids_endpoint=self.connector_ids_endpoint)
-        return header_received, payload_received
+        return payload_received
+
+    @classmethod
+    def get_asset_ids_from_catalog(cls, catalog: dict):
+        """
+        Find all asset_ids in a given catalog
+        """
+        assets = set() # no double entries of assets
+        for offer in catalog.get('ids:resourceCatalog', [])[0].get('ids:offeredResource', []):
+            asset_prop_id = offer['ids:contractOffer'][0]['edc:policy:target']
+            assets.add(asset_prop_id)
+        return assets
 
     def get_offers(self, asset_id: str):
         """
@@ -96,7 +107,7 @@ class IdsMultipartConsumer(IdsMultipartBase):
         header['ids:requestedElement'] = 'urn:uuid:028aaea9-ac01-4838-a516-00ef604ef128-urn:uuid:1b0a70a0-f64b-4c45-a808-4d35d3912fe5'
         header_msg = json.dumps(header)
         """
-        _, catalog = self.get_catalog()
+        catalog = self.get_catalog()
         # find contract offer for asset_id
         contract_offers = []
         for offer in catalog['ids:resourceCatalog'][0]['ids:offeredResource']: # could it be more than 1 item in the list?
@@ -197,29 +208,3 @@ class IdsMultipartConsumer(IdsMultipartBase):
         # now, wait for what's coming in on the webhook
         edr_header, edr_payload = self.wait_for_message(key=correlation_id)
         return edr_payload
-
-
-
-
-#####################
-# old deprecated direct functions.
-#####################
-def get_catalog(daps_token: str, provider_connector_ids_endpoint: str, resource_uri: str = '', paging_from: int = 0, paging_to: int = 0):
-    """
-    deprecated
-    """
-    consumer = IdsMultipartConsumer(private_key_fn=settings.PRIVATE_KEY_FN, provider_connector_ids_endpoint=provider_connector_ids_endpoint)
-    return consumer.get_catalog()
-
-def negotiate(daps_token:str, contract_offer: dict, provider_connector_ids_endpoint: str):
-    consumer = IdsMultipartConsumer(private_key_fn=settings.PRIVATE_KEY_FN, provider_connector_ids_endpoint=provider_connector_ids_endpoint)
-    return consumer.negotiate(contract_offer=contract_offer)
-
-def transfer(resource_uri:str, artifact_uri:str, agreement: dict, daps_access_token: str, provider_connector_ids_endpoint: str):
-    consumer = IdsMultipartConsumer(private_key_fn=settings.PRIVATE_KEY_FN, provider_connector_ids_endpoint=provider_connector_ids_endpoint)
-    return consumer.transfer(resource_uri=resource_uri, artifact_uri=artifact_uri, agreement=agreement)
-
-def request_data(ids_resource: dict, artifact_uri: str, agreement: dict, daps_access_token: str, contract_agreement_message: dict, provider_connector_ids_endpoint: str):
-    consumer = IdsMultipartConsumer(private_key_fn=settings.PRIVATE_KEY_FN, provider_connector_ids_endpoint=provider_connector_ids_endpoint)
-    return consumer.request_data(ids_resource=ids_resource, artifact_uri=artifact_uri, agreement=agreement, contract_agreement_message=contract_agreement_message)
-

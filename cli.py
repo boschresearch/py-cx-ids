@@ -9,19 +9,11 @@
 import click
 import os
 import json
-import sys
 from datetime import datetime
-from threading import Thread
 import requests
-import uvicorn
 
-from pycxids.core.ids_multipart.ids_multipart import negotiate, request_data, transfer, get_catalog
-from pycxids.core.ids_multipart import webhook_fastapi
-from pycxids.core import jwt_decode
-from pycxids.core.ids_multipart.webhook_queue import wait_for_message
-from pycxids.core.models import NotFoundException
-from pycxids.core.daps import get_daps_token
-from pycxids.core.settings import PROVIDER_CONNECTOR_URL, PROVIDER_CONNECTOR_IDS_ENDPOINT, endpoint_check, CONSUMER_WEBHOOK, settings
+from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer
+from pycxids.core.settings import endpoint_check, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
 
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
 
@@ -43,9 +35,18 @@ def fetch_catalog(endpoint: str, out_fn: str = ''):
     Returns None in case of an error
     """
     ids_endpoint = endpoint_check(endpoint=endpoint)
-    daps_token = get_daps_token(audience=ids_endpoint) # TODO: handle daps error
-    catalog_header, catalog = get_catalog(daps_token=daps_token, provider_connector_ids_endpoint=ids_endpoint)
-    # TODO: check catalog_header for e.g. RejectionMessage, catalog is None in this case
+
+    consumer = IdsMultipartConsumer(
+        private_key_fn=settings.PRIVATE_KEY_FN,
+        provider_connector_ids_endpoint=ids_endpoint,
+        consumer_connector_urn=settings.CONSUMER_CONNECTOR_URN,
+        consumer_connector_webhook_url='http://dev:6080/webhook',
+        consumer_webhook_message_base_url='http://dev:6080/messages',
+        consumer_webhook_message_username=BASIC_AUTH_USERNAME,
+        consumer_webhook_message_password=BASIC_AUTH_PASSWORD,
+    )
+
+    catalog = consumer.get_catalog()
 
     if out_fn:
         os.makedirs(os.path.dirname(out_fn), exist_ok=True)
@@ -69,11 +70,8 @@ def list_assets_from_catalog(catalog_filename: str):
         catalog_str = click.get_text_stream('stdin').read().strip()
 
     catalog = json.loads(catalog_str)
-    assets = set() # no double entries of assets
-    for offer in catalog.get('ids:resourceCatalog', [])[0].get('ids:offeredResource', []):
-        asset_prop_id = offer['ids:contractOffer'][0]['edc:policy:target']
-        assets.add(asset_prop_id)
-    print('\n'.join(assets))
+    asset_ids = IdsMultipartConsumer.get_asset_ids_from_catalog(catalog=catalog)
+    print('\n'.join(asset_ids))
 
 @cli.command('fetch', help="Fetch a given asset id")
 @click.option('-r', '--raw-data', default=False, is_flag=True)
@@ -113,6 +111,7 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
     Does the negotiation with the provider control plane and the actual data fetch from the provider data plane.
     """
 
+    """
     if start_webhook:
         server_thread = Thread(target=uvicorn.run, args=[webhook_fastapi.app], kwargs={'host': '0.0.0.0', 'port': settings.WEBHOOK_PORT})
         server_thread.start()
@@ -121,74 +120,35 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
         webhook_test = webhook_fastapi.webhook_test(CONSUMER_WEBHOOK)
         if not webhook_test:
             raise Exception('webhook not reachable. exit.')
-
-    artifact_uri = f"urn:artifact:{asset_id}"
-
-    catalog = fetch_catalog(connector_url)
+    """
 
     ids_endpoint = endpoint_check(endpoint=connector_url)
-    # find contract offer for asset_id
-    contract_offer = None
-    for offer in catalog['ids:resourceCatalog'][0]['ids:offeredResource']: # could it be more than 1 item in the list?
-        if offer['ids:contractOffer'][0]['edc:policy:target'] == asset_id: # what are the arrays here?
-            contract_offer = offer
-            break
 
-    if not contract_offer:
-        raise NotFoundException(f"Could not find contract offer in the catalog for asset_id: {asset_id}")
-
-    # negotiate
-    daps_token = get_daps_token(ids_endpoint)
-    resource_uri = contract_offer['@id']
-    agreement_header, agreement_payload = negotiate(daps_token=daps_token, contract_offer=contract_offer, provider_connector_ids_endpoint=ids_endpoint)
-    
-    daps_token = get_daps_token(ids_endpoint)
-    transfer_header, transfer_payload = transfer(resource_uri=resource_uri, artifact_uri=artifact_uri, agreement=agreement_payload, daps_access_token=daps_token['access_token'], provider_connector_ids_endpoint=ids_endpoint)
-    
-    # request data, or better the EDR token
-    ids_resource = transfer_payload
-    daps_token = get_daps_token(ids_endpoint)
-    data_request_header, data_request_payload = request_data(
-        ids_resource=ids_resource,
-        artifact_uri=artifact_uri,
-        agreement=agreement_payload,
-        daps_access_token=daps_token['access_token'],
-        contract_agreement_message=agreement_header,
-        provider_connector_ids_endpoint=ids_endpoint
+    consumer = IdsMultipartConsumer(
+        private_key_fn=settings.PRIVATE_KEY_FN,
+        provider_connector_ids_endpoint=ids_endpoint,
+        consumer_connector_urn=settings.CONSUMER_CONNECTOR_URN,
+        consumer_connector_webhook_url='http://dev:6080/webhook',
+        consumer_webhook_message_base_url='http://dev:6080/messages',
+        consumer_webhook_message_username=BASIC_AUTH_USERNAME,
+        consumer_webhook_message_password=BASIC_AUTH_PASSWORD,
     )
-    #print(data_request_header)
-    #print(data_request_payload)
-    #edr_header, edr_payload = webhook_receiver_queue.get()
-    #correlation_id = agreement_header['ids:transferContract']['@id']
-    correlation_id = data_request_header['ids:correlationMessage']['@id']
-    # now, wait for what's coming in on the webhook
-    edr_header, edr_payload = wait_for_message(key=correlation_id)
 
-    edr_json_str = json.dumps(edr_payload, indent=4)
-    with(open('edr.json', 'w')) as f:
-        f.write(edr_json_str)
-    #print(edr_json_str)
+    # find offers from the catalog
+    offers = consumer.get_offers(asset_id=asset_id)
+    offer = offers[0] # TODO: check which offer to use
+    # negotiate
+    agreement_id = consumer.negotiate(contract_offer=offer)
+    # transfer
+    provider_edr = consumer.transfer(asset_id=asset_id, agreement_id=agreement_id)
 
     # actually fetch the data from the provider data plane
     headers = {
-        edr_payload['authKey']: edr_payload['authCode']
+        provider_edr.get('authKey'): provider_edr.get('authCode')
     }
 
-    decoded_auth_code = jwt_decode.decode(edr_payload['authCode'])
-    """
-    exp = decoded_auth_code['payload']['exp']
-    now = datetime.now().timestamp()
-    sec = exp - now
-    min = sec/60
-    print(f"seconds: {sec} minutes: {min}")
-    """
-    del decoded_auth_code['signature']
-    edr_auth_code_str = json.dumps(decoded_auth_code, indent=4)
-    with open('edr_auth_code.json', 'w') as f:
-        f.write(edr_auth_code_str)
-
     params = {}
-    endpoint = edr_payload['endpoint']
+    endpoint = provider_edr.get('endpoint')
     if not raw_data:
         if suburl:
             endpoint = endpoint + '/' + suburl
@@ -215,12 +175,6 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
         return content
 
     j = r.json()
-    """
-    data_result_str = json.dumps(j, indent=4)
-    with(open('data_result.json', 'w')) as f:
-        f.write(data_result_str)
-    #print(data_result_str)
-    """
     return j
 
 if __name__ == '__main__':
