@@ -39,8 +39,8 @@ def test():
         private_key_fn='./edc-dev-env/vault_secrets/consumer.key',
         provider_connector_ids_endpoint='http://provider-control-plane:8282/api/v1/ids/data',
         consumer_connector_urn='urn:uuid:consumer',
-        consumer_connector_webhook_url='http://dev:6080/webhook',
-        consumer_webhook_message_base_url='http://dev:6080/messages',
+        consumer_connector_webhook_url='http://consumer-webhook-service:8000/webhook',
+        consumer_webhook_message_base_url='http://consumer-webhook-service:8000/messages',
         consumer_webhook_message_username='someuser',
         consumer_webhook_message_password='somepassword',
     )
@@ -55,8 +55,8 @@ def test():
         private_key_fn='./edc-dev-env/vault_secrets/third.key',
         provider_connector_ids_endpoint='http://provider-control-plane:8282/api/v1/ids/data',
         consumer_connector_urn='urn:uuid:third',
-        consumer_connector_webhook_url='http://dev:6070/webhook',
-        consumer_webhook_message_base_url='http://dev:6070/messages',
+        consumer_connector_webhook_url='http://third-webhook-service:8000/webhook',
+        consumer_webhook_message_base_url='http://third-webhook-service:8000/messages',
         consumer_webhook_message_username='someuser',
         consumer_webhook_message_password='somepassword',
     )
