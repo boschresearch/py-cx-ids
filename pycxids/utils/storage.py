@@ -35,3 +35,13 @@ class FileStorageEngine():
                     print(ex)
         return storage.get(key, default)
 
+    def get_all(self):
+        storage = {}
+        if os.path.exists(self.storage_fn):
+            with open(self.storage_fn, 'r') as f:
+                content = f.read()
+                try:
+                    storage = json.loads(content)
+                except Exception as ex:
+                    print(ex)
+        return storage
