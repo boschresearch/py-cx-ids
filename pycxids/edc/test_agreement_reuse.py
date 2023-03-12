@@ -13,6 +13,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 import pytest
 from uuid import uuid4
+from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer
+from pycxids.core.settings import settings
 
 from pycxids.edc.api import EdcProvider, EdcConsumer
 from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD
@@ -53,15 +55,27 @@ def test():
     assert 'headers' in j
 
     # now let's try to reuse the agreement_id with another instance in the dataspace
+    """
     consumer_third = EdcConsumer(
         edc_data_managment_base_url='http://third-control-plane:9193/api/v1/data',
         auth_key=CONSUMER_EDC_API_KEY,
         token_receiver_service_base_url='http://third-receiver-service:8000/transfer'
         )
     transfer_id_third = consumer_third.transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=asset_id, agreement_id=agreement_id)
-    provider_edr_third = consumer_third.edr_provider_wait(transfer_id=transfer_id_third)
-    assert provider_edr_third
-    
+    # we expect a timeout here
+    provider_edr_third = consumer_third.edr_provider_wait(transfer_id=transfer_id_third, timeout=10)
+    assert provider_edr_third == None, "If we get a result we have a security issue here."
+    """
+
+    # now, try it on the IDS (multipart) protocol layer
+    ids = IdsMultipartConsumer(
+        private_key_fn='./edc-dev-env/vault_secrets/third.key',
+        provider_connector_ids_endpoint='http://provider-control-plane:8282/api/v1/ids/data'
+    )
+    artifact_uri = asset_id
+    header, payload = ids.request_data_lean(artifact_uri=artifact_uri, agreement_id=agreement_id, transfer_contract_id=transfer_id)
+    print(header)
+    print(payload)
 
 
 
