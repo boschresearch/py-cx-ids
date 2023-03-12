@@ -130,6 +130,9 @@ class IdsMultipartConsumer(IdsMultipartBase):
             'ids:permission':  contract_offer['ids:contractOffer'][0]['ids:permission'],
             'ids:provider': contract_offer['ids:contractOffer'][0]['ids:provider'],
             'ids:consumer': contract_offer['ids:contractOffer'][0]['ids:consumer'],
+            # new in 0.3.0
+            'ids:contractStart': contract_offer['ids:contractOffer'][0]['ids:contractStart'],
+            'ids:contractEnd': contract_offer['ids:contractOffer'][0]['ids:contractEnd'],
         }
 
         payload = json.dumps(contract_request)
