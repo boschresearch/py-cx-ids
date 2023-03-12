@@ -14,6 +14,7 @@ import base64
 import sys
 from string import Template
 import requests
+from requests.auth import HTTPBasicAuth
 from uuid import uuid4
 from email import message_from_bytes, message_from_string
 from requests_toolbelt.multipart import decoder
@@ -34,6 +35,9 @@ class IdsMultipartConsumer(IdsMultipartBase):
     """
     def __init__(self, private_key_fn: str, provider_connector_ids_endpoint: str,
             consumer_connector_urn=CONSUMER_CONNECTOR_URN, consumer_connector_webhook_url=CONSUMER_WEBHOOK,
+            consumer_webhook_message_base_url = None,
+            consumer_webhook_message_username = '',
+            consumer_webhook_message_password = '',
             debug_messages=False, debug_out_dir=''
         ) -> None:
         super().__init__(
@@ -46,6 +50,9 @@ class IdsMultipartConsumer(IdsMultipartBase):
         provider_connector_ids_endpoint = endpoint_check(provider_connector_ids_endpoint) # TODO: find a better solution
         self.connector_ids_endpoint = provider_connector_ids_endpoint
         self.debug_messages = debug_messages
+        self.consumer_webhook_message_base_url = consumer_webhook_message_base_url
+        self.consumer_webhook_message_username = consumer_webhook_message_username
+        self.consumer_webhook_message_password = consumer_webhook_message_password
 
     def _get_daps_token(self):
         """
@@ -74,7 +81,6 @@ class IdsMultipartConsumer(IdsMultipartBase):
         header_received, payload_received = self._send_message(header_msg=header_msg, provider_connector_ids_endpoint=self.connector_ids_endpoint)
         return header_received, payload_received
 
-
     def get_offers(self, asset_id: str):
         """
         Return the offers for a given asset_id.
@@ -90,9 +96,18 @@ class IdsMultipartConsumer(IdsMultipartBase):
         header['ids:requestedElement'] = 'urn:uuid:028aaea9-ac01-4838-a516-00ef604ef128-urn:uuid:1b0a70a0-f64b-4c45-a808-4d35d3912fe5'
         header_msg = json.dumps(header)
         """
-        pass
+        _, catalog = self.get_catalog()
+        # find contract offer for asset_id
+        contract_offers = []
+        for offer in catalog['ids:resourceCatalog'][0]['ids:offeredResource']: # could it be more than 1 item in the list?
+            if offer['ids:contractOffer'][0]['edc:policy:target'] == asset_id: # what are the arrays here?
+                contract_offers.append(offer)
+        return contract_offers
 
     def negotiate(self, contract_offer: dict):
+        """
+        Returns the agreement_id
+        """
         daps_token = self._get_daps_token()
         access_token = daps_token['access_token']
         transfer_contract_id = str(uuid4())
@@ -111,37 +126,53 @@ class IdsMultipartConsumer(IdsMultipartBase):
         header_received, payload_received = self._send_message(header_msg=header_msg, payload=payload, provider_connector_ids_endpoint=self.connector_ids_endpoint)
 
         correlation_id = transfer_contract_id
-        # now, wait for what's coming in on the webhook
-        agreement_header, agreement_payload = wait_for_message(key=correlation_id)
-        return agreement_header, agreement_payload
+        agreement_header, agreement_payload = self.wait_for_message(key=correlation_id)
+        #return agreement_header, agreement_payload
+        agreement_id = agreement_payload.get('@id', None)
+        return agreement_id
 
-    def transfer(self, resource_uri:str, artifact_uri:str, agreement: dict):
-        daps_token = self._get_daps_token()
-        access_token = daps_token['access_token']
+    def wait_for_message(self, key: str, timeout = 30):
+        """
+        Allows both options, fetch from the webhook server or transfer via thread
+        """
+        if self.consumer_webhook_message_base_url:
+            params = {
+                'timeout': timeout
+            }
+            r = requests.get(f"{self.consumer_webhook_message_base_url}/{key}", params=params, auth=HTTPBasicAuth(username=self.consumer_webhook_message_username, password=self.consumer_webhook_message_password))
+            if not r.ok:
+                print(f"{r.status_code} - {r.reason} - {r.content}")
+                return None
+            j = r.json()
+            header = j.get('header')
+            payload = j.get('payload')
+            return header, payload
+        else:
+            # now, wait for what's coming in on the webhook
+            header, payload = wait_for_message(key=key)
+            return header, payload
 
-        # first step is the same as with fetching the catalog for 1 resource!!!
-        header_msg = self.prepare_default_header(msg_type='ids:DescriptionRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint)
-        header = json.loads(header_msg)
-        header['ids:requestedElement'] = resource_uri # TODO: further ivestigation needed. 'r' vs 'R' is different
+    def asset_id_to_artifact_uri(self, asset_id: str):
+        """
+        Transform a regular asset_id into a valid artifact uri.
+        """
+        return f"urn:artifact:{asset_id}"
 
-        header_msg = json.dumps(header)
-        header_received, payload_received = self._send_message(header_msg=header_msg, payload='', provider_connector_ids_endpoint=self.connector_ids_endpoint)
-        if self.debug_messages:
-            self._debug_message(msg=header_received, fn='transfer_header.json')
-            self._debug_message(msg=payload_received, fn='transfer_payload.json')
-        
-        return header_received, payload_received
+    def transfer(self, asset_id: str, agreement_id:str):
+        """
+        New version with only required params.
 
-
-    def request_data(self, ids_resource: dict, artifact_uri: str, agreement: dict, contract_agreement_message: dict):
+        Returns the provider EDR token
+        """
+        artifact_uri = self.asset_id_to_artifact_uri(asset_id=asset_id)
         daps_token = self._get_daps_token()
         access_token = daps_token['access_token']
 
         # actual data request
-        header_msg = self.prepare_default_header(msg_type='ids:ArtifactRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint, transfer_contract_id=contract_agreement_message['ids:transferContract']['@id'])
+        header_msg = self.prepare_default_header(msg_type='ids:ArtifactRequestMessage', daps_access_token=access_token, provider_connector_ids_endpoint=self.connector_ids_endpoint, transfer_contract_id=agreement_id)
         header = json.loads(header_msg)
         header['ids:requestedArtifact'] = artifact_uri
-        header['ids:transferContract'] = agreement['@id']
+        header['ids:transferContract'] = agreement_id
         header_msg = json.dumps(header)
         
         # TODO: this message seems to be NOT IDS compliant!
@@ -160,8 +191,13 @@ class IdsMultipartConsumer(IdsMultipartBase):
         if self.debug_messages:
             self._debug_message(msg=header_received, fn='transfer_artifact_header.json')
             self._debug_message(msg=payload_received, fn='transfer_artifact_payload.json')
+        # the received header is only relevant to get the correlation id under which we can find
+        # the received (or soon to be received) provider EDR token
+        correlation_id = header_received['ids:correlationMessage']['@id']
+        # now, wait for what's coming in on the webhook
+        edr_header, edr_payload = self.wait_for_message(key=correlation_id)
+        return edr_payload
 
-        return header_received, payload_received
 
 
 

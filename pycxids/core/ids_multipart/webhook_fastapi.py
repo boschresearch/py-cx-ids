@@ -4,18 +4,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 import json
 from threading import Thread
 from datetime import datetime
-from fastapi import FastAPI, Request, Response, Body
+from fastapi import FastAPI, Request, Response, Body, Depends, HTTPException, status, Query
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from requests_toolbelt import MultipartEncoder
 import requests
 import time
 
-from pycxids.core.settings import CONSUMER_CONNECTOR_URN, CONSUMER_WEBHOOK
+from pycxids.core.settings import CONSUMER_CONNECTOR_URN, CONSUMER_WEBHOOK, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
 from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer, IdsMultipartBase
 from pycxids.core import daps
 from pycxids.core.ids_multipart.webhook_queue import add_message, wait_for_message
+
+from pycxids.utils.storage import FileStorageEngine
+
+STORAGE_FN = os.getenv('STORAGE_FN', 'storage.json')
+
+
+storage = FileStorageEngine(storage_fn=STORAGE_FN)
 
 TEST_MSG_KEY = 'TEST_MSG'
 TEST_MSG = b'test_msg'
@@ -23,7 +32,7 @@ TEST_MSG = b'test_msg'
 WEBHOOK_LOADED_KEY = 'WEBHOOK_LOADED'
 
 app = FastAPI()
-
+security = HTTPBasic()
 
 @app.post("/webhook")
 async def webhook(request: Request): #, body: dict = Body(...)
@@ -50,7 +59,14 @@ async def webhook(request: Request): #, body: dict = Body(...)
         correlation_id = header.get('ids:correlationMessage', {}).get('@id', None)
         if not correlation_id:
             correlation_id = header['ids:transferContract']['@id']
+    # thread communication of the received content
     add_message(key = correlation_id, header=header, payload=payload)
+    # store received content to make is accessible via an api request
+    storage.put(key=correlation_id, value={
+        'header': header,
+        'payload': payload
+    })
+
     # TODO: we should check the content before confirming anything
 
     response_payload = ''
@@ -86,6 +102,38 @@ async def webhook(request: Request): #, body: dict = Body(...)
     return response
 
 
+@app.get('/messages/{message_id}')
+def get_message(message_id: str, credentials: HTTPBasicCredentials = Depends(security), timeout: int = Query(default=30)):
+    """
+    message_id is the 'correlation_id' from the IDS multipart messages.
+    what it is, depends on where in the process the message was received.
+    """
+    if not (credentials.username == BASIC_AUTH_USERNAME and credentials.password == BASIC_AUTH_PASSWORD):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not authenticated. Use basic auth.")
+
+    counter = 0
+    while True:
+        data = storage.get(key=message_id, default=None)
+        if data:
+            return data
+
+        if counter < timeout:
+            time.sleep(1)
+            counter = counter + 1
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Timeout. Could not find message in time. timeout: {timeout}")
+
+
+@app.get('/messages')
+def get_all_messages(credentials: HTTPBasicCredentials = Depends(security)):
+    """
+    """
+    if not (credentials.username == BASIC_AUTH_USERNAME and credentials.password == BASIC_AUTH_PASSWORD):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not authenticated. Use basic auth.")
+    result = storage.get_all()
+    return result
+
+
 def send_test_request(public_url:str):
     r = requests.post(public_url, data=TEST_MSG)
     if not r.ok:
@@ -119,3 +167,10 @@ def webhook_test(public_url: str):
 # any better way to check and inform the other thread?
 now = datetime.now().timestamp()
 add_message(WEBHOOK_LOADED_KEY, now, now)
+
+if __name__ == '__main__':
+    import uvicorn
+    port = os.getenv('PORT', '8000')
+    host = os.getenv('HOST', "0.0.0.0")
+    workers = os.getenv('WORKERS', '1')
+    uvicorn.run("pycxids.core.ids_multipart.webhook_fastapi:app", host=host, port=int(port), workers=int(workers), reload=False)

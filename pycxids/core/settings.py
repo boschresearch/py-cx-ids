@@ -43,6 +43,9 @@ ASSERTION_TYPE = settings.ASSERTION_TYPE
 PROVIDER_CONNECTOR_URL = settings.PROVIDER_CONNECTOR_URL
 PROVIDER_CONNECTOR_IDS_ENDPOINT = settings.PROVIDER_CONNECTOR_URL + settings.PROVIDER_CONNECTOR_IDS_ENDPOINT_PATH
 
+BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', 'someuser')
+BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD', 'somepassword')
+
 def endpoint_check(endpoint: str):
     if not '/api/v1/ids/data' in endpoint:
         endpoint = endpoint + '/api/v1/ids/data'
