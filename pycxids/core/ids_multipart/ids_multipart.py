@@ -191,12 +191,11 @@ class IdsMultipartConsumer(IdsMultipartBase):
         
         # TODO: this message seems to be NOT IDS compliant!
         artifact_request_message_payload = {
-            'secret': '12345',
+            #'secret': '',
             'dataDestination': {
                 'properties': {
-                    'keyName': 'mydummykeyname',
+                    'keyName': '',
                     'type': 'HttpProxy',
-                    #'baseurl': 'http://localhost'
                 }
             }
         }
