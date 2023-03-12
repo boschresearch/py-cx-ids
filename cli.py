@@ -77,8 +77,9 @@ def list_assets_from_catalog(catalog_filename: str):
 @click.option('-r', '--raw-data', default=False, is_flag=True)
 @click.option('--out-dir', default='', help='Directory in which the results should be stored under the asset_id filename.')
 @click.option('--provider-connector-url', default=PROVIDER_IDS_BASE_URL)
+@click.option('--agreement-id', default=None, help='Reuse existing agreement ID and save some negotiation time.')
 @click.argument('asset_id', default='')
-def fetch_asset_cli(provider_connector_url, asset_id: str, raw_data:bool, out_dir:str):
+def fetch_asset_cli(provider_connector_url, asset_id: str, raw_data:bool, out_dir:str, agreement_id: str):
     before = datetime.now().timestamp()
     try:
         data_result = fetch_asset(asset_id=asset_id, raw_data=raw_data, connector_url=provider_connector_url)
@@ -105,7 +106,7 @@ def fetch_asset_cli(provider_connector_url, asset_id: str, raw_data:bool, out_di
     print(f"request duration in seconds: {duration}")
     os._exit(1) # this does also stop the webhook thread
 
-def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_webhook=False, connector_url=None, suburl=None, query_params=None):
+def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_webhook=False, connector_url=None, suburl=None, query_params=None, agreement_id:str = None):
     """
     Starts the webhook to receive async messages
     Does the negotiation with the provider control plane and the actual data fetch from the provider data plane.
@@ -134,11 +135,12 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
         consumer_webhook_message_password=BASIC_AUTH_PASSWORD,
     )
 
-    # find offers from the catalog
-    offers = consumer.get_offers(asset_id=asset_id)
-    offer = offers[0] # TODO: check which offer to use
-    # negotiate
-    agreement_id = consumer.negotiate(contract_offer=offer)
+    if not agreement_id:
+        # find offers from the catalog
+        offers = consumer.get_offers(asset_id=asset_id)
+        offer = offers[0] # TODO: check which offer to use
+        # negotiate
+        agreement_id = consumer.negotiate(contract_offer=offer)
     # transfer
     provider_edr = consumer.transfer(asset_id=asset_id, agreement_id=agreement_id)
 
