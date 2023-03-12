@@ -14,6 +14,24 @@ services:
       - CONSUMER_EDC_BASE_URL=http://third-control-plane:9193/api/v1/data
       - CONSUMER_EDC_VALIDATION_ENDPOINT=http://third-control-plane:9192/validation/token
 
+  consumer-webhook-service:
+    build: ./docker/webhook-service
+    environment:
+      - CONSUMER_CONNECTOR_URN=urn:uuid:consumer
+      - CONSUMER_WEBHOOK=http://consumer-webhook-service:8000/webhook
+      - PRIVATE_KEY_FN=/private.key
+    volumes:
+      - ./vault_secrets/consumer.key:/private.key
+
+  third-webhook-service:
+    build: ./docker/webhook-service
+    environment:
+      - CONSUMER_CONNECTOR_URN=urn:uuid:third
+      - CONSUMER_WEBHOOK=http://third-webhook-service:8000/webhook
+      - PRIVATE_KEY_FN=/private.key
+    volumes:
+      - ./vault_secrets/third.key:/private.key
+
   dummy-backend:
     build: ./docker/dummy-backend
     ports:
