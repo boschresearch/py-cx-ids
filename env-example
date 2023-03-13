@@ -1,0 +1,9 @@
+CLIENT_ID=
+CERT_FN=
+PRIVATE_KEY_FN=
+DAPS_ENDPOINT=https://daps1.int.demo.catena-x.net/token
+CONSUMER_CONNECTOR_URL=
+CONSUMER_WEBHOOK=
+CONSUMER_WEBHOOK_MESSAGE_BASE_URL=https://changeme.localhost/webhook-service/messages
+CONSUMER_WEBHOOK_MESSAGE_USERNAME=someuser
+CONSUMER_WEBHOOK_MESSAGE_PASSWORD=somepassword

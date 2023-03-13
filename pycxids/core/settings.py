@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
     PROVIDER_CONNECTOR_URL = ""
     PROVIDER_CONNECTOR_IDS_ENDPOINT_PATH = "/api/v1/ids/data"
+    # webhook service usage
+    CONSUMER_WEBHOOK_MESSAGE_BASE_URL = ""
+    CONSUMER_WEBHOOK_MESSAGE_USERNAME = "someuser"
+    CONSUMER_WEBHOOK_MESSAGE_PASSWORD = "somepassword"
 
     class Config:
         env_file = os.getenv('ENV_FILE', '.env') # if ENV_FILE is not set, we read env vars from .env by default

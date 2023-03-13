@@ -25,7 +25,7 @@ from pycxids.core import jwt_decode
 from pycxids.core.ids_multipart import message_templates
 from pycxids.core.ids_multipart.multipart_helper import IdsMultipartBase
 from pycxids.core.settings import ASSERTION_TYPE, CERT_FN, CLIENT_ID, CONSUMER_CONNECTOR_URL, CONSUMER_CONNECTOR_URN, CONSUMER_WEBHOOK, DAPS_ENDPOINT, SCOPE, settings, endpoint_check
-from pycxids.core.daps import get_daps_token
+from pycxids.core.daps import Daps
 from pycxids.core.ids_multipart.webhook_queue import wait_for_message
 
 
@@ -33,12 +33,17 @@ class IdsMultipartConsumer(IdsMultipartBase):
     """
     A IDS Multipart consumer that is able to communicate with a fixed, given Provider
     """
-    def __init__(self, private_key_fn: str, provider_connector_ids_endpoint: str,
-            consumer_connector_urn=CONSUMER_CONNECTOR_URN, consumer_connector_webhook_url=CONSUMER_WEBHOOK,
+    def __init__(self,
+            private_key_fn: str,
+            client_id: str,
+            daps_endpoint: str,
+            provider_connector_ids_endpoint: str,
+            consumer_connector_urn=CONSUMER_CONNECTOR_URN,
+            consumer_connector_webhook_url=CONSUMER_WEBHOOK,
             consumer_webhook_message_base_url = None,
             consumer_webhook_message_username = '',
             consumer_webhook_message_password = '',
-            debug_messages=False, debug_out_dir=''
+            debug_messages=False, debug_out_dir='',
         ) -> None:
         super().__init__(
             consumer_connector_urn=consumer_connector_urn,
@@ -47,6 +52,8 @@ class IdsMultipartConsumer(IdsMultipartBase):
             debug_out_dir=debug_out_dir
         )
         self.private_key_fn = private_key_fn
+        self.client_id = client_id
+        self.daps_endpoint = daps_endpoint
         provider_connector_ids_endpoint = endpoint_check(provider_connector_ids_endpoint) # TODO: find a better solution
         self.connector_ids_endpoint = provider_connector_ids_endpoint
         self.debug_messages = debug_messages
@@ -58,7 +65,8 @@ class IdsMultipartConsumer(IdsMultipartBase):
         """
         Only for class internal use to get a dpas token.
         """
-        return get_daps_token(audience=self.connector_ids_endpoint)
+        daps = Daps(daps_endpoint=self.daps_endpoint, private_key_fn=self.private_key_fn, client_id=self.client_id)
+        return daps.get_daps_token(audience=self.connector_ids_endpoint)
 
     def get_catalog(self, paging_from: int = 0, paging_to: int = 0):
         """
@@ -130,10 +138,14 @@ class IdsMultipartConsumer(IdsMultipartBase):
             'ids:permission':  contract_offer['ids:contractOffer'][0]['ids:permission'],
             'ids:provider': contract_offer['ids:contractOffer'][0]['ids:provider'],
             'ids:consumer': contract_offer['ids:contractOffer'][0]['ids:consumer'],
-            # new in 0.3.0
-            'ids:contractStart': contract_offer['ids:contractOffer'][0]['ids:contractStart'],
-            'ids:contractEnd': contract_offer['ids:contractOffer'][0]['ids:contractEnd'],
         }
+        # new in 0.3.0
+        contract_start = contract_offer['ids:contractOffer'][0].get('ids:contractStart')
+        if contract_start:
+            contract_request['ids:contractStart'] = contract_start
+        contract_end = contract_offer['ids:contractOffer'][0].get('ids:contractEnd')
+        if contract_end:
+            contract_request['ids:contractEnd'] = contract_end
 
         payload = json.dumps(contract_request)
         #print(json.dumps(contract_request, indent=4))

@@ -14,9 +14,9 @@ from requests_toolbelt import MultipartEncoder
 import requests
 import time
 
-from pycxids.core.settings import CONSUMER_CONNECTOR_URN, CONSUMER_WEBHOOK, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
+from pycxids.core.settings import CONSUMER_CONNECTOR_URN, CONSUMER_WEBHOOK, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD, settings
 from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer, IdsMultipartBase
-from pycxids.core import daps
+from pycxids.core.daps import Daps
 from pycxids.core.ids_multipart.webhook_queue import add_message, wait_for_message
 
 from pycxids.utils.storage import FileStorageEngine
@@ -73,6 +73,7 @@ async def webhook(request: Request): #, body: dict = Body(...)
     response_header = ''
 
     ids_endpoint = header.get('idsWebhookAddress') # TODO: is this the correct audience? need to check
+    daps = Daps(daps_endpoint=settings.DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=settings.CLIENT_ID)
     daps_token = daps.get_daps_token(audience=ids_endpoint)
 
 
