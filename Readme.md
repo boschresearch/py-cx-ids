@@ -17,8 +17,26 @@ Some core components to e.g. get a DAPS token or negotiate (without the EDC), bu
 # CLI - command line interface
 The cli uses the pycxids `core` module, meaning the one without EDC connection, but purely on the IDS protocol level.
 
-## useful commands
+The cli needs a `webhook-service` up and running with a public endpoint. The cli uses this to receive async responses from the provider. This is required because of the IDS multipart async protocol design.
+
+## setup of the webhook-service
 ```
+pip install --no-cache-dir --upgrade git+https://github.com/boschresearch/py-cx-ids.git@dev
+
+export CONSUMER_CONNECTOR_URN=urn:uuid:yourconnectorname
+export CONSUMER_WEBHOOK=http://yourservernamehere:8000/webhook
+export PRIVATE_KEY_FN=./your_private.key
+
+python -m pycxids.core.ids_multipart.webhook_fastapi
+
+```
+Or have a look into `./edc-dev-env/docker-compose-helpers.yaml` and `./edc-dev-env/docker/webhook-service/Dockerfile`
+
+## Using the CLI - some useful commands
+```
+# Setup the cli
+./cli.py init
+
 # print the catalog
 ./cli.py catalog
 

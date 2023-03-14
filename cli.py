@@ -8,10 +8,13 @@
 
 import click
 import os
+import sys
 import json
 from datetime import datetime
 import base64
+from uuid import uuid4
 import requests
+from requests.auth import HTTPBasicAuth
 
 from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer
 from pycxids.core.settings import endpoint_check, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
@@ -23,35 +26,112 @@ from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
 AGREEMENT_CACHE_DIR = os.getenv('AGREEMENT_CACHE_DIR', 'agreementcache')
 os.makedirs(AGREEMENT_CACHE_DIR, exist_ok=True)
 
+SETTINGS_STORAGE = os.getenv('SETTINGS_STORAGE', 'cli_settings.json')
+config = FileStorageEngine(storage_fn=SETTINGS_STORAGE)
+
 
 @click.group('A cli to interact with IDS / EDC data providers')
 def cli():
     pass
 
+@cli.command('init', help='Initial configuration')
+def cli_init():
+    config.put('PRIVATE_KEY_FN',
+        click.prompt("Private key filename:", default=config.get('PRIVATE_KEY_FN', "private.key")))
+    config.put(
+        'CLIENT_ID',
+        click.prompt("CLIENT_ID:", default=config.get('CLIENT_ID', "")))
+    config.put(
+        'DAPS_ENDPOINT',
+        click.prompt("DAPS_ENDPOINT:", default=config.get('DAPS_ENDPOINT',
+            "https://daps1.int.demo.catena-x.net/token")))
+    config.put(
+        'CONSUMER_CONNECTOR_URN',
+        click.prompt("CONSUMER_CONNECTOR_URN:", default=config.get('CONSUMER_CONNECTOR_URN', "")))
+    config.put(
+        'CONSUMER_WEBHOOK',
+        click.prompt("CONSUMER_WEBHOOK:", default=config.get('CONSUMER_WEBHOOK', "https://changeme.localhost/webhook")))
+    config.put(
+        'CONSUMER_WEBHOOK_MESSAGE_BASE_URL',
+        click.prompt("CONSUMER_WEBHOOK_MESSAGE_BASE_URL:", default=config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL',
+            "https://changme.localhost/messages")))
+    config.put(
+        'CONSUMER_WEBHOOK_MESSAGE_USERNAME',
+        click.prompt("CONSUMER_WEBHOOK_MESSAGE_USERNAME:", default=config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME',
+            "someuser")))
+    config.put(
+        'CONSUMER_WEBHOOK_MESSAGE_PASSWORD',
+        click.prompt("CONSUMER_WEBHOOK_MESSAGE_PASSWORD (stored in clear text!):",
+            default=config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD', "somepassword"), hide_input=True, show_default=False))
+    config.put(
+        'DEFAULT_PROVIDER_IDS_ENDPOINT',
+        click.prompt("DEFAULT_PROVIDER_IDS_ENDPOINT - will be used as default if no other provider is set in specific functions:",
+            default=config.get('DEFAULT_PROVIDER_IDS_ENDPOINT', "https://provider:8282/api/v1/data")))
+
+    click.echo("")
+    click.echo("Configuration done.")
+    click.echo("")
+
+    test_webhook = click.confirm("Do you want to test the webhook?", default=True)
+    if test_webhook:
+        CONSUMER_WEBHOOK = config.get('CONSUMER_WEBHOOK')
+        assert CONSUMER_WEBHOOK
+        CONSUMER_WEBHOOK_MESSAGE_BASE_URL = config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL')
+        assert CONSUMER_WEBHOOK_MESSAGE_BASE_URL
+        CONSUMER_WEBHOOK_MESSAGE_USERNAME = config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME')
+        assert CONSUMER_WEBHOOK_MESSAGE_USERNAME
+        CONSUMER_WEBHOOK_MESSAGE_PASSWORD = config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD')
+        assert CONSUMER_WEBHOOK_MESSAGE_PASSWORD
+
+        test_id = str(uuid4())
+        data = {'@id': test_id, 'hello': 'world'}
+        r = requests.post(CONSUMER_WEBHOOK, json=data)
+        assert r.ok, f"Could not post test data to WEBHOOK {CONSUMER_WEBHOOK}"
+
+        msg_url = f"{CONSUMER_WEBHOOK_MESSAGE_BASE_URL}/{test_id}"
+        r = requests.get(msg_url, json=data, auth=HTTPBasicAuth(username=CONSUMER_WEBHOOK_MESSAGE_USERNAME, password=CONSUMER_WEBHOOK_MESSAGE_PASSWORD))
+        assert r.ok, f"Could not fetch test data from webhook service: {msg_url}"
+        j = r.json()
+        assert j.get('hello') == 'world'
+        print("Successfully tested the reachability of the webhook.")
+
+
 @cli.command('catalog')
 @click.option('-o', '--out-fn', default='')
-@click.argument('provider_connector_url', default=PROVIDER_IDS_BASE_URL)
-def fetch_catalog_cli(provider_connector_url: str, out_fn):
-    catalog = fetch_catalog(endpoint=provider_connector_url, out_fn=out_fn)
+@click.option('--provider-ids-endpoint', default='')
+def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
+    if not provider_ids_endpoint:
+        provider_ids_endpoint = config.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
+        print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
+            file=sys.stderr) # stderr to prevent | pipe content issues
+    catalog = fetch_catalog(ids_endpoint=provider_ids_endpoint, out_fn=out_fn)
     print(json.dumps(catalog, indent=4))
 
-def fetch_catalog(endpoint: str, out_fn: str = ''):
+def get_consumer(ids_endpoint: str):
+    """
+    Returns a consumer instance created from settings
+    """
+
+    consumer = IdsMultipartConsumer(
+        private_key_fn=config.get('PRIVATE_KEY_FN'),
+        client_id=config.get('CLIENT_ID'),
+        daps_endpoint=config.get('DAPS_ENDPOINT'),
+        provider_connector_ids_endpoint=ids_endpoint,
+        consumer_connector_urn=config.get('CONSUMER_CONNECTOR_URN'),
+        consumer_connector_webhook_url=config.get('CONSUMER_WEBHOOK'),
+        consumer_webhook_message_base_url=config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL'),
+        consumer_webhook_message_username=config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME'),
+        consumer_webhook_message_password=config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD'),
+    )
+    return consumer
+
+def fetch_catalog(ids_endpoint: str, out_fn: str = ''):
     """
     Fetch the catalog from the given endpoint.
 
     Returns None in case of an error
     """
-    ids_endpoint = endpoint_check(endpoint=endpoint)
-
-    consumer = IdsMultipartConsumer(
-        private_key_fn=settings.PRIVATE_KEY_FN,
-        provider_connector_ids_endpoint=ids_endpoint,
-        consumer_connector_urn=settings.CONSUMER_CONNECTOR_URN,
-        consumer_connector_webhook_url='http://dev:6080/webhook',
-        consumer_webhook_message_base_url='http://dev:6080/messages',
-        consumer_webhook_message_username=BASIC_AUTH_USERNAME,
-        consumer_webhook_message_password=BASIC_AUTH_PASSWORD,
-    )
+    consumer = get_consumer(ids_endpoint=ids_endpoint)
 
     catalog = consumer.get_catalog()
 
@@ -83,13 +163,19 @@ def list_assets_from_catalog(catalog_filename: str):
 @cli.command('fetch', help="Fetch a given asset id")
 @click.option('-r', '--raw-data', default=False, is_flag=True)
 @click.option('--out-dir', default='', help='Directory in which the results should be stored under the asset_id filename.')
-@click.option('--provider-connector-url', default=PROVIDER_IDS_BASE_URL)
+@click.option('--provider-ids-endpoint', default='')
 @click.option('--agreement-id', default=None, help='Reuse existing agreement ID and save some negotiation time.')
 @click.argument('asset_id', default='')
-def fetch_asset_cli(provider_connector_url, asset_id: str, raw_data:bool, out_dir:str, agreement_id: str):
+def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir:str, agreement_id: str):
     before = datetime.now().timestamp()
+
+    if not provider_ids_endpoint:
+        provider_ids_endpoint = config.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
+        print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
+            file=sys.stderr)
+
     try:
-        data_result = fetch_asset(asset_id=asset_id, raw_data=raw_data, connector_url=provider_connector_url)
+        data_result = fetch_asset(asset_id=asset_id, raw_data=raw_data, provider_ids_endpoint=provider_ids_endpoint)
     except Exception as ex:
         print(ex)
         os._exit(1) # this is a first class cli function, here we can immediately exit
@@ -110,10 +196,10 @@ def fetch_asset_cli(provider_connector_url, asset_id: str, raw_data:bool, out_di
             f.write(data_str)
     else:
         print(data_str)
-    print(f"request duration in seconds: {duration}")
+    print(f"request duration in seconds: {duration}", file=sys.stderr)
     os._exit(1) # this does also stop the webhook thread
 
-def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_webhook=False, connector_url=None, suburl=None, query_params=None, agreement_id:str = None):
+def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_webhook=False, provider_ids_endpoint=None, suburl=None, query_params=None, agreement_id:str = None):
     """
     Starts the webhook to receive async messages
     Does the negotiation with the provider control plane and the actual data fetch from the provider data plane.
@@ -130,20 +216,12 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
             raise Exception('webhook not reachable. exit.')
     """
 
-    ids_endpoint = endpoint_check(endpoint=connector_url)
+    ids_endpoint = provider_ids_endpoint
     ids_endpoint_b64 = base64.urlsafe_b64encode(ids_endpoint.encode()).decode()
     cache_fn = os.path.join(AGREEMENT_CACHE_DIR, ids_endpoint_b64)
     cache = FileStorageEngine(storage_fn=cache_fn)
 
-    consumer = IdsMultipartConsumer(
-        private_key_fn=settings.PRIVATE_KEY_FN,
-        provider_connector_ids_endpoint=ids_endpoint,
-        consumer_connector_urn=settings.CONSUMER_CONNECTOR_URN,
-        consumer_connector_webhook_url='http://dev:6080/webhook',
-        consumer_webhook_message_base_url='http://dev:6080/messages',
-        consumer_webhook_message_username=BASIC_AUTH_USERNAME,
-        consumer_webhook_message_password=BASIC_AUTH_PASSWORD,
-    )
+    consumer = get_consumer(ids_endpoint=ids_endpoint)
 
     if not agreement_id:
         # if not given, next lookup in cache
