@@ -41,6 +41,18 @@ async def webhook(request: Request): #, body: dict = Body(...)
         # this is a test msg to let us figure out if webhook is reachable in general
         add_message(key=TEST_MSG_KEY, header=TEST_MSG, payload=TEST_MSG)
         return ''
+    try:
+        # test data case for now
+        j = json.loads(body)
+        # if the content is json already, just store it for now
+        id = j.get('@id')
+        if id:
+            storage.put(id, j)
+            return {}
+    except Exception as ex:
+        # expected in most cases if not test messages
+        pass
+
     content_type = request.headers['Content-Type']
     header, payload = IdsMultipartBase.parse_multipart_result(r_content=body, content_type=content_type)
     #print(json.dumps(header, indent=4))
