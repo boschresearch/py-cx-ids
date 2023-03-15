@@ -27,47 +27,61 @@ AGREEMENT_CACHE_DIR = os.getenv('AGREEMENT_CACHE_DIR', 'agreementcache')
 os.makedirs(AGREEMENT_CACHE_DIR, exist_ok=True)
 
 SETTINGS_STORAGE = os.getenv('SETTINGS_STORAGE', 'cli_settings.json')
-config = FileStorageEngine(storage_fn=SETTINGS_STORAGE)
+config_storage = FileStorageEngine(storage_fn=SETTINGS_STORAGE)
 
 
 @click.group('A cli to interact with IDS / EDC data providers')
 def cli():
     pass
 
-@cli.command('init', help='Initial configuration')
-def cli_init():
-    config.put('PRIVATE_KEY_FN',
-        click.prompt("Private key filename:", default=config.get('PRIVATE_KEY_FN', "private.key")))
-    config.put(
-        'CLIENT_ID',
-        click.prompt("CLIENT_ID:", default=config.get('CLIENT_ID', "")))
-    config.put(
-        'DAPS_ENDPOINT',
-        click.prompt("DAPS_ENDPOINT:", default=config.get('DAPS_ENDPOINT',
-            "https://daps1.int.demo.catena-x.net/token")))
-    config.put(
-        'CONSUMER_CONNECTOR_URN',
-        click.prompt("CONSUMER_CONNECTOR_URN:", default=config.get('CONSUMER_CONNECTOR_URN', "")))
-    config.put(
-        'CONSUMER_WEBHOOK',
-        click.prompt("CONSUMER_WEBHOOK:", default=config.get('CONSUMER_WEBHOOK', "https://changeme.localhost/webhook")))
-    config.put(
-        'CONSUMER_WEBHOOK_MESSAGE_BASE_URL',
-        click.prompt("CONSUMER_WEBHOOK_MESSAGE_BASE_URL:", default=config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL',
-            "https://changme.localhost/messages")))
-    config.put(
-        'CONSUMER_WEBHOOK_MESSAGE_USERNAME',
-        click.prompt("CONSUMER_WEBHOOK_MESSAGE_USERNAME:", default=config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME',
-            "someuser")))
-    config.put(
-        'CONSUMER_WEBHOOK_MESSAGE_PASSWORD',
-        click.prompt("CONSUMER_WEBHOOK_MESSAGE_PASSWORD (stored in clear text!):",
-            default=config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD', "somepassword"), hide_input=True, show_default=False))
-    config.put(
-        'DEFAULT_PROVIDER_IDS_ENDPOINT',
-        click.prompt("DEFAULT_PROVIDER_IDS_ENDPOINT - will be used as default if no other provider is set in specific functions:",
-            default=config.get('DEFAULT_PROVIDER_IDS_ENDPOINT', "https://provider:8282/api/v1/data")))
+@cli.group('config', help='Configure the CLI')
+def config():
+    pass
 
+@config.command('use', help='Select config to use')
+@click.argument('config_name')
+def cli_config_select(config_name: str):
+    config_storage.put('use', config_name)
+
+@config.command('list', help='List available configurations')
+@click.argument('config_name', default='')
+def cli_config_list(config_name: str):
+    configs = config_storage.get('configs', {})
+    if config_name:
+        config = configs.get(config_name)
+        print(json.dumps(config, indent=4))
+    else:
+        for conf in configs.keys():
+            print(conf)
+
+@config.command('add', help='Add configuration')
+@click.argument('config_name')
+def cli_config_add(config_name: str):
+    configs = config_storage.get('configs', {})
+    config = configs.get(config_name, {})
+
+    config['PRIVATE_KEY_FN'] = click.prompt("Private key filename:",
+        default=config.get('PRIVATE_KEY_FN', "private.key"))
+    config['CLIENT_ID'] = click.prompt("CLIENT_ID:",
+        default=config.get('CLIENT_ID', ""))
+    config['DAPS_ENDPOINT'] = click.prompt("DAPS_ENDPOINT:",
+        default=config.get('DAPS_ENDPOINT', "https://daps1.int.demo.catena-x.net/token"))
+    config['CONSUMER_CONNECTOR_URN'] = click.prompt("CONSUMER_CONNECTOR_URN:",
+        default=config.get('CONSUMER_CONNECTOR_URN', ""))
+    config['CONSUMER_WEBHOOK'] = click.prompt("CONSUMER_WEBHOOK:",
+        default=config.get('CONSUMER_WEBHOOK', "https://changeme.localhost/webhook"))
+    config['CONSUMER_WEBHOOK_MESSAGE_BASE_URL'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_BASE_URL:",
+        default=config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL', "https://changme.localhost/messages"))
+    config['CONSUMER_WEBHOOK_MESSAGE_USERNAME'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_USERNAME:",
+        default=config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME', "someuser"))
+    config['CONSUMER_WEBHOOK_MESSAGE_PASSWORD'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_PASSWORD (stored in clear text!):",
+        default=config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD', "somepassword"), hide_input=True, show_default=False)
+    config['DEFAULT_PROVIDER_IDS_ENDPOINT'] = click.prompt("DEFAULT_PROVIDER_IDS_ENDPOINT - will be used as default if no other provider is set in specific functions:",
+        default=config.get('DEFAULT_PROVIDER_IDS_ENDPOINT', "https://provider:8282/api/v1/data"))
+
+    configs[config_name] = config
+    config_storage.put('configs', configs)
+    config_storage.put('use', config_name)
     click.echo("")
     click.echo("Configuration done.")
     click.echo("")
@@ -111,6 +125,13 @@ def get_consumer(ids_endpoint: str):
     """
     Returns a consumer instance created from settings
     """
+
+    config_to_use = config_storage.get('use', None)
+    assert config_to_use, "Please add a config first"
+    print(f"Using {config_to_use}", file=sys.stderr)
+    configs = config_storage.get('configs', {})
+    config = configs.get(config_to_use, None)
+    assert config, f"Please configure {config_to_use} first."
 
     consumer = IdsMultipartConsumer(
         private_key_fn=config.get('PRIVATE_KEY_FN'),
@@ -170,6 +191,12 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
     before = datetime.now().timestamp()
 
     if not provider_ids_endpoint:
+        # TODO: change this
+        config_to_use = config_storage.get('use')
+        assert config_to_use, "Please add a config first."
+        configs = config_storage.get('configs', {})
+        config = configs.get(config_to_use)
+        assert config, "Please add config first"
         provider_ids_endpoint = config.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
         print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
             file=sys.stderr)
