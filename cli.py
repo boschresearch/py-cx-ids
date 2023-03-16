@@ -39,9 +39,13 @@ def config():
     pass
 
 @config.command('use', help='Select config to use')
-@click.argument('config_name')
+@click.argument('config_name', default='')
 def cli_config_select(config_name: str):
-    config_storage.put('use', config_name)
+    if config_name:
+        config_storage.put('use', config_name)
+    else:
+        config_name = config_storage.get('use')
+        print(config_name)
 
 @config.command('list', help='List available configurations')
 @click.argument('config_name', default='')
