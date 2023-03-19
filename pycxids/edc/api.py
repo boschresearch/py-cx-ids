@@ -200,6 +200,18 @@ class EdcConsumer(EdcDataManagement):
         catalog = self.get(path="/catalog", params=params)
         return catalog
 
+    def negotiate_contract_and_wait_with_asset(self, provider_ids_endpoint: str, asset_id: str, timeout = 30):
+        """
+        Negotiate a contract / an agreement for the given asset.
+        It uses the first (!) avialable policy - beware, that this is not suitable for production ready systems!
+        Returns the agreement_id
+        """
+        catalog = self.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
+        contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
+        negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint, contract_offer=contract_offer, timeout=timeout)
+        agreement_id = negotiated_contract.get('contractAgreementId', None)
+        return agreement_id
+
     def negotiate_contract_and_wait(self, provider_ids_endpoint, contract_offer, timeout = 30):
         """
         Result: The negotiated contract (contains the agreementId)
