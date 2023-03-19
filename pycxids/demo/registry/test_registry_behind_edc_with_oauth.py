@@ -12,6 +12,11 @@ import pytest
 from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, PROVIDER_IDS_ENDPOINT, CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY, RECEIVER_SERVICE_BASE_URL
 from pycxids.edc.api import EdcProvider, EdcConsumer
 
+from pycxids.registry.api import CxRegistry
+from pycxids.models.cxregistry import CxAas, CxSubmodelEndpoint
+from pycxids.edc.settings import DUMMY_BACKEND
+
+
 REGISTRY_CLIENT_ID = os.getenv('REGISTRY_CLIENT_ID')
 REGISTRY_CLIENT_SECRET = os.getenv('REGISTRY_CLIENT_SECRET')
 REGISTRY_TOKEN_ENDPOINT = os.getenv('REGISTRY_TOKEN_ENDPOINT')
@@ -39,18 +44,23 @@ def test():
     assert r, "Could not fetch auth token for registry access."
     token = r.json()
 
-    # test accessing the registry
-    url = f"{REGISTRY_BASE_URL}/lookup/shells"
     headers = {
         'Authorization': f"Bearer {token['access_token']}",
-        'User-Agent': 'pythonreqquests',
+        'User-Agent': 'pythonreqquests', # Azure application firewall default rules workaround
     }
-    r = requests.get(url, headers=headers)
-    assert r, "Could not fetch data from registry."
-    j = r.json()
-    print(j)
+    registry = CxRegistry(base_url=REGISTRY_BASE_URL, headers=headers)
+    # test the registry with creating an AAS
+    cx_ep = f"http://my-provider-control-plane/edc_asset_id/submodel/notuesdforthedemo"
+    sm = CxSubmodelEndpoint(endpointAddress=cx_ep, semantic_id='urn:bamm:org:1.0.0:modelname') # TODO: very strict seamntic_id checks!!!
+    aas = CxAas(submodels=[sm])
+    aas_id = aas.identification
+    assert aas_id, "Could not prepare AAS"
+
+    aas_created = registry.create(aas=aas)
+    assert aas_created['identification'] == aas_id, "AAS creation did not create with the given AAS id."
 
     # now create the EDC 'dummy' asset that forwards requests to our registry
+    # registry asset needs to be created only ONCE
     provider = EdcProvider(edc_data_managment_base_url=PROVIDER_EDC_BASE_URL, auth_key=PROVIDER_EDC_API_KEY)
     # oauth related asset configs
     oauth_asset_configs = {
@@ -71,7 +81,8 @@ def test():
         data_address_additional_props=oauth_asset_configs,
     )
 
-    assert asset_id, "Could not create asset."
+    assert asset_id == registry_asset_id, "Could not create asset."
+
 
     # now the consumer side
     consumer = EdcConsumer(
@@ -86,7 +97,8 @@ def test():
     provider_edr = consumer.transfer_and_wait_provider_edr(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,asset_id=registry_asset_id, agreement_id=agreement_id)
 
     # now, the call against the registry (via the EDC)
-    url = f"{provider_edr['baseUrl']}/lookup/shells"
+    #url = f"{provider_edr['baseUrl']}/lookup/shells/{aas_id}"
+    url = f"{provider_edr['baseUrl']}/registry/shell-descriptors/{aas_id}"
     headers = {
         provider_edr['authKey']: provider_edr['authCode']
     }
@@ -94,6 +106,24 @@ def test():
     assert r.ok, "Could not lookup shells from registry via EDC"
     j = r.json()
     print(j)
+
+    # since the pure registry part worked, let's now use actual AAS endpoints via EDC
+    # first, create the submodel endpoint EDC asset from the AAS we've created earlier
+    # Provider side
+    sm_asset_id, _, __ = provider.create_asset_and_friends(base_url=DUMMY_BACKEND, proxyPath=True, proxyQueryParams=True)
+
+    # Consumer side
+    agreement_id = consumer.negotiate_contract_and_wait_with_asset(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=sm_asset_id)
+    provider_edr = consumer.transfer_and_wait_provider_edr(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=sm_asset_id, agreement_id=agreement_id)
+    url = provider_edr['baseUrl']
+    headers = {
+        provider_edr['authKey']: provider_edr['authCode']
+    }
+    r = requests.get(url, headers=headers)
+    assert r.ok, "Could not submodel data via EDC"
+    j = r.json()
+    print(j)
+
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
