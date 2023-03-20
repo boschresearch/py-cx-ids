@@ -20,7 +20,6 @@ from pycxids.edc.api import EdcProvider
 from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD, PROVIDER_EDC_VALIDATION_ENDPOINT
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL, CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_IDS_ENDPOINT
 
-
 def test():
     """
     """
@@ -39,6 +38,8 @@ def test():
         private_key_fn='./edc-dev-env/vault_secrets/consumer.key',
         provider_connector_ids_endpoint='http://provider-control-plane:8282/api/v1/ids/data',
         consumer_connector_urn='urn:uuid:consumer',
+        client_id='consumer',
+        daps_endpoint='http://daps-mock:8000/token',
         consumer_connector_webhook_url='http://consumer-webhook-service:8000/webhook',
         consumer_webhook_message_base_url='http://consumer-webhook-service:8000/messages',
         consumer_webhook_message_username='someuser',
@@ -55,16 +56,15 @@ def test():
         private_key_fn='./edc-dev-env/vault_secrets/third.key',
         provider_connector_ids_endpoint='http://provider-control-plane:8282/api/v1/ids/data',
         consumer_connector_urn='urn:uuid:third',
+        client_id='third',
+        daps_endpoint='http://daps-mock:8000/token',
         consumer_connector_webhook_url='http://third-webhook-service:8000/webhook',
         consumer_webhook_message_base_url='http://third-webhook-service:8000/messages',
         consumer_webhook_message_username='someuser',
         consumer_webhook_message_password='somepassword',
     )
-    """
-    offers = ids.get_offers(asset_id=asset_id)
-    offer = offers[0]
-    agreement_id = ids.negotiate(contract_offer=offer)
-    """
+    # no negotiation here!!!
+    # we start right with the transfer process
     edr_provider_third = ids.transfer(asset_id=asset_id, agreement_id=agreement_id)
     print(edr_provider_third)
     url = edr_provider_third.get('endpoint')
