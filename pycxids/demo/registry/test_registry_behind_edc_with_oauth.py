@@ -97,7 +97,7 @@ def test():
     provider_edr = consumer.transfer_and_wait_provider_edr(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,asset_id=registry_asset_id, agreement_id=agreement_id)
 
     # now, the call against the registry (via the EDC)
-    #url = f"{provider_edr['baseUrl']}/lookup/shells/{aas_id}"
+    #url = f"{provider_edr['baseUrl']}/lookup/shells"
     url = f"{provider_edr['baseUrl']}/registry/shell-descriptors/{aas_id}"
     headers = {
         provider_edr['authKey']: provider_edr['authCode']
