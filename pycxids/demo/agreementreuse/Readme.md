@@ -14,6 +14,4 @@ In product-edc 0.3.0 (and earlier) a consumer (attacker) seems to be able to sta
 - attacker needs knowledge to change the attacker's EDC instance (disable state machine) or use an alternative protocol implementation, e.g. from this repository `core` compoments and `cli`
 
 # Files
-`test_agreement_reuse_consumer_with_edc.py` tries the attack with an EDC on attacker side. Fails because of state machine issues (according to the log).
-
-`test_pycxids_agreement_reuse.py` works with the alternative protocol implementation form `core` module of this repository.
+`test_pycxids_agreement_reuse.py` uses EDC to create the provider asset an first fetch it (also via EDC, but a separte consumer instance). Afterwards, switch to the alternative protocol implementation and fetch the data with a different (attacker) identity under the the same contract agreement.
