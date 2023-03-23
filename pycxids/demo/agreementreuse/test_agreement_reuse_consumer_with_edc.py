@@ -20,6 +20,9 @@ from pycxids.edc.api import EdcProvider, EdcConsumer
 from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL, CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_IDS_ENDPOINT
 
+#PROVIDER_EDC_BASE_URL = "http://edc-upstream-provider:9193/api/v1/data"
+#PROVIDER_IDS_ENDPOINT = "http://edc-upstream-provider:8282/api/v1/ids/data"
+#CONSUMER_EDC_BASE_URL = "http://edc-upstream-consumer:9193/api/v1/data"
 
 def test():
     """
@@ -54,28 +57,47 @@ def test():
     j = r.json()
     assert 'headers' in j
 
-    # now let's try to reuse the agreement_id with another instance in the dataspace
-    """
-    consumer_third = EdcConsumer(
-        edc_data_managment_base_url='http://third-control-plane:9193/api/v1/data',
-        auth_key=CONSUMER_EDC_API_KEY,
-        token_receiver_service_base_url='http://third-receiver-service:8000/transfer'
-        )
-    transfer_id_third = consumer_third.transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=asset_id, agreement_id=agreement_id)
-    # we expect a timeout here
-    provider_edr_third = consumer_third.edr_provider_wait(transfer_id=transfer_id_third, timeout=10)
-    assert provider_edr_third == None, "If we get a result we have a security issue here."
-    """
-
-    # now, try it on the IDS (multipart) protocol layer
+    # Now let's try to reuse the agreement_id with another instance in the dataspace.
+    # This does not work with product-edc (0.3.0) out of the box.
+    # Probably this would be possible with some changes of the EDC code, e.g. disable the state machine somehow.
+    #
+    # Instead, we now try it on the IDS (multipart) protocol layer.
+    # For this, we use the `core` module from this repository.
     ids = IdsMultipartConsumer(
         private_key_fn='./edc-dev-env/vault_secrets/third.key',
-        provider_connector_ids_endpoint='http://provider-control-plane:8282/api/v1/ids/data'
+        provider_connector_ids_endpoint=PROVIDER_IDS_ENDPOINT,
+        consumer_connector_urn='urn:uuid:third',
+        client_id='third',
+        daps_endpoint='http://daps-mock:8000/token',
+        consumer_connector_webhook_url='http://third-webhook-service:8000/webhook',
+        consumer_webhook_message_base_url='http://third-webhook-service:8000/messages',
+        consumer_webhook_message_username='someuser',
+        consumer_webhook_message_password='somepassword',
+        debug_messages=True,
     )
-    artifact_uri = asset_id
-    header, payload = ids.request_data_lean(artifact_uri=artifact_uri, agreement_id=agreement_id, transfer_contract_id=transfer_id)
-    print(header)
-    print(payload)
+    # no negotiation here!!!
+    # we start right with the transfer process
+    ids_agreement_id = f"urn:contractagreement:{agreement_id}" # agreement_id from EDC is without the prefix...
+    edr_provider_third = ids.transfer(asset_id=asset_id, agreement_id=ids_agreement_id)
+    print(edr_provider_third)
+    url = edr_provider_third.get('endpoint')
+    auth_key = edr_provider_third.get('authKey')
+    auth_code = edr_provider_third.get('authCode')
+    r = requests.get(url, headers={
+        auth_key: auth_code
+    })
+    if not r.ok:
+        print(f"{r.status_code} - {r.reason} - {r.content}")
+        assert False
+    j = r.json()
+    print(j)
+    assert 'headers' in j
+
+    edc_contract_agreement_id = j.get('headers', {}).get('edc-contract-agreement-id', None)
+    if edc_contract_agreement_id:
+        # only possible in 0.3.0. first version in which the agreement ID is sent to the backend in the http header
+        non_urn_agreement_id = agreement_id.replace('urn:contractagreement:', '')
+        assert edc_contract_agreement_id != non_urn_agreement_id, "It should not be possible to fetch data under someone elses agreement_id!"
 
 
 
