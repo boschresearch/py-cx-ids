@@ -55,11 +55,23 @@ def get_return_params(request: Request, sub_path: str = None):
     """
     Used for testing what information is passed through the data plane towards the backend
     """
-    return {
+    result = {
         'query_params': request.query_params,
         'headers': request.headers,
         'sub_path': sub_path,
     }
+    try:
+        # starting with 0.3.0 the agreement_id is transferred in the headers
+        # let's fetch additional information for it and return in the result for easier testing
+        agreement_id = request.headers.get('edc-contract-agreement-id')
+        if agreement_id:
+            edc = EdcDataManagement(edc_data_managment_base_url=PROVIDER_EDC_BASE_URL, auth_key=PROVIDER_EDC_API_KEY)
+            agreement = edc.get(f"/contractagreements/{agreement_id}")
+            result['agreement'] = agreement
+    except Exception as ex:
+        print(ex)
+
+    return result
 
 if __name__ == '__main__':
     import uvicorn
