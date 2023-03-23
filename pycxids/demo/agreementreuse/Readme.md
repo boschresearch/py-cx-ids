@@ -15,3 +15,5 @@ In product-edc 0.3.0 (and earlier) a consumer (attacker) seems to be able to sta
 
 # Files
 `test_pycxids_agreement_reuse.py` uses EDC to create the provider asset an first fetch it (also via EDC, but a separte consumer instance). Afterwards, switch to the alternative protocol implementation and fetch the data with a different (attacker) identity under the the same contract agreement.
+
+`providerdb/*` contains the relevant database exports.
