@@ -1,0 +1,4 @@
+contract_definition_id;selector_expression;access_policy_id;contract_policy_id;created_at;validity
+9b6c78d1-e76f-451a-b7ed-f109f6646591;"{""criteria"":[{""operandLeft"":""asset:prop:id"",""operator"":""="",""operandRight"":""b36a7809-8d58-44da-aa6b-b154d689bceb""}]}";5ea5ab68-9bc8-451f-88ab-37a3c1cd5177;5ea5ab68-9bc8-451f-88ab-37a3c1cd5177;1680117446573;31536000
+24e4f820-649d-4538-8c8e-7243ab622023;"{""criteria"":[{""operandLeft"":""asset:prop:id"",""operator"":""="",""operandRight"":""ec7e4f32-700f-4da8-a9b5-d2d90732aac1""}]}";407ed2a2-f96e-4c4b-a648-e4ed1ac4006e;407ed2a2-f96e-4c4b-a648-e4ed1ac4006e;1680117446655;31536000
+caaac303-71b7-4a8a-8346-35333bc12e20;"{""criteria"":[{""operandLeft"":""asset:prop:id"",""operator"":""="",""operandRight"":null}]}";86b851da-fd48-49d9-918e-20d7f8c3495c;86b851da-fd48-49d9-918e-20d7f8c3495c;1680117456719;31536000

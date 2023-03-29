@@ -27,9 +27,8 @@ def test_catalog():
 
     # now the actual test case
     # use the same asset_id twice now!
-    asset_id = str(uuid4())
-    for i in range(0,2):
-        provider.create_asset_and_friends(base_url=DAPS_JWKS, asset_id=asset_id)
+    policy = provider.create_policy(asset_id=None)
+    cd = provider.create_contract_definition(policy_id=policy, asset_id=None)
 
     sleep(2)
     catalog = consumer.get_catalog(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT)
