@@ -20,5 +20,7 @@ class IdsBase():
         if isinstance(msg, dict):
             msg = json.dumps(msg, indent=4)
         path_fn = os.path.join(self.debug_out_dir, fn)
+        if not msg:
+            msg = ''
         with(open(path_fn, 'w')) as f:
             f.write(msg)

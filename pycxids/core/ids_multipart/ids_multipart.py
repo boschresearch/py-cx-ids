@@ -206,11 +206,14 @@ class IdsMultipartConsumer(IdsMultipartBase):
             #'secret': '',
             'dataDestination': {
                 'properties': {
-                    'keyName': '',
                     'type': 'HttpProxy',
                 }
             }
         }
+        if self.debug_messages:
+            debug_id = str(uuid4())
+            self._debug_message(msg=header, fn=f"{debug_id}_transfer_request_header.json")
+            self._debug_message(msg=artifact_request_message_payload, fn=f"{debug_id}_transfer_request_payload.json")
         payload = json.dumps(artifact_request_message_payload)
         header_received, payload_received = self._send_message(header_msg=header_msg, payload=payload, provider_connector_ids_endpoint=self.connector_ids_endpoint)
         if self.debug_messages:
