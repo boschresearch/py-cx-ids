@@ -51,11 +51,15 @@ class Daps(IdsBase):
             'resource': audience,
         }
 
-        r = requests.post(self.daps_endpoint, params=params)
-        if not r.ok:
-            print(f"Could not fetch token. Reason: {r.reason} Content: {r.content}")
+        try:
+            r = requests.post(self.daps_endpoint, params=params)
+            if not r.ok:
+                print(f"Could not fetch token. Reason: {r.reason} Content: {r.content}")
+                return None
+            j = r.json()
+        except Exception as ex:
+            print(ex)
             return None
-        j = r.json()
 
         if self.debug_messages:
             decoded = jwt_decode.decode(j['access_token'])
@@ -103,5 +107,11 @@ def get_daps_token(audience: str = ''):
 
 
 if __name__ == '__main__':
-    token = get_daps_token(audience='')
+    daps = Daps(
+        daps_endpoint=DAPS_ENDPOINT,
+        private_key_fn=settings.PRIVATE_KEY_FN,
+        client_id=settings.CLIENT_ID,
+        debug_messages=True,
+    )
+    token = daps.get_daps_token(audience='')
     print(token)
