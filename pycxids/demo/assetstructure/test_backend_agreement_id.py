@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from tests.helper import create_asset, create_policy, create_contract_definition
 from pycxids.edc.api import EdcConsumer
-from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL
+from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_IDS_BASE_URL, PROVIDER_IDS_ENDPOINT
 from pycxids.core.daps import get_daps_access_token
 
 
@@ -31,11 +31,6 @@ def test_backend_agreement_id():
     sleep(1)
     
     # now, consumer side:
-
-    IDS_PATH = '/api/v1/ids/data'
-    PROVIDER_IDS_BASE_URL = 'http://provider-control-plane:8282'
-    PROVIDER_IDS_ENDPOINT = f"{PROVIDER_IDS_BASE_URL}{IDS_PATH}"
-
     consumer = EdcConsumer(edc_data_managment_base_url=CONSUMER_EDC_BASE_URL, auth_key=CONSUMER_EDC_API_KEY)
     catalog = consumer.get_catalog(PROVIDER_IDS_ENDPOINT)
     contract_offer = EdcConsumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
