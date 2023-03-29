@@ -38,7 +38,13 @@ class EdcProvider(EdcDataManagement):
     def __init__(self, edc_data_managment_base_url: str, auth_key: str) -> None:
         super().__init__(edc_data_managment_base_url, auth_key)
 
-    def create_asset_and_friends(self, base_url: str, asset_id: str = '', proxyPath=False, proxyQueryParams=False, proxyBody=False, proxyMethod=False, data_address_additional_props:dict={}):
+    def create_asset_and_friends(self,
+            base_url: str,
+            asset_id: str = '',
+            proxyPath=False, proxyQueryParams=False, proxyBody=False, proxyMethod=False,
+            asset_additional_props:dict={},
+            data_address_additional_props:dict={},
+        ):
         asset_id = self.create_asset(
             base_url=base_url,
             asset_id=asset_id,
@@ -46,13 +52,21 @@ class EdcProvider(EdcDataManagement):
             proxyQueryParams=proxyQueryParams,
             proxyBody=proxyBody,
             proxyMethod=proxyMethod,
+            asset_additional_props=asset_additional_props,
             data_address_additional_props=data_address_additional_props,
         )
         policy_id = self.create_policy(asset_id=asset_id)
         contract_id = self.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
         return(asset_id, policy_id, contract_id)
 
-    def create_asset(self, base_url: str, asset_id: str = '', proxyPath=False, proxyQueryParams=False, proxyBody=False, proxyMethod=False, try_delete_before_create=False, data_address_additional_props:dict={}):
+    def create_asset(self,
+            base_url: str,
+            asset_id: str = '',
+            proxyPath=False, proxyQueryParams=False, proxyBody=False, proxyMethod=False,
+            try_delete_before_create=False,
+            asset_additional_props:dict={},
+            data_address_additional_props:dict={},
+        ):
         if not asset_id:
             asset_id = str(uuid4())
         else:
@@ -84,6 +98,8 @@ class EdcProvider(EdcDataManagement):
                 }
             }
         }
+        for k,v in asset_additional_props.items():
+            data['asset']['properties'][k] = v
         for k,v in data_address_additional_props.items():
             data['dataAddress']['properties'][k] = v
         result = self.post(path="/assets", data=data, json_content=False)
