@@ -52,11 +52,11 @@ services:
       # only then, changes to the script are executed!
       - ./docker/postgres/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
 
-  #adminer:
-  #  image: adminer
-  #  ports:
+  adminer:
+    image: adminer
+    ports:
       # bound to localhost
       # do ssh -L 6082:localhost:6082 <host>
       # to forward the port
       # In most cases, don't start adminer at all
-  #    - 127.0.0.1:6082:8080
+      - 127.0.0.1:6082:8080
