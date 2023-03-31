@@ -24,6 +24,7 @@ dependencies = [
     "jwcrypto",
     "python-multipart",
     "uvicorn",
+    "requests-oauthlib", # portal access with oauth
 ]
 
 [tool.setuptools]
