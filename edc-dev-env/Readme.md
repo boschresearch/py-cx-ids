@@ -38,3 +38,18 @@ Use a local `.env` file for e.g. the consumer HTTP endpoint if it is not the def
 EDC_RECEIVER_HTTP_ENDPOINT=http://dev:8000/datareference
 
 ```
+
+# Azure Vault Help
+Azure Vault is not used in this dev-env, because up until now, there is no way to mock it.
+There is an upstream Issue to change this: https://github.com/eclipse-edc/Connector/issues/2686
+
+In case Image and config is changed accordingly, some help to get key material into Azure Vault.
+(It is important to know, that using the Azure portal did not work to get the keys in! Only the cli worked.)
+```
+az login
+az keyvault secret set --name provider-key-1 --vault-name matthias-test-vault --file provider.key
+az keyvault secret set --name provider-crt-1 --vault-name matthias-test-vault --file provider.crt
+az keyvault secret set --name provider-ecryption-keys --vault-name matthias-test-vault --file provider-encryption.keys
+az keyvault secret set --name provider-encryption-keys --vault-name matthias-test-vault --file provider-encryption.keys
+
+```
