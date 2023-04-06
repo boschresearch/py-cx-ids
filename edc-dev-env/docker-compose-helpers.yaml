@@ -1,6 +1,12 @@
 version: "3.9"
 
 services:
+  provider-receiver-service:
+    build: ./docker/receiver-service
+    environment:
+      - CONSUMER_EDC_BASE_URL=http://provider-control-plane:9193/api/v1/data
+      - CONSUMER_EDC_VALIDATION_ENDPOINT=http://provider-control-plane:9192/validation/token
+
   receiver-service:
     # token_receiver_service for 'consumer' EDC instance
     build: ./docker/receiver-service

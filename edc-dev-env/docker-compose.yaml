@@ -15,6 +15,9 @@ services:
       - "9193:9193" # data management api - should be private later on
     volumes:
       - ${PROVIDER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/provider/control-plane.properties}:/app/configuration.properties
+    environment:
+          - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${PROVIDER_EDC_RECEIVER_HTTP_ENDPOINT:-http://provider-receiver-service:8000/datareference}
+
   provider-data-plane:
     extends:
       file: docker-compose-edc.yaml
@@ -30,10 +33,8 @@ services:
     volumes:
       - ${CONSUMER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/consumer/control-plane.properties}:/app/configuration.properties
     environment:
-        # the default (api-wrapper) is set here, or change for your local development with a .env file
-      - EDC_RECEIVER_HTTP_ENDPOINT=${EDC_RECEIVER_HTTP_ENDPOINT:-http://api-wrapper:9192/callback/endpoint-data-reference}
       # renamed in 0.3.0
-      - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${EDC_RECEIVER_HTTP_ENDPOINT:-http://api-wrapper:9192/callback/endpoint-data-reference}
+      - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${EDC_RECEIVER_HTTP_ENDPOINT:-http://receiver-service:8000/datareference}
 
   consumer-data-plane:
     extends:
@@ -50,10 +51,8 @@ services:
     volumes:
       - ${THIRD_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/third/control-plane.properties}:/app/configuration.properties
     environment:
-      # before 0.3.0
-      - EDC_RECEIVER_HTTP_ENDPOINT=${THIRD_EDC_RECEIVER_HTTP_ENDPOINT:-http://receiver-service-third:8000/datareference}
       # renamed in 0.3.0
-      - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${THIRD_EDC_RECEIVER_HTTP_ENDPOINT:-http://receiver-service-third:8000/datareference}
+      - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${THIRD_EDC_RECEIVER_HTTP_ENDPOINT:-http://third-receiver-service:8000/datareference}
   third-data-plane:
     extends:
       file: docker-compose-edc.yaml
