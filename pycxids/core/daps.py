@@ -29,7 +29,7 @@ class Daps(IdsBase):
         self.private_key = private_key
   
 
-    def get_daps_token(self, audience: str = ''):
+    def get_daps_token(self, audience: str = '', scope = "idsc:IDS_CONNECTOR_ATTRIBUTES_ALL"):
         now = int(datetime.now().timestamp())
         daps_claim_set = {
             "@context": "https://w3id.org/idsa/contexts/context.jsonld",
@@ -45,7 +45,7 @@ class Daps(IdsBase):
 
         params = {
             'grant_type' : 'client_credentials',
-            'scope' : "idsc:IDS_CONNECTOR_ATTRIBUTES_ALL",
+            'scope' : scope,
             'client_assertion_type' : "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
             'client_assertion' : client_assertion,
             'resource': audience,
