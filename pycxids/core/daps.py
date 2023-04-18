@@ -96,14 +96,6 @@ def get_daps_access_token(audience: str = ''):
     return daps['access_token']
 
 daps = Daps(daps_endpoint=DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=CLIENT_ID)
-def get_daps_token(audience: str = ''):
-    """
-    deprectated!
-    
-    audience:   Typically the endpoint for which we request the token.
-                If not given, we use the (old) env var
-    """
-    return daps.get_daps_token(audience=audience)
 
 
 if __name__ == '__main__':

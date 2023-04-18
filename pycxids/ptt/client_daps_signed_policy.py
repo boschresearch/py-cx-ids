@@ -8,7 +8,9 @@ import sys
 import hashlib
 from urllib.parse import urlparse
 import requests
-from pycxids.core.daps import get_daps_token
+from pycxids.core.daps import Daps
+from pycxids.core.settings import settings, CLIENT_ID, DAPS_ENDPOINT
+
 
 
 # first, try to get the content
@@ -34,7 +36,8 @@ if not policy:
 
 # now get the policy indirectly signed, by sending it to the DAPS
 # to make it part of the token
-daps_token = get_daps_token(audience=policy)
+daps = Daps(daps_endpoint=DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=CLIENT_ID)
+daps_token = daps.get_daps_token(audience=policy)
 
 
 access_token = daps_token['access_token']

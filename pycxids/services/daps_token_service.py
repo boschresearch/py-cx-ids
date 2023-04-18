@@ -10,7 +10,9 @@ from fastapi import FastAPI, Depends, status, Security, Request, HTTPException, 
 from fastapi.security import HTTPBasicCredentials, HTTPBasic
 from fastapi.middleware.cors import CORSMiddleware
 
-from pycxids.core.daps import get_daps_access_token, get_daps_token
+from pycxids.core.daps import Daps
+from pycxids.core.settings import settings, CLIENT_ID, DAPS_ENDPOINT
+
 from pycxids.core.jwt_decode import decode
 
 BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME', 'admin')
@@ -52,7 +54,8 @@ def get_token(audience: str = Query(default='')):
     to the bakckend.
     """
 
-    token = get_daps_token(audience=audience)
+    daps = Daps(daps_endpoint=DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=CLIENT_ID)
+    token = daps.get_daps_token(audience=audience)
     return token
 
 @app.get('/token-decoded', dependencies=[Security(check_access)])

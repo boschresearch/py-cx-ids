@@ -8,11 +8,13 @@ import sys
 import hashlib
 from urllib.parse import urlparse
 import requests
-from pycxids.core.daps import get_daps_token
+from pycxids.core.daps import Daps
+from pycxids.core.settings import settings, CLIENT_ID, DAPS_ENDPOINT
 
 POLICY_HEADER = "Policy"
 
-daps_token = get_daps_token(audience='')
+daps = Daps(daps_endpoint=DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=CLIENT_ID)
+daps_token = daps.get_daps_token(audience='')
 #print(daps_token)
 
 access_token = daps_token['access_token']
