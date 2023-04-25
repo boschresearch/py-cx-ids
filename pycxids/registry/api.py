@@ -4,14 +4,35 @@ from pycxids.utils.api import GeneralApi
 from pycxids.models.generated.registry import AssetAdministrationShellDescriptorCollection, AssetAdministrationShellDescriptor, SubmodelDescriptor, Endpoint, ProtocolInformation, GlobalReference
 from pycxids.models.cxregistry import CxSubmodelEndpoint, CxAas
 
+from oauthlib.oauth2 import BackendApplicationClient
+from requests_oauthlib import OAuth2Session
+
+
 class Registry(GeneralApi):
     """
     Everything being close to the AAS Registry API goes here
     """
-    def __init__(self, base_url: str, headers=None, username=None, password=None) -> None:
-        super().__init__(base_url, headers, username, password)
+    def __init__(self, base_url: str, headers = None, client_id: str = None, client_secret: str = None, token_url: str = None, scope:str = None) -> None:
+        """
+        If client_id is given, try to fetch a token with the required other fields.
+        If not, you can pass in 'headers' (with an Authorization) that will be used.
+        """
+        if client_id:
+            client = BackendApplicationClient(client_id=client_id)
+            oauth_session = OAuth2Session(client=client, scope=scope)
+            token = oauth_session.fetch_token(token_url=token_url, client_id=client_id, client_secret=client_secret)
+            access_token = token.get('access_token', None)
+            if not access_token:
+                print("Could not fetch access_token for the portal access.")
+            # TODO: This could be improved. e.g. check token has expired, or use the session to fetch data...
+            super().__init__(base_url=base_url, headers={'Authorization': f"Bearer {access_token}" })
+        else:
+            super().__init__(base_url=base_url, headers=headers)
     
     def get_shell_descriptors(self) -> AssetAdministrationShellDescriptorCollection:
+        """
+        Returns all AAS
+        """
         data = self.get(path="/registry/shell-descriptors")
         # dirty workaround for pagination vs non-pagination issue
         data_pages = None
@@ -44,9 +65,6 @@ class CxRegistry(Registry):
     """
     Every CX related simplification to use the AAS Registry goes here
     """
-    def __init__(self, base_url: str, headers=None, username=None, password=None) -> None:
-        super().__init__(base_url, headers, username, password)
-    
     def create(self, aas: CxAas ):
         """
         Basically 'translates' from our simplified data structure into an official AAAs (Descriptor)
