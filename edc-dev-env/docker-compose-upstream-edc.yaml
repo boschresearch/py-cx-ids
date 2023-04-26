@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  edc-upstream-provider:
+    build: ./edc-upstream/
+    environment:
+      - EDC_FS_CONFIG=/app/config.properties
+      - EDC_KEYSTORE_PASSWORD=dontuseinpublic
+      - EDC_VAULT=/app/config.properties
+      - EDC_KEYSTORE=/app/keystore.p12
+    volumes:
+      - ./edc-upstream/configs/provider.config.properties:/app/config.properties
+      #- ./edc-upstream/configs/provider.vault.properties:/app/vault.properties
+      - ./edc-upstream/configs/provider.p12:/app/keystore.p12
+
+  edc-upstream-consumer:
+    build: ./edc-upstream/
+    environment:
+      - EDC_FS_CONFIG=/app/config.properties
+      - EDC_KEYSTORE_PASSWORD=dontuseinpublic
+      - EDC_VAULT=/app/config.properties
+      - EDC_KEYSTORE=/app/keystore.p12
+    volumes:
+      - ./edc-upstream/configs/consumer.config.properties:/app/config.properties
+      #- ./edc-upstream/configs/consumer.vault.properties:/app/vault.properties
+      - ./edc-upstream/configs/consumer.p12:/app/keystore.p12
