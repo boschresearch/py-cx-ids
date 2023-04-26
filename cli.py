@@ -258,7 +258,8 @@ def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_
 
     if not agreement_id:
         # if not given, next lookup in cache
-        agreement_id = cache.get(key=asset_id, default=None)
+        # disable cache for now - until we know when to clean it up
+        # agreement_id = cache.get(key=asset_id, default=None)
         if not agreement_id:
             # find offers from the catalog
             offers = consumer.get_offers(asset_id=asset_id)
