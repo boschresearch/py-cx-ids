@@ -1,0 +1,2 @@
+# we don't want to store the openapi yamls from this directory
+*.yaml
