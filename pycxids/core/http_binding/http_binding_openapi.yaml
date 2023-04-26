@@ -1,0 +1,184 @@
+openapi: "3.0.0"
+info:
+  description: "IDS spec"
+  version: "0.8"
+  title: "IDS http binding"
+  
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+
+
+tags:
+- name: "Catalog"
+  description: "Catalog endpoints"
+
+- name: "Negotiation"
+  description: "Negotiation Process"
+
+- name: "Transfer"
+  description: "Transfer Process"
+
+paths:
+  /catalog/request:
+    post:
+      tags:
+      - "Catalog"
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatalogRequestMessage"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DcatCatalog"
+          description: "Result"
+  /catalog/datasets{id}:
+    get:
+      tags:
+        - "Catalog"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Result"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DcatDataset"
+        
+
+components:
+  schemas:
+    DspaceFilter:
+      type: object
+    CatalogRequestMessage:
+      type: object
+      properties:
+        "@context":
+          type: string
+        "@type":
+          type: string
+        filter:
+          $ref: "#/components/schemas/DspaceFilter"
+
+
+    DcatDataset:
+      type: object
+      properties:
+        "@id":
+          type: string
+        "@type":
+          type: string
+        dct:title:
+          type: string
+        dct:description:
+          type: string
+        dct:keyword:
+          type: array
+          items:
+            type: string
+        odrl:hasPolicy:
+          type: array
+          items:
+            $ref: "#/components/schemas/OdrlPolicy"
+        dcat:distribution:
+          $ref: "#/components/schemas/DcatDistribution"
+    DcatCatalog:
+      type: object
+      properties:
+        "@context":
+          type: string
+        "@id":
+          type: string
+        "@type":
+          type: string
+        "dct:title":
+          type: string
+        "dct:publisher":
+          type: string
+        "dcat:keyword":
+          type: array
+          items:
+            type: string
+        dcat:service:
+          $ref: "#/components/schemas/DcatService"
+        dcat:dataset:
+          type: array
+          items:
+            $ref: "#/components/schemas/DcatDataset"
+    DcatDistribution:
+      type: object
+      properties:
+        "@type":
+          type: string
+        dct:format:
+          type: string
+        dcat:accessService:
+          type: string
+    DcatService:
+      type: object
+      properties:
+        "@id":
+          type: string
+        "@type":
+          type: string
+        dct:terms:
+          type: string
+        dct:endpointUrl:
+          type: string
+
+
+    OdrlOperand:
+      type: object
+      properties:
+        value:
+          type: string
+    OdrlConstraint:
+      type: object
+      properties:
+        leftOperand:
+          $ref: "#/components/schemas/OdrlOperand"
+        rightOperand:
+          $ref: "#/components/schemas/OdrlOperand"
+        operator:
+          type: string
+        
+    OdrlRule:
+      type: object
+      properties:
+        action:
+          type: string
+        constraint:
+          $ref: "#/components/schemas/OdrlConstraint"
+        duty:
+          type: array
+          items:
+            type: string # TODO: what is this exactly?
+    OdrlPolicy:
+      type: object
+      properties:
+        "@id":
+          type: string
+        permission:
+          type: array
+          items:
+            $ref: "#/components/schemas/OdrlRule"
+        prohibition:
+          type: array
+          items:
+            $ref: "#/components/schemas/OdrlRule"
+        obligation:
+          type: array
+          items:
+            $ref: "#/components/schemas/OdrlRule"
+
+      
