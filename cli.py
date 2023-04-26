@@ -119,7 +119,9 @@ def cli_config_add(config_name: str):
 @click.option('--provider-ids-endpoint', default='')
 def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
     if not provider_ids_endpoint:
-        provider_ids_endpoint = config.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
+        use_config = config_storage.get('use')
+        myconfig = config_storage.get('configs', {}).get(use_config)
+        provider_ids_endpoint = myconfig.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
         print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
             file=sys.stderr) # stderr to prevent | pipe content issues
     catalog = fetch_catalog(ids_endpoint=provider_ids_endpoint, out_fn=out_fn)
