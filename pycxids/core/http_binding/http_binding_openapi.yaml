@@ -16,6 +16,9 @@ tags:
 - name: "Negotiation"
   description: "Negotiation Process"
 
+- name: "Negotiation Callbacks"
+  description: "Negotiation Process Callbacks"
+
 - name: "Transfer"
   description: "Transfer Process"
 
@@ -37,7 +40,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DcatCatalog"
           description: "Result"
-  /catalog/datasets{id}:
+  /catalog/datasets/{id}:
     get:
       tags:
         - "Catalog"
@@ -54,7 +57,123 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DcatDataset"
-        
+
+  /negotiations/{id}:
+    get:
+      tags:
+        - "Negotiation"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Result"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractNegotiation"
+  
+  /negotiations/request:
+    post:
+      tags:
+        - "Negotiation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractRequestMessage"
+      responses:
+        "201":
+          description: "The provider connector must return an HTTP 201 (Created) response with the location header set to the location of the contract negotiation and a body containing the ContractNegotiation message"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractNegotiation"
+  /negotiations/{id}/request:
+    post:
+      tags:
+        - "Negotiation"
+      description: "The consumer must include the processId. The consumer must include either the offer or offerId property."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractRequestMessage"
+      responses:
+        "200":
+          description: "If the message is successfully processed, the provider connector must return and HTTP 200 (OK) response. The response body is not specified and clients are not required to process it."
+  /negotiations/{id}/events:
+    post:
+      tags:
+        - "Negotiation"
+      description: "The consumer must include the processId. The consumer must include either the offer or offerId property."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContracNegotiationEventMessage"
+      responses:
+        "200":
+          description: "Result"
+  /negotiations/{id}/agreement/verification:
+    post:
+      tags:
+        - "Negotiation"
+      description: "TODO"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContracAgreementVerificationMessage"
+      responses:
+        "200":
+          description: "Result"
+  /negotiations/{id}/termination:
+    post:
+      tags:
+        - "Negotiation"
+      description: "TODO"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractNegotiationTerminationMessage"
+      responses:
+        "200":
+          description: "Result"
+
 
 components:
   schemas:
@@ -65,11 +184,122 @@ components:
       properties:
         "@context":
           type: string
+          default: "https://w3id.org/dspace/v0.8/context.json"
         "@type":
           type: string
+          default: "dspace:CatalogRequestMessage"
         filter:
           $ref: "#/components/schemas/DspaceFilter"
 
+    ContractRequestMessage:
+      type: object
+      properties:
+        "@context":
+          type: string
+          default: "https://w3id.org/dspace/v0.8/context.json"
+        "@id":
+          type: string
+        dspace:dataset:
+          type: string
+          description: "@id of the dataset"
+        dspace:processId:
+          type: string
+          description: "TODO: Deprecated? To be removed?"
+        dspace:offer:
+          $ref: "#/components/schemas/OdrlOffer"
+        dscpace:callbackAddress:
+          type: string
+    
+    ContracNegotiationEventMessage:
+      type: object
+      properties:
+        "@context":
+          type: string
+          default: "https://w3id.org/dspace/v0.8/context.json"
+        "@type":
+          type: string
+          default: "dspace:ContractNegotiationEventMessage"
+        "dspace:processId":
+          type: string
+        "dspace:eventType":
+          type: string
+          enum:
+            - FINALIZED
+            - ACCEPTED
+            - TERMINATED
+        "dspace:checksum":
+          type: string
+
+    ContracAgreementVerificationMessage:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "TODO: not finished yet"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:ContractAgreementVerificationMessage"
+            "dspace:processId":
+              type: string
+    ContractNegotiationTerminationMessage:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "TODO: not finished yet"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:ContractNegotiationTerminationMessage"
+            "dspace:processId":
+              type: string
+            "dspace:code":
+              type: string
+              description: "TODO: not documented?"
+            "dspace:reason":
+              description: "TODO: can be a link / @id too"
+              type: array
+              items:
+                $ref: "#/components/schemas/LanguageValue"
+            
+    ContractNegotiation:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          properties:
+            "@type":
+              type: string
+            "dscpace:processId":
+              type: string
+            "dspace:state":
+              type: string
+              enum:
+                - REQUESTED
+                - OFFERED
+                - ACCEPTED
+                - AGREED
+                - VERIFIED
+                - FINALIZED
+                - TERMINATED
+            "dspace:checksum":
+              description: "TODO: not explained anywhere"
+              type: string
+
+    LanguageValue:
+      type: object
+      properties:
+        "@value":
+          type: string
+        "@language":
+          type: string
+    JsonLd:
+      type: object
+      properties:
+        "@context":
+          type: string
+          default: "https://w3id.org/dspace/v0.8/context.json"
+        "@id":
+          type: string
+      
 
     DcatDataset:
       type: object
@@ -164,6 +394,7 @@ components:
           items:
             type: string # TODO: what is this exactly?
     OdrlPolicy:
+      description: "In IDS http binding explicitly does NOT have a target, because this is derived from the enclosing context!"
       type: object
       properties:
         "@id":
@@ -180,5 +411,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OdrlRule"
-
+    OdrlOffer:
+      description: "Only addition compared to the Policy: the target field"
+      allOf:
+        - $ref: "#/components/schemas/OdrlPolicy"
+        - type: object
+          properties:
+            target:
+              type: string
       
