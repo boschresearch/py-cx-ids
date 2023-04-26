@@ -14,8 +14,8 @@ from requests.auth import HTTPBasicAuth
 import pytest
 from uuid import uuid4
 
-from pycxids.edc.api import EdcProvider
-from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD
+from pycxids.edc.api import EdcConsumer, EdcProvider
+from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD, PROVIDER_IDS_ENDPOINT
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
 
 # actual test case
@@ -43,20 +43,21 @@ def test_create_and_delete():
     assert nr_of_assets_after == nr_of_assets + 1, "Not exactly 1 more asset after creating 1"
 
     sleep(1)
-    
-    auth = HTTPBasicAuth(username=API_WRAPPER_USER, password=API_WRAPPER_PASSWORD)
-    params = {
-        "provider-connector-url": PROVIDER_IDS_BASE_URL,
-    }
-    url = f"{API_WRAPPER_BASE_URL}/{asset_id}/xxx"
 
-    r = requests.get(url, auth=auth, params=params)
+    consumer = EdcConsumer(
+        edc_data_managment_base_url=CONSUMER_EDC_BASE_URL,
+        auth_key=CONSUMER_EDC_API_KEY,
+        token_receiver_service_base_url='http://receiver-service:8000/transfer'
+        )
+    agreement_id, transfer_id = consumer.negotiate_and_transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=asset_id)
+    provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
 
+    provider_data_plane_endpoint = provider_edr.get('baseUrl')
+
+    r = requests.get(provider_data_plane_endpoint, headers={provider_edr['authKey']: provider_edr['authCode']})
     if not r.ok:
-        print(f"{r.reason} {r.content}")
-        assert False, "Could not fetch data"
-    
-    print(r.content)
+        print(f"{r.status_code} {r.reason} {r.content}")
+        assert False, "Could not fetch data via PROVIDER data plane"
 
     j = r.json()
     assert 'keys' in j
