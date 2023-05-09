@@ -15,3 +15,5 @@ tmpvenv/
 *.log
 certificates/
 agreementcache/
+out_file.jpg
+out_file_origin.jpg
