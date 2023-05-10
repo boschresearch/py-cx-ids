@@ -1,0 +1,60 @@
+digraph { 
+ node [ fontname="DejaVu Sans" ] ; 
+	node0 -> node1 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:severity</font> > ] ;
+	node0 -> node3 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:class</font> > ] ;
+	node5 -> node6 [ color=BLACK, label=< <font point-size='10' color='#336633'>rdfs:subClassOf</font> > ] ;
+	node2 -> node7 [ color=BLACK, label=< <font point-size='10' color='#336633'>rdf:type</font> > ] ;
+	node0 -> node8 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:path</font> > ] ;
+	node9 -> node10 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:declare</font> > ] ;
+	node5 -> node11 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:targetClass</font> > ] ;
+	node5 -> node12 [ color=BLACK, label=< <font point-size='10' color='#336633'>rdf:type</font> > ] ;
+	node2 -> node13 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:path</font> > ] ;
+	node9 -> node14 [ color=BLACK, label=< <font point-size='10' color='#336633'>rdf:type</font> > ] ;
+	node4 -> node7 [ color=BLACK, label=< <font point-size='10' color='#336633'>rdf:type</font> > ] ;
+	node2 -> node1 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:severity</font> > ] ;
+	node4 -> node16 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:path</font> > ] ;
+	node0 -> node7 [ color=BLACK, label=< <font point-size='10' color='#336633'>rdf:type</font> > ] ;
+	node2 -> node17 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:datatype</font> > ] ;
+	node5 -> node4 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:property</font> > ] ;
+	node5 -> node0 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:property</font> > ] ;
+	node9 -> node15 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:declare</font> > ] ;
+	node5 -> node2 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:property</font> > ] ;
+	node4 -> node1 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:severity</font> > ] ;
+	node4 -> node17 [ color=BLACK, label=< <font point-size='10' color='#336633'>sh:datatype</font> > ] ;
+# nbbc1ea9ece0247e19edba4dd58d37c88b3 node0
+node0 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>nbbc1ea9ece0247e19edba4dd58d37c88b3</B></td></tr><tr><td href='nbbc1ea9ece0247e19edba4dd58d37c88b3' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>nbbc1ea9ece0247e19edba4dd58d37c88b3</font></td></tr><tr><td align='left'>sh:maxCount</td><td align='left'>&quot;1&quot;^^xsd:integer</td></tr><tr><td align='left'>sh:message</td><td align='left'>&quot;&lt;https://raw.githubusercontent.com/International-Data-Spaces-Association/ids-specification/master/schemas/contract-offer-message-shape.ttl&gt; (ContractOfferMessageShape): A dspace:offer property must point to exactly one odrl:Offer class.&quot;@en</td></tr><tr><td align='left'>sh:minCount</td><td align='left'>&quot;1&quot;^^xsd:integer</td></tr></table> > ] 
+# http://www.w3.org/ns/shacl#Violation node1
+node1 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>Violation</B></td></tr><tr><td href='http://www.w3.org/ns/shacl#Violation' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/ns/shacl#Violation</font></td></tr></table> > ] 
+# nbbc1ea9ece0247e19edba4dd58d37c88b4 node2
+node2 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>nbbc1ea9ece0247e19edba4dd58d37c88b4</B></td></tr><tr><td href='nbbc1ea9ece0247e19edba4dd58d37c88b4' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>nbbc1ea9ece0247e19edba4dd58d37c88b4</font></td></tr><tr><td align='left'>sh:maxCount</td><td align='left'>&quot;1&quot;^^xsd:integer</td></tr><tr><td align='left'>sh:message</td><td align='left'>&quot;&lt;https://raw.githubusercontent.com/International-Data-Spaces-Association/ids-specification/master/schemas/contract-offer-message-shape.ttl&gt; (ContractOfferMessageShape): A dspace:callbackAddress property must point to exactly one xsd:string value.&quot;@en</td></tr><tr><td align='left'>sh:minCount</td><td align='left'>&quot;1&quot;^^xsd:integer</td></tr></table> > ] 
+# http://www.w3.org/ns/odrl/2/Offer node3
+node3 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>Offer</B></td></tr><tr><td href='http://www.w3.org/ns/odrl/2/Offer' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/ns/odrl/2/Offer</font></td></tr></table> > ] 
+# nbbc1ea9ece0247e19edba4dd58d37c88b5 node4
+node4 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>nbbc1ea9ece0247e19edba4dd58d37c88b5</B></td></tr><tr><td href='nbbc1ea9ece0247e19edba4dd58d37c88b5' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>nbbc1ea9ece0247e19edba4dd58d37c88b5</font></td></tr><tr><td align='left'>sh:maxCount</td><td align='left'>&quot;1&quot;^^xsd:integer</td></tr><tr><td align='left'>sh:message</td><td align='left'>&quot;&lt;https://raw.githubusercontent.com/International-Data-Spaces-Association/ids-specification/master/schemas/contract-offer-message-shape.ttl&gt; (ContractOfferMessageShape): A dspace:checksum property must point to exactly one xsd:string value.&quot;@en</td></tr><tr><td align='left'>sh:minCount</td><td align='left'>&quot;1&quot;^^xsd:integer</td></tr></table> > ] 
+# http://www.w3.org/ns/shapes#ContractOfferMessageShape node5
+node5 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>ContractOfferMessageShape</B></td></tr><tr><td href='http://www.w3.org/ns/shapes#ContractOfferMessageShape' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/ns/shapes#ContractOfferMessageShape</font></td></tr></table> > ] 
+# https://w3id.org/dspace/v0.8/ContractNegotiationMessageShape node6
+node6 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>ContractNegotiationMessageShape</B></td></tr><tr><td href='https://w3id.org/dspace/v0.8/ContractNegotiationMessageShape' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>https://w3id.org/dspace/v0.8/ContractNegotiationMessageShape</font></td></tr></table> > ] 
+# http://www.w3.org/ns/shacl#PropertyShape node7
+node7 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>PropertyShape</B></td></tr><tr><td href='http://www.w3.org/ns/shacl#PropertyShape' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/ns/shacl#PropertyShape</font></td></tr></table> > ] 
+# https://w3id.org/dspace/v0.8/offer node8
+node8 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>offer</B></td></tr><tr><td href='https://w3id.org/dspace/v0.8/offer' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>https://w3id.org/dspace/v0.8/offer</font></td></tr></table> > ] 
+# http://www.w3.org/ns/shapes# node9
+node9 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B></B></td></tr><tr><td href='http://www.w3.org/ns/shapes#' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/ns/shapes#</font></td></tr></table> > ] 
+# nbbc1ea9ece0247e19edba4dd58d37c88b1 node10
+node10 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>nbbc1ea9ece0247e19edba4dd58d37c88b1</B></td></tr><tr><td href='nbbc1ea9ece0247e19edba4dd58d37c88b1' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>nbbc1ea9ece0247e19edba4dd58d37c88b1</font></td></tr><tr><td align='left'>sh:namespace</td><td align='left'>&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot;^^xsd:anyURI</td></tr><tr><td align='left'>sh:prefix</td><td align='left'>&quot;rdf&quot;</td></tr></table> > ] 
+# https://w3id.org/dspace/v0.8/ContractOfferMessage node11
+node11 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>ContractOfferMessage</B></td></tr><tr><td href='https://w3id.org/dspace/v0.8/ContractOfferMessage' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>https://w3id.org/dspace/v0.8/ContractOfferMessage</font></td></tr></table> > ] 
+# http://www.w3.org/ns/shacl#NodeShape node12
+node12 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>NodeShape</B></td></tr><tr><td href='http://www.w3.org/ns/shacl#NodeShape' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/ns/shacl#NodeShape</font></td></tr></table> > ] 
+# https://w3id.org/dspace/v0.8/callbackAddress node13
+node13 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>callbackAddress</B></td></tr><tr><td href='https://w3id.org/dspace/v0.8/callbackAddress' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>https://w3id.org/dspace/v0.8/callbackAddress</font></td></tr></table> > ] 
+# http://www.w3.org/2002/07/owl#Ontology node14
+node14 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>Ontology</B></td></tr><tr><td href='http://www.w3.org/2002/07/owl#Ontology' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/2002/07/owl#Ontology</font></td></tr></table> > ] 
+# nbbc1ea9ece0247e19edba4dd58d37c88b2 node15
+node15 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>nbbc1ea9ece0247e19edba4dd58d37c88b2</B></td></tr><tr><td href='nbbc1ea9ece0247e19edba4dd58d37c88b2' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>nbbc1ea9ece0247e19edba4dd58d37c88b2</font></td></tr><tr><td align='left'>sh:namespace</td><td align='left'>&quot;https://w3id.org/dspace/v0.8/&quot;^^xsd:anyURI</td></tr><tr><td align='left'>sh:prefix</td><td align='left'>&quot;dspace&quot;</td></tr></table> > ] 
+# https://w3id.org/dspace/v0.8/checksum node16
+node16 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>checksum</B></td></tr><tr><td href='https://w3id.org/dspace/v0.8/checksum' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>https://w3id.org/dspace/v0.8/checksum</font></td></tr></table> > ] 
+# http://www.w3.org/2001/XMLSchema#string node17
+node17 [ shape=none, color=black label=< <table color='#666666' cellborder='0' cellspacing='0' border='1'><tr><td colspan='2' bgcolor='grey'><B>string</B></td></tr><tr><td href='http://www.w3.org/2001/XMLSchema#string' bgcolor='#eeeeee' colspan='2'><font point-size='10' color='#6666ff'>http://www.w3.org/2001/XMLSchema#string</font></td></tr></table> > ] 
+}

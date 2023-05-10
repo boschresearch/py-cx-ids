@@ -7,6 +7,7 @@
 import sys
 import os
 import time
+from datetime import datetime
 import json
 import uuid
 import base64
@@ -16,10 +17,11 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
-PRIVATE_KEY_FN = os.getenv('PRIVATE_KEY_FN', './pycxids/ptt/demokeys/client_1.key')
-CERTIFICATE_FN = os.getenv('CERTIFICATE_FN', './pycxids/ptt/demokeys/client_1.crt')
+PRIVATE_KEY_FN = os.getenv('PRIVATE_KEY_FN', './.secrets/i40/client_1.key')
+CERTIFICATE_FN = os.getenv('CERTIFICATE_FN', './.secrets/i40/client_1.crt')
 
-TOKEN_ENDPOINT = os.getenv('TOKEN_ENDPOINT', 'https://admin-shell-io.com/50001/connect/token')
+#TOKEN_ENDPOINT = os.getenv('TOKEN_ENDPOINT', 'https://admin-shell-io.com/50001/connect/token')
+TOKEN_ENDPOINT = os.getenv('TOKEN_ENDPOINT', 'http://idp:80/connect/token')
 
 certificate_data = ''
 with open(CERTIFICATE_FN, 'rb') as f:
@@ -69,14 +71,13 @@ params = {
     'scope' : 'resource1.scope1',
     'client_assertion_type' : "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     'client_assertion' : client_assertion,
-    #'client_id': 'client1',
 }
 headers = {
     'Accept': 'application/json',
     'Content-type': 'application/x-www-form-urlencoded',
 }
 
-r = requests.post(TOKEN_ENDPOINT, params=params, headers=headers)
+r = requests.post(TOKEN_ENDPOINT, data=params, headers=headers)
 
 if not r.ok:
     print(f"reason: {r.reason} content: {r.content}")
@@ -85,4 +86,16 @@ if not r.ok:
 j = r.json()
 print(json.dumps(j, indent=4))
 
-assert j['access_token']
+token = j.get('access_token')
+
+assert token, "No access_token received."
+
+decoded = jwt.decode(jwt=token, algorithms=['RS256'], options={'verify_signature': False})
+print(json.dumps(decoded, indent=4))
+
+exp = decoded.get('exp')
+exp_str = datetime.utcfromtimestamp(int(exp)).isoformat()
+print(f"exp: {exp_str}")
+
+now_str = datetime.utcfromtimestamp(now).isoformat()
+print(f"now: {now_str}")
