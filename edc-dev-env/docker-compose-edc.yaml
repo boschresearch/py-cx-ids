@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   control-plane:
-    image: ${CONTROL_PLANE_IMAGE:-ghcr.io/catenax-ng/product-edc/edc-controlplane-postgresql-hashicorp-vault}:${EDC_VERSION:-0.3.0}
+    image: tractusx/edc-controlplane-postgresql-hashicorp-vault:${EDC_VERSION:-0.3.3}
+    # until 0.3.0
+    #image: ${CONTROL_PLANE_IMAGE:-ghcr.io/catenax-ng/product-edc/edc-controlplane-postgresql-hashicorp-vault}:${EDC_VERSION:-0.3.0}
     # alternative image:
     # ghcr.io/catenax-ng/tx-tractusx-edc/edc-controlplane-postgresql-hashicorp-vault
     #ports:
@@ -17,7 +19,9 @@ services:
       - ${LOGGING_CONFIGURATION_FILE:-./configs/default/logging.properties}:/app/logging.properties
 
   data-plane:
-    image: ${DATA_PLANE_IMAGE:-ghcr.io/catenax-ng/product-edc/edc-dataplane-hashicorp-vault}:${EDC_VERSION:-0.3.0}
+    image: tractusx/edc-dataplane-hashicorp-vault:${EDC_VERSION:-0.3.3}
+    # until 0.3.0
+    #image: ${DATA_PLANE_IMAGE:-ghcr.io/catenax-ng/product-edc/edc-dataplane-hashicorp-vault}:${EDC_VERSION:-0.3.3}
     # alternative image:
     # ghcr.io/catenax-ng/tx-tractusx-edc/edc-dataplane-hashicorp-vault
     #ports:
