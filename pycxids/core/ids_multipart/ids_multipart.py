@@ -68,19 +68,20 @@ class IdsMultipartConsumer(IdsMultipartBase):
         daps = Daps(daps_endpoint=self.daps_endpoint, private_key_fn=self.private_key_fn, client_id=self.client_id)
         return daps.get_daps_token(audience=self.connector_ids_endpoint)
 
-    def get_catalog(self, paging_from: int = 0, paging_to: int = 0):
+    def get_catalog(self, offset: int = 0, limit: int = 1000000):
         """
         Return the entire catalog or given pages of it
-
-        # this is the EDC implementation to do paging - not standardized!
-        if paging_from != 0 and paging_to != 0:
-            header = json.loads(header_msg)
-            header['from'] = paging_from
-            header['to'] = paging_to
-            header_msg = json.dumps(header)
         """
+
         daps_token = self._get_daps_token()
         header_msg = self.prepare_default_header(msg_type='ids:DescriptionRequestMessage', daps_access_token=daps_token['access_token'], provider_connector_ids_endpoint=self.connector_ids_endpoint)
+
+        # TODO: this is the EDC implementation to do paging - not standardized!
+        header = json.loads(header_msg)
+        header['querySpec'] = {}
+        header['querySpec']['offset'] = offset
+        header['querySpec']['limit'] = limit
+        header_msg = json.dumps(header)
 
 
         if self.debug_messages:
