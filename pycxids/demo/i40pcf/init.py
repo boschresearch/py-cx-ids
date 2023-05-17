@@ -95,21 +95,35 @@ def create_edc_assets_from_list(endpoints:list, edc_data_managment_base_url: str
     because those might already exist.
     """
 
+    # make sure the list only contains unique items that we don't try to create an asset again
+    # that already exists
+    endpoints = list(set(endpoints))
+
     edc = EdcProvider(edc_data_managment_base_url=edc_data_managment_base_url, auth_key=edc_auth_key)
 
     counter = 0
+    counter_errors = 0
+    error_endpoints = []
     asset_ids = []
     for endpoint in endpoints:
         edc_asset_id = hashed_asset_id(value=endpoint)
         # we add all, not only newly created to the list
         asset_ids.append(edc_asset_id)
         edc_asset_id_created = edc.create_asset_and_friends(base_url=endpoint, asset_id=edc_asset_id, proxyQueryParams=True, proxyPath=proxyPath)[0]
-        if edc_asset_id != edc_asset_id_created:
-            print(f"Error: Something went wrong. Seems we could not create the asset. Continue with next submodel...")
+        if not edc_asset_id_created:
+            print(f"Error: Something went wrong. Seems we could not create the asset for endpoint: {endpoint}")
+            counter_errors = counter_errors + 1
+            error_endpoints.append(endpoint)
             continue
-        print(f"Created EDC asset for: {endpoint} asset_id: {edc_asset_id}")
+        #print(f"Created EDC asset for: {endpoint} asset_id: {edc_asset_id}")
         counter = counter + 1
-    print(f"Created: {counter}")
+    if counter_errors > 0:
+        print(f"Could not create for endpoints:")
+        for ep in error_endpoints:
+            print(ep)
+    print(f"Created EDC assets: {counter}")
+    print(f"NOT created EDC assets: {counter_errors}")
+
     return asset_ids
 
 
@@ -121,6 +135,7 @@ if __name__ == '__main__':
         edc_auth_key=PROVIDER_EDC_API_KEY
     )
 
+    print("Creating assets per server:")
     server_name_asset_ids = create_edc_assets_for_server_names(
         registry_base_url=REGISTRY_ENDPOINT,
         edc_data_managment_base_url=PROVIDER_EDC_BASE_URL,

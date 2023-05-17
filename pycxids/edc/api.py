@@ -45,7 +45,7 @@ class EdcProvider(EdcDataManagement):
             asset_additional_props:dict={},
             data_address_additional_props:dict={},
         ):
-        asset_id = self.create_asset(
+        asset_id_created = self.create_asset(
             base_url=base_url,
             asset_id=asset_id,
             proxyPath=proxyPath,
@@ -55,6 +55,9 @@ class EdcProvider(EdcDataManagement):
             asset_additional_props=asset_additional_props,
             data_address_additional_props=data_address_additional_props,
         )
+        if not asset_id_created:
+            # TODO: better error handling
+            return (None, None, None)
         policy_id = self.create_policy(asset_id=asset_id)
         contract_id = self.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
         return(asset_id, policy_id, contract_id)
