@@ -53,10 +53,9 @@ def get_endpoints(registry_base_url: str):
     aases:AssetAdministrationShellDescriptorCollection = registry.get_shell_descriptors()
     for aas in aases.items:
         for sm in aas.submodel_descriptors:
-            if sm.semantic_id and sm.semantic_id.value and len(sm.semantic_id.value) > 0 and 'https://zvei.org/demo/ProductCarbonFootprint/1/0' in sm.semantic_id.value:
-                for ep in sm.endpoints:
-                    ep_address = ep.protocol_information.endpoint_address
-                    endpoints.append(ep_address)
+            for ep in sm.endpoints:
+                ep_address = ep.protocol_information.endpoint_address
+                endpoints.append(ep_address)
     return endpoints
 
 def get_endpoint_hashes(registry_base_url: str):
