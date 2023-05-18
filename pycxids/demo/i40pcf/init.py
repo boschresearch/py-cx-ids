@@ -115,7 +115,7 @@ def create_edc_assets_from_list(endpoints:list, edc_data_managment_base_url: str
             counter_errors = counter_errors + 1
             error_endpoints.append(endpoint)
             continue
-        #print(f"Created EDC asset for: {endpoint} asset_id: {edc_asset_id}")
+        print(f"Created EDC asset for: {endpoint} asset_id: {edc_asset_id}")
         counter = counter + 1
     if counter_errors > 0:
         print(f"Could not create for endpoints:")
