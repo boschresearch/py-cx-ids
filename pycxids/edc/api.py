@@ -58,9 +58,9 @@ class EdcProvider(EdcDataManagement):
         if not asset_id_created:
             # TODO: better error handling
             return (None, None, None)
-        policy_id = self.create_policy(asset_id=asset_id)
-        contract_id = self.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
-        return(asset_id, policy_id, contract_id)
+        policy_id = self.create_policy(asset_id=asset_id_created)
+        contract_id = self.create_contract_definition(policy_id=policy_id, asset_id=asset_id_created)
+        return(asset_id_created, policy_id, contract_id)
 
     def create_asset(self,
             base_url: str,
