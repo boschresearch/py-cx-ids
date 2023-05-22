@@ -14,9 +14,10 @@ from requests.auth import HTTPBasicAuth
 import pytest
 from uuid import uuid4
 
-from pycxids.edc.api import EdcProvider
+from pycxids.edc.api import EdcProvider, EdcConsumer
 from pycxids.edc.settings import PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD
-from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
+from pycxids.edc.settings import PROVIDER_IDS_BASE_URL, PROVIDER_IDS_ENDPOINT
+from pycxids.edc.settings import CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY
 
 # actual test case
 def test():
@@ -33,22 +34,23 @@ def test():
 
     sleep(1)
     
-    auth = HTTPBasicAuth(username=API_WRAPPER_USER, password=API_WRAPPER_PASSWORD)
-    params = {
-        "provider-connector-url": PROVIDER_IDS_BASE_URL,
-    }
-    url = f"{API_WRAPPER_BASE_URL}/{asset_id}/xxx"
+    consumer = EdcConsumer(
+        edc_data_managment_base_url=CONSUMER_EDC_BASE_URL,
+        auth_key=CONSUMER_EDC_API_KEY,
+        token_receiver_service_base_url='http://receiver-service:8000/transfer'
+        )
+    agreement_id, transfer_id = consumer.negotiate_and_transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=asset_id)
+    provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
 
-    r = requests.get(url, auth=auth, params=params)
+    provider_data_plane_endpoint = provider_edr.get('baseUrl')
 
+    r = requests.get(provider_data_plane_endpoint, headers={provider_edr['authKey']: provider_edr['authCode']})
     if not r.ok:
-        print(f"{r.reason} {r.content}")
-        assert False, "Could not fetch data"
-    
-    print(r.content)
+        print(f"{r.status_code} {r.reason} {r.content}")
+        assert False, "Could not fetch data via PROVIDER data plane"
 
     j = r.json()
-    assert 'keys' in j
+    assert 'edc-contract-agreement-id' in j['headers']
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
