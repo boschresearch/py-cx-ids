@@ -19,6 +19,8 @@ assert PROVIDER_EDC_API_KEY
 PROVIDER_EDC_VALIDATION_ENDPOINT = os.getenv('PROVIDER_EDC_VALIDATION_ENDPOINT', 'http://provider-control-plane:9192/validation/token')
 
 IDS_PATH = os.getenv('IDS_PATH', '/api/v1/dsp')
+if USE_V1_DATA_MANAGEMENT_API:
+    IDS_PATH = os.getenv('IDS_PATH', '/api/v1/data')
 PROVIDER_IDS_BASE_URL = os.getenv('PROVIDER_IDS_BASE_URL', 'http://provider-control-plane:8282')
 PROVIDER_IDS_ENDPOINT = f"{PROVIDER_IDS_BASE_URL}{IDS_PATH}"
 
@@ -32,6 +34,9 @@ CONSUMER_EDC_API_KEY = os.getenv('CONSUMER_EDC_API_KEY', 'dontuseinpublic')
 assert CONSUMER_EDC_API_KEY
 
 CONSUMER_EDC_VALIDATION_ENDPOINT = os.getenv('CONSUMER_EDC_VALIDATION_ENDPOINT', 'http://consumer-control-plane:9192/validation/token')
+
+CONSUMER_IDS_BASE_URL = os.getenv('CONSUMEr_IDS_BASE_URL', 'http://consumer-control-plane:8282')
+CONSUMER_IDS_ENDPOINT = f"{CONSUMER_IDS_BASE_URL}{IDS_PATH}"
 
 API_WRAPPER_BASE_URL = os.getenv('API_WRAPPER_BASE_URL', 'http://api-wrapper:9191/api/service')
 assert API_WRAPPER_BASE_URL
