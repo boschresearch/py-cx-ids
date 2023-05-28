@@ -14,10 +14,10 @@ tags:
   description: "Catalog endpoints"
 
 - name: "Negotiation"
-  description: "Negotiation Process"
+  description: "Negotiation Process - Provider side"
 
 - name: "Negotiation Callbacks"
-  description: "Negotiation Process Callbacks"
+  description: "Negotiation Process Callbacks - Consumer side"
 
 - name: "Transfer"
   description: "Transfer Process"
@@ -174,6 +174,26 @@ paths:
         "200":
           description: "Result"
 
+  /negotiations/{id}/offer:
+    post:
+      tags:
+        - "Negotiation Callbacks"
+      description: "Callback on the Consumer side"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractOfferMessage"
+      responses:
+        "200":
+          description: "Result"
 
 components:
   schemas:
@@ -227,8 +247,6 @@ components:
             - FINALIZED
             - ACCEPTED
             - TERMINATED
-        "dspace:checksum":
-          type: string
 
     ContracAgreementVerificationMessage:
       allOf:
@@ -260,7 +278,24 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/LanguageValue"
-            
+
+    ContractOfferMessage:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "Used for Tranistion Requested -> Offered from Provider -> Consumer Callback endpoint"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:ContractOfferMessage"
+            dspace:processId:
+              type: string
+            dspace:offer:
+              $ref: "#/components/schemas/OdrlOffer"
+            dscpace:callbackAddress:
+              type: string
+
+    
     ContractNegotiation:
       allOf:
         - $ref: "#/components/schemas/JsonLd"
@@ -268,6 +303,7 @@ components:
           properties:
             "@type":
               type: string
+              default: "dspace:ContractNegotiation"
             "dscpace:processId":
               type: string
             "dspace:state":
@@ -280,9 +316,6 @@ components:
                 - VERIFIED
                 - FINALIZED
                 - TERMINATED
-            "dspace:checksum":
-              description: "TODO: not explained anywhere"
-              type: string
 
     LanguageValue:
       type: object
