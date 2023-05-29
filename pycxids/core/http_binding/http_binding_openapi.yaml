@@ -194,6 +194,27 @@ paths:
       responses:
         "200":
           description: "Result"
+  /negotiations/{id}/agreement:
+    post:
+      tags:
+        - "Negotiation Callbacks"
+      description: "Callback on the Consumer side"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractAgreementMessage"
+      responses:
+        "200":
+          description: "Result"
+
 
 components:
   schemas:
@@ -292,6 +313,22 @@ components:
               type: string
             dspace:offer:
               $ref: "#/components/schemas/OdrlOffer"
+            dscpace:callbackAddress:
+              type: string
+
+    ContractAgreementMessage:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "Used for Tranistion Requested -> Agreed from Provider -> Consumer Callback endpoint"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:ContractAgreementMessage"
+            dspace:processId:
+              type: string
+            dspace:agreement:
+              $ref: "#/components/schemas/OdrlAgreement"
             dscpace:callbackAddress:
               type: string
 
@@ -450,6 +487,18 @@ components:
         - $ref: "#/components/schemas/OdrlPolicy"
         - type: object
           properties:
-            target:
+            odrl:target:
               type: string
-      
+    OdrlAgreement:
+      description: "Agreement"
+      allOf:
+        - $ref: "#/components/schemas/OdrlPolicy"
+        - type: object
+          properties:
+            odrl:target:
+              type: string
+            dspace:consumerId:
+              type: string
+            dspace:provierId:
+              type: string
+
