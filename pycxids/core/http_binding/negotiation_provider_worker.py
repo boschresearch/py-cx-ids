@@ -6,10 +6,11 @@
 
 from time import sleep
 from datetime import datetime
+from uuid import uuid4
 import requests
 from fastapi import status
 
-from pycxids.core.http_binding.settings import KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID
+from pycxids.core.http_binding.settings import KEY_AGREEMENT_ID, KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID
 from pycxids.core.http_binding.policies import default_policy
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.negotiation_states import Agreed, Requested, Offered
@@ -86,7 +87,7 @@ def requested_agreed(item):
     agreement.dspace_timestamp = DspaceTimestamp(field_value=now.isoformat())
     agreement.dspace_provider_id = 'TODO'
     agreement.dspace_consumer_id = 'TODO'
-    id = item.get(KEY_ID)
+    id = str(uuid4()) # the agreement id must be newly created, don't reuse an existing id to avoid id mis-use
     agreement_message = ContractAgreementMessage(
         field_id = id,
         dspace_process_id = request_id,
@@ -101,6 +102,7 @@ def requested_agreed(item):
     if r.status_code == status.HTTP_200_OK:
         # TODO: check read / write changes or lock
         item[KEY_STATE] = Agreed.NAME
+        item[KEY_AGREEMENT_ID] = id
         storage.put(id, item)
 
 

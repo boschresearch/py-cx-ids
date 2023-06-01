@@ -215,6 +215,24 @@ paths:
         "200":
           description: "Result"
 
+  /transfers/request:
+    post:
+      tags:
+        - "Transfer"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequestMessage"
+      responses:
+        "201":
+          description: "The provider connector must return an HTTP 201 (Created) response with the location header set to the location of the transfer process and a body containing the TransferProcess message"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferProcess"
+
 
 components:
   schemas:
@@ -353,6 +371,56 @@ components:
                 - VERIFIED
                 - FINALIZED
                 - TERMINATED
+
+    TransferRequestMessage:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "Used for Transfer Tranistion Start -> Requested from Consumer -> Provider"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:TransferRequestMessage"
+            dct:format:
+              type: string
+              description: "The dct:format property is a format specified by a Distribution for the Asset associated with the agreement. This is generally obtained from the provider Catalog."
+            dspace:dataAddress:
+              type: string
+              description: "The dataAddress property must only be provided if the dct:format requires a push transfer."
+            dscpace:callbackAddress:
+              type: string
+
+    TransferStartMessage:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "Used for Transfer Tranistion Requested -> Started from Provider -> Consumer"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:TransferStartMessage"
+            dspace:processId:
+              type: string
+            dspace:dataAddress:
+              type: string
+    TransferProcess:
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          properties:
+            "@type":
+              type: string
+              default: "dspace:TransferProcess"
+            dscpace:processId:
+              type: string
+            dspace:state:
+              type: string
+              enum:
+                - REQUESTED
+                - STARTED
+                - TERMINATED
+                - COMPLETED
+                - SUSPENDED
 
     LanguageValue:
       type: object
