@@ -149,7 +149,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContracAgreementVerificationMessage"
+              $ref: "#/components/schemas/ContractAgreementVerificationMessage"
       responses:
         "200":
           description: "Result"
@@ -269,7 +269,7 @@ components:
             - ACCEPTED
             - TERMINATED
 
-    ContracAgreementVerificationMessage:
+    ContractAgreementVerificationMessage:
       allOf:
         - $ref: "#/components/schemas/JsonLd"
         - type: object
@@ -469,6 +469,9 @@ components:
       properties:
         "@id":
           type: string
+        "@type":
+          type: string
+          default: "odrl:Policy"
         permission:
           type: array
           items:
@@ -487,6 +490,9 @@ components:
         - $ref: "#/components/schemas/OdrlPolicy"
         - type: object
           properties:
+            "@type":
+              type: string
+              default: "odrl:Offer"
             odrl:target:
               type: string
     OdrlAgreement:
@@ -495,10 +501,24 @@ components:
         - $ref: "#/components/schemas/OdrlPolicy"
         - type: object
           properties:
+            "@type":
+              type: string
+              default: "odrl:Agreement"
             odrl:target:
               type: string
+            dspace:timestamp:
+              $ref: "#/components/schemas/DspaceTimestamp"
             dspace:consumerId:
               type: string
-            dspace:provierId:
+            dspace:providerId:
               type: string
+    DspaceTimestamp:
+      description: "xsd:dateTime"
+      properties:
+        "@type":
+          type: string
+          default: "xsd:dateTime"
+        "@value":
+          type: string
+
 

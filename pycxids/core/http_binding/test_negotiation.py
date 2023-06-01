@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from provider import app as provider_app
 from consumer import app as consumer_app
 
-from pycxids.core.http_binding.models import CatalogRequestMessage, ContractRequestMessage, OdrlOffer, ContractNegotiation
+from pycxids.core.http_binding.models import CatalogRequestMessage, ContractAgreementMessage, ContractRequestMessage, OdrlOffer, ContractNegotiation, ContractAgreementVerificationMessage
 
 PROVIDER_CALLBACK_BASE_URL = 'http://provider'
 CONSUMER_CALLBACK_BASE_URL = 'http://consumer'
@@ -78,6 +78,10 @@ def test_negotiation():
     # requested -> agreed
     r = consumer.get(f'/negotiations/{contract_request_id}/agreement') # TODO: location header?
     assert r.status_code == 200
+    contract_agreement_message_received = ContractAgreementMessage.parse_obj(r.json())
+
+    # agreed -> verified
+
 
 
 if __name__ == '__main__':

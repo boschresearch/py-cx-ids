@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from time import sleep
-
+from datetime import datetime
 import requests
 from fastapi import status
 
@@ -13,7 +13,7 @@ from pycxids.core.http_binding.settings import KEY_DATASET, KEY_STATE, PROVIDER_
 from pycxids.core.http_binding.policies import default_policy
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.negotiation_states import Agreed, Requested, Offered
-from pycxids.core.http_binding.models import ContractAgreementMessage, ContractRequestMessage, ContractOfferMessage, OdrlAgreement, OdrlOffer
+from pycxids.core.http_binding.models import ContractAgreementMessage, ContractRequestMessage, ContractOfferMessage, DspaceTimestamp, OdrlAgreement, OdrlOffer
 
 storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN)
 storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN)
@@ -82,6 +82,10 @@ def requested_agreed(item):
 
     agreement = OdrlAgreement.parse_obj(default_policy)
     agreement.odrl_target = item.get(KEY_DATASET)
+    now = datetime.now()
+    agreement.dspace_timestamp = DspaceTimestamp(field_value=now.isoformat())
+    agreement.dspace_provider_id = 'TODO'
+    agreement.dspace_consumer_id = 'TODO'
     id = item.get(KEY_ID)
     agreement_message = ContractAgreementMessage(
         field_id = id,
