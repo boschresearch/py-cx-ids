@@ -9,8 +9,9 @@ from fastapi import APIRouter, Body, Request, HTTPException, status
 
 from pycxids.core.http_binding.models import ContractRequestMessage, ContractNegotiation
 from pycxids.core.http_binding.negotiation_states import Requested
-from pycxids.core.http_binding.settings import KEY_DATASET, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
+from pycxids.core.http_binding.settings import KEY_DATASET, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
 from pycxids.utils.storage import FileStorageEngine
+from pycxids.core.http_binding.negotiation_provider_worker import requested_agreed
 
 storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN)
 storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN)
@@ -28,19 +29,23 @@ def negotiation_request(contract_request: ContractRequestMessage = Body(...)):
     # don't use the consumers' id, but generate a new one under which we process the request
     id = str(uuid4())
     # store for further processing
-    storage.put(id, {
+    custom_storage_item = {
         KEY_ID: id,
         KEY_STATE: Requested.NAME,
         KEY_NEGOTIATION_REQUEST_ID: contract_request.field_id,
         KEY_DATASET: contract_request.dspace_dataset,
-    })
+    }
+    storage.put(id, custom_storage_item)
+    if not PROVIDER_DISABLE_IN_CONTEXT_WORKER:
+        # sends and immediate agreed response to the consumer
+        requested_agreed(item=custom_storage_item)
     # prepare response
     contract_negotiation = ContractNegotiation(
         field_id = id,
         dscpace_process_id=id, # is the correlcation to the incoming request
         dspace_state=Requested.NAME,
     )
-    # TODO: fix type with default, remove checksum, 
+    # TODO: fix type with default
     # TODO: set location header
     return contract_negotiation
 

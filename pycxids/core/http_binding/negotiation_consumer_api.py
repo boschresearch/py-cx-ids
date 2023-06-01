@@ -26,9 +26,10 @@ def negotiation_agreement(id: str, contract_agreement: ContractAgreementMessage 
     We just confirm every agreement we received. No matter we know it or not.
     We store it and send a 200 OK, which means state is transitioned to 'AGREED'
     """
+    process_id = contract_agreement.dspace_process_id
     data = contract_agreement.dict()
     storage_agreements_received.put(
-        id,
+        process_id, #id, as a consumer we might not know the id, but the process id
         data,
     )
     return {}

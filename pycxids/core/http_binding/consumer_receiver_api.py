@@ -14,7 +14,7 @@ from pycxids.utils.storage import FileStorageEngine
 
 storage_agreements_received = FileStorageEngine(storage_fn=CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN)
 
-app = APIRouter(tags=['Negotiaion Consumer - Receiver API'])
+app = APIRouter(tags=['Negotiaion Consumer - customized, non-dsp / private receiver API'])
 
 @app.get('/negotiations/{id}/agreement')
 def get_negotiation_agreement(id: str, timeout: int = Query(default=30, description='Timeout to wait for a message before returning with an error')):

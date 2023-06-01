@@ -8,6 +8,8 @@ PROVIDER_STORAGE_REQUESTS_FN = os.getenv('PROVIDER_STORAGE_REQUESTS_FN', 'provid
 
 PROVIDER_CALLBACK_BASE_URL = os.getenv('PROVIDER_CALLBACK_BASE_URL', 'http://localhost:8080')
 
+PROVIDER_DISABLE_IN_CONTEXT_WORKER = os.getenv('PROVIDER_DISABLE_IN_CONTEXT_WORKER', 'False').lower() in ['true']
+
 # main storage
 CONSUMER_STORAGE_FN = os.getenv('CONSUMER_STORAGE_FN', 'consumer_storage.json')
 # used mainly for backup and as a reference - not the main storage
@@ -17,6 +19,7 @@ CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN = os.getenv('CONSUMER_STORAGE_AGREEMENTS
 CONSUMER_CALLBACK_BASE_URL = os.getenv('CONSUMER_CALLBACK_BASE_URL', 'http://localhost:6060')
 
 CONSUMER_DISABLE_RECEIVER_API = os.getenv('CONSUMER_DISABLE_RECEIVER_API', 'False').lower() in ['true']
+
 
 KEY_NEGOTIATION_REQUEST_ID = 'negotiation_request_id'
 KEY_ID = 'id'

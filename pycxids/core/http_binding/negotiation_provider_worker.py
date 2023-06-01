@@ -65,6 +65,11 @@ def requested_offered(item):
         storage.put(id, item)
 
 def requested_agreed(item):
+    """
+    Requested -> Agreeed
+
+    item: custom storage item
+    """
     request_id = item.get(KEY_NEGOTIATION_REQUEST_ID)
     if not request_id:
         return
@@ -85,8 +90,8 @@ def requested_agreed(item):
         dspace_callback_address = PROVIDER_CALLBACK_BASE_URL,
     )
 
-    r = requests.post(url=f"{callback}/negotiations/{request_id}/agreement", data=agreement_message)
-    if not r.ok:
+    r = requests.post(url=f"{callback}/negotiations/{request_id}/agreement", json=agreement_message.dict())
+    if not r.status_code == status.HTTP_200_OK:
         print(f"{r.status_code} - {r.reason} - {r.content}")
         return
     if r.status_code == status.HTTP_200_OK:
