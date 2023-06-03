@@ -7,8 +7,7 @@
 from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status
 
-from pycxids.core.http_binding.models import ContractRequestMessage, ContractNegotiation
-from pycxids.core.http_binding.negotiation_states import Requested
+from pycxids.core.http_binding.models import ContractRequestMessage, ContractNegotiation, NegotiationState
 from pycxids.core.http_binding.settings import KEY_DATASET, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.negotiation_provider_worker import requested_agreed
@@ -31,7 +30,7 @@ def negotiation_request(contract_request: ContractRequestMessage = Body(...)):
     # store for further processing
     custom_storage_item = {
         KEY_ID: id,
-        KEY_STATE: Requested.NAME,
+        KEY_STATE: NegotiationState.requested,
         KEY_NEGOTIATION_REQUEST_ID: contract_request.field_id,
         KEY_DATASET: contract_request.dspace_dataset,
     }
@@ -43,7 +42,7 @@ def negotiation_request(contract_request: ContractRequestMessage = Body(...)):
     contract_negotiation = ContractNegotiation(
         field_id = id,
         dscpace_process_id=id, # is the correlcation to the incoming request
-        dspace_state=Requested.NAME,
+        dspace_state=NegotiationState.requested,
     )
     # TODO: fix type with default
     # TODO: set location header

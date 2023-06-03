@@ -12,9 +12,12 @@ echo "Generating model from input file: $input_file"
 echo "................into output file: $output_file"
 echo ""
 
+# --use-subclass-enum: better enum support https://github.com/koxudaxi/datamodel-code-generator/issues/697#issuecomment-1366782351
+
 datamodel-codegen \
     --base-class=pycxids.models.base_model.MyBaseModel \
     --collapse-root-models --snake-case-field \
+    --use-subclass-enum \
     --input $input_file \
     --output $output_file
 

@@ -7,8 +7,6 @@
 from time import sleep
 from fastapi import APIRouter, Body, Request, HTTPException, status, Query
 
-from pycxids.core.http_binding.models import ContractOfferMessage, ContractAgreementMessage
-from pycxids.core.http_binding.negotiation_states import Requested
 from pycxids.core.http_binding.settings import CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN
 from pycxids.utils.storage import FileStorageEngine
 

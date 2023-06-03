@@ -8,7 +8,6 @@ from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status
 
 from pycxids.core.http_binding.models import ContractRequestMessage, ContractNegotiation, TransferProcess, TransferRequestMessage
-from pycxids.core.http_binding.negotiation_states import Requested
 from pycxids.core.http_binding.settings import KEY_DATASET, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
 from pycxids.utils.storage import FileStorageEngine
 

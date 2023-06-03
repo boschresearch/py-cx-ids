@@ -13,8 +13,7 @@ from fastapi import status
 from pycxids.core.http_binding.settings import KEY_AGREEMENT_ID, KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID
 from pycxids.core.http_binding.policies import default_policy
 from pycxids.utils.storage import FileStorageEngine
-from pycxids.core.http_binding.negotiation_states import Agreed, Requested, Offered
-from pycxids.core.http_binding.models import ContractAgreementMessage, ContractRequestMessage, ContractOfferMessage, DspaceTimestamp, OdrlAgreement, OdrlOffer
+from pycxids.core.http_binding.models import ContractAgreementMessage, ContractRequestMessage, ContractOfferMessage, DspaceTimestamp, OdrlAgreement, OdrlOffer, NegotiationState
 
 storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN)
 storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN)
@@ -23,7 +22,7 @@ def worker_loop():
     while True:
         all = storage.get_all()
         for item in all:
-            if item.get('state') == Requested.NAME:
+            if item.get('state') == NegotiationState.requested:
                 # Transition: Requested -> Offered
                 #requested_offered(item=item)
 
@@ -62,7 +61,7 @@ def requested_offered(item):
         return
     if r.status_code == status.HTTP_200_OK:
         # TODO: check read / write changes or lock
-        item[KEY_STATE] = Offered.NAME
+        item[KEY_STATE] = NegotiationState.offered
         storage.put(id, item)
 
 def requested_agreed(item):
@@ -101,7 +100,7 @@ def requested_agreed(item):
         return
     if r.status_code == status.HTTP_200_OK:
         # TODO: check read / write changes or lock
-        item[KEY_STATE] = Agreed.NAME
+        item[KEY_STATE] = NegotiationState.agreed
         item[KEY_AGREEMENT_ID] = id
         storage.put(id, item)
 

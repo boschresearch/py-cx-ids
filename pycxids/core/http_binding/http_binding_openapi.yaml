@@ -362,15 +362,7 @@ components:
             "dscpace:processId":
               type: string
             "dspace:state":
-              type: string
-              enum:
-                - REQUESTED
-                - OFFERED
-                - ACCEPTED
-                - AGREED
-                - VERIFIED
-                - FINALIZED
-                - TERMINATED
+              $ref: "#/components/schemas/TransferState"
 
     TransferRequestMessage:
       allOf:
@@ -414,13 +406,28 @@ components:
             dscpace:processId:
               type: string
             dspace:state:
-              type: string
-              enum:
-                - REQUESTED
-                - STARTED
-                - TERMINATED
-                - COMPLETED
-                - SUSPENDED
+              $ref: "#/components/schemas/TransferState"
+
+    NegotiationState:
+      type: string
+      enum:
+        - REQUESTED
+        - OFFERED
+        - ACCEPTED
+        - AGREED
+        - VERIFIED
+        - FINALIZED
+        - TERMINATED
+
+    TransferState:
+      type: string
+      enum:
+        - REQUESTED
+        - STARTED
+        - TERMINATED
+        - COMPLETED
+        - SUSPENDED
+      
 
     LanguageValue:
       type: object
