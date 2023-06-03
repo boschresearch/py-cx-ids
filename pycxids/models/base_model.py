@@ -14,7 +14,10 @@ class MyBaseModel(BaseModel):
         return json_result
 
     def dict(self, exclude_none=True, by_alias = True, exclude_unset = True, **kwargs):
-        exclude_unset = True
+        """
+        Beware: exclude_unset=True also removes default values!
+        """
+        #exclude_unset = True
         return super().dict(exclude_none=exclude_none, by_alias=by_alias, exclude_unset=exclude_unset, **kwargs)
 
     class Config:
