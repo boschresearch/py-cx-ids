@@ -7,10 +7,10 @@
 from time import sleep
 from fastapi import APIRouter, Body, Request, HTTPException, status, Query
 
-from pycxids.core.http_binding.settings import CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN
+from pycxids.core.http_binding.settings import CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN, KEY_MODIFIED
 from pycxids.utils.storage import FileStorageEngine
 
-storage_agreements_received = FileStorageEngine(storage_fn=CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN)
+storage_agreements_received = FileStorageEngine(storage_fn=CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
 
 app = APIRouter(tags=['Negotiaion Consumer - customized, non-dsp / private receiver API'])
 

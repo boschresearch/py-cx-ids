@@ -5,6 +5,8 @@ from pycxids.core.http_binding.models import OdrlOffer, OdrlPolicy, OdrlRule
 PROVIDER_STORAGE_FN = os.getenv('PROVIDER_STORAGE_FN', 'provider_storage.json')
 # used mainly for backup and as a reference - not the main storage
 PROVIDER_STORAGE_REQUESTS_FN = os.getenv('PROVIDER_STORAGE_REQUESTS_FN', 'provider_negotiation_requests.json')
+# separate transfer storage
+PROVIDER_TRANSFER_STORAGE_FN = os.getenv('PROVIDER_TRANSFER_STORAGE_FN', 'provider_transfer_storage.json')
 
 PROVIDER_CALLBACK_BASE_URL = os.getenv('PROVIDER_CALLBACK_BASE_URL', 'http://localhost:8080')
 
@@ -26,3 +28,4 @@ KEY_ID = 'id'
 KEY_STATE = 'state'
 KEY_DATASET = 'dataset'
 KEY_AGREEMENT_ID  = 'agreement_id'
+KEY_MODIFIED = 'modified'

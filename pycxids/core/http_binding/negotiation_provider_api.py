@@ -8,12 +8,12 @@ from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status
 
 from pycxids.core.http_binding.models import ContractRequestMessage, ContractNegotiation, NegotiationState
-from pycxids.core.http_binding.settings import KEY_DATASET, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
+from pycxids.core.http_binding.settings import KEY_DATASET, KEY_MODIFIED, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.negotiation_provider_worker import requested_agreed
 
 storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN)
-storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN)
+storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
 
 app = APIRouter(tags=['Negotiaion'])
 

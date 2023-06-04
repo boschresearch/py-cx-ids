@@ -10,13 +10,13 @@ from uuid import uuid4
 import requests
 from fastapi import status
 
-from pycxids.core.http_binding.settings import KEY_AGREEMENT_ID, KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID
+from pycxids.core.http_binding.settings import KEY_AGREEMENT_ID, KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_MODIFIED
 from pycxids.core.http_binding.policies import default_policy
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.models import ContractAgreementMessage, ContractRequestMessage, ContractOfferMessage, DspaceTimestamp, OdrlAgreement, OdrlOffer, NegotiationState
 
-storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN)
-storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN)
+storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
+storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
 
 def worker_loop():
     while True:
@@ -71,6 +71,7 @@ def requested_agreed(item):
     item: custom storage item
     """
     request_id = item.get(KEY_NEGOTIATION_REQUEST_ID)
+    item_id = item.get(KEY_ID)
     if not request_id:
         return
     data = storage_negotiation_requests.get(request_id)
@@ -102,7 +103,7 @@ def requested_agreed(item):
         # TODO: check read / write changes or lock
         item[KEY_STATE] = NegotiationState.agreed
         item[KEY_AGREEMENT_ID] = id
-        storage.put(id, item)
+        storage.put(item_id, item)
 
 
 if __name__ == '__main__':
