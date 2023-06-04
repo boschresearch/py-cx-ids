@@ -5,10 +5,13 @@ from pycxids.core.http_binding.models import OdrlOffer, OdrlPolicy, OdrlRule
 PROVIDER_STORAGE_FN = os.getenv('PROVIDER_STORAGE_FN', 'provider_storage.json')
 # used mainly for backup and as a reference - not the main storage
 PROVIDER_STORAGE_REQUESTS_FN = os.getenv('PROVIDER_STORAGE_REQUESTS_FN', 'provider_negotiation_requests.json')
+# agreement storage
+PROVIDER_STORAGE_AGREEMENTS_FN = os.getenv('PROVIDER_STORAGE_AGREEMENTS_FN', 'provider_agreements.json')
 # separate transfer storage
 PROVIDER_TRANSFER_STORAGE_FN = os.getenv('PROVIDER_TRANSFER_STORAGE_FN', 'provider_transfer_storage.json')
 
 PROVIDER_CALLBACK_BASE_URL = os.getenv('PROVIDER_CALLBACK_BASE_URL', 'http://localhost:8080')
+PROVIDER_DATA_DEFAULT_BASE_URL = os.getenv('PROVIDER_DATA_DEFAULT_BASE_URL', 'http://localhost:8080/data')
 
 PROVIDER_DISABLE_IN_CONTEXT_WORKER = os.getenv('PROVIDER_DISABLE_IN_CONTEXT_WORKER', 'False').lower() in ['true']
 
@@ -22,10 +25,19 @@ CONSUMER_CALLBACK_BASE_URL = os.getenv('CONSUMER_CALLBACK_BASE_URL', 'http://loc
 
 CONSUMER_DISABLE_RECEIVER_API = os.getenv('CONSUMER_DISABLE_RECEIVER_API', 'False').lower() in ['true']
 
+DATASPACE_PROTOCOL_HTTP = 'dataspace-protocol-http'
 
+# http header fields
+HTTP_HEADER_LOCATION = 'Location'
+
+# storage keys
 KEY_NEGOTIATION_REQUEST_ID = 'negotiation_request_id'
 KEY_ID = 'id'
 KEY_STATE = 'state'
 KEY_DATASET = 'dataset'
 KEY_AGREEMENT_ID  = 'agreement_id'
 KEY_MODIFIED = 'modified'
+
+KEY_TRANSFER_REQUEST_ID = 'transfer_request_id'
+KEY_TRANSFER_ID = 'transfer_id'
+KEY_TRANSFER_TOKEN = 'transfer_token'
