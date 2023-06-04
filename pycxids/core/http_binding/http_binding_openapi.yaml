@@ -373,6 +373,9 @@ components:
             "@type":
               type: string
               default: "dspace:TransferRequestMessage"
+            dspace:agreementId:
+              type: string
+              description: "The agreementId property refers to an existing contract agreement between the consumer and provider."
             dct:format:
               type: string
               description: "The dct:format property is a format specified by a Distribution for the Asset associated with the agreement. This is generally obtained from the provider Catalog."
