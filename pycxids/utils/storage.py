@@ -1,14 +1,16 @@
 
 import os
 import json
+from datetime import datetime
 
 class FileStorageEngine():
     """
     Simple JSON key/value file storage
     TODO: multi thread/process
     """
-    def __init__(self, storage_fn) -> None:
+    def __init__(self, storage_fn, last_modified_field_name_isoformat = None) -> None:
         self.storage_fn = storage_fn
+        self.last_modified_field_name_isoformat = last_modified_field_name_isoformat
 
     def put(self, key, value):
         storage = {}
@@ -20,6 +22,9 @@ class FileStorageEngine():
                     storage = json.loads(content)
                 except Exception as ex:
                     print(ex)
+        if self.last_modified_field_name_isoformat:
+            now = datetime.now().isoformat()
+            value[self.last_modified_field_name_isoformat] = now
         storage[key] = value
         with open(self.storage_fn, 'w') as f:
             f.write(json.dumps(storage, indent=4))
