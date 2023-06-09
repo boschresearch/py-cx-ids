@@ -17,7 +17,8 @@ from pycxids.core.http_binding.models import ContractAgreementMessage, ContractR
 
 storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
 storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
-storage_agreements = FileStorageEngine(storage_fn=PROVIDER_STORAGE_AGREEMENTS_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
+# references storage doesn't make sense to have modified, because the value is no object!
+storage_agreements = FileStorageEngine(storage_fn=PROVIDER_STORAGE_AGREEMENTS_FN)
 
 def worker_loop():
     while True:
