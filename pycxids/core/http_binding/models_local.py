@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from typing import Optional
+from pycxids.core.http_binding.settings import HTTP_HEADER_DEFAULT_AUTH_KEY
 from pycxids.models.base_model import MyBaseModel
 from pycxids.core.http_binding.models import NegotiationState, TransferState
 
@@ -23,15 +24,15 @@ class DataAddress(MyBaseModel):
     """
     TODO: This is only temporary. We need to find out what EDC uses here exactly
     """
-    auth_key: Optional[str] = Field('Authorization', alias='authKey')
+    auth_key: Optional[str] = Field(HTTP_HEADER_DEFAULT_AUTH_KEY, alias='authKey')
     auth_code: Optional[str] = Field(None, alias='authCode')
     base_url: Optional[str] = Field(None, alias='baseUrl')
 
 class TransferStateStore(MyBaseModel):
     id: str
-    process_id: str # @id from the request
-    state: TransferState
-    agreement_id: str
-    callback_address_request: str
-    data_address: DataAddress
+    process_id: Optional[str] # @id from the request
+    state: Optional[TransferState]
+    agreement_id: Optional[str]
+    callback_address_request: Optional[str]
+    data_address: Optional[DataAddress]
 

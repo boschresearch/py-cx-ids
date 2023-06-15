@@ -20,15 +20,21 @@ CONSUMER_STORAGE_FN = os.getenv('CONSUMER_STORAGE_FN', 'consumer_storage.json')
 # used mainly for backup and as a reference - not the main storage
 #CONSUMER_STORAGE_REQUESTS_FN = os.getenv('CONSUMER_STORAGE_REQUESTS_FN', 'consumer_negotiation_requests.json')
 CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN = os.getenv('CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN', 'consumer_agreements_received.json')
+CONSUMER_TRANSFER_STORAGE_FN = os.getenv('CONSUMER_TRANSFER_STORAGE_FN', 'consumer_transfer_storage.json')
 
 CONSUMER_CALLBACK_BASE_URL = os.getenv('CONSUMER_CALLBACK_BASE_URL', 'http://localhost:6060')
 
 CONSUMER_DISABLE_RECEIVER_API = os.getenv('CONSUMER_DISABLE_RECEIVER_API', 'False').lower() in ['true']
 
 DATASPACE_PROTOCOL_HTTP = 'dataspace-protocol-http'
+DCT_FORMAT_HTTP = 'dspace:HttpProxy' # TODO: what does EDC use here?
+
+AUTH_CODE_REFERENCES_FN = os.getenv('AUTH_CODE_REFERENCES_FN', 'auth_code_references.json')
+
 
 # http header fields
 HTTP_HEADER_LOCATION = 'Location'
+HTTP_HEADER_DEFAULT_AUTH_KEY = os.getenv('HTTP_HEADER_DEFAULT_AUTH_KEY', 'Authorization')
 
 # storage keys
 KEY_NEGOTIATION_REQUEST_ID = 'negotiation_request_id'

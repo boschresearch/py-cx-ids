@@ -43,7 +43,7 @@ def requested_offered(item):
         return
     data = storage_negotiation_requests.get(request_id)
     negotation_request_message = ContractRequestMessage.parse_obj(data)
-    callback = negotation_request_message.dscpace_callback_address
+    callback = negotation_request_message.dspace_callback_address
 
     # send an offer
     # TODO: of course in reality, we would need to check some details
@@ -66,7 +66,7 @@ def requested_offered(item):
         item[KEY_STATE] = NegotiationState.offered
         storage.put(id, item)
 
-def requested_agreed(item):
+async def requested_agreed(item):
     """
     Requested -> Agreeed
 
@@ -78,7 +78,7 @@ def requested_agreed(item):
         return
     data = storage_negotiation_requests.get(request_id)
     negotation_request_message = ContractRequestMessage.parse_obj(data)
-    callback = negotation_request_message.dscpace_callback_address
+    callback = negotation_request_message.dspace_callback_address
 
     # send an agreement
     # TODO: of course in reality, we would need to check some details

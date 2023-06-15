@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import asyncio
 from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status
 
@@ -11,6 +12,7 @@ from pycxids.core.http_binding.models import ContractRequestMessage, ContractNeg
 from pycxids.core.http_binding.settings import KEY_DATASET, KEY_MODIFIED, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.negotiation_provider_worker import requested_agreed
+from pycxids.utils.tasks import fire_and_forget
 
 storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN)
 storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQUESTS_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
@@ -18,7 +20,7 @@ storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQ
 app = APIRouter(tags=['Negotiaion'])
 
 @app.post('/negotiations/request', response_model=ContractNegotiation)
-def negotiation_request(contract_request: ContractRequestMessage = Body(...)):
+async def negotiation_request(contract_request: ContractRequestMessage = Body(...)):
     if not contract_request.field_id:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='no @id field given.')
     if storage_negotiation_requests.get(contract_request.field_id):
@@ -37,11 +39,12 @@ def negotiation_request(contract_request: ContractRequestMessage = Body(...)):
     storage.put(id, custom_storage_item)
     if not PROVIDER_DISABLE_IN_CONTEXT_WORKER:
         # sends and immediate agreed response to the consumer
-        requested_agreed(item=custom_storage_item)
+        task = asyncio.create_task(requested_agreed(item=custom_storage_item))
+        fire_and_forget(task=task)
     # prepare response
     contract_negotiation = ContractNegotiation(
         field_id = id,
-        dscpace_process_id=id, # is the correlcation to the incoming request
+        dspace_process_id=id, # is the correlcation to the incoming request
         dspace_state=NegotiationState.requested,
     )
     # TODO: fix type with default

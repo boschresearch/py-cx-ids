@@ -266,7 +266,7 @@ components:
           description: "TODO: Deprecated? To be removed?"
         dspace:offer:
           $ref: "#/components/schemas/OdrlOffer"
-        dscpace:callbackAddress:
+        dspace:callbackAddress:
           type: string
     
     ContracNegotiationEventMessage:
@@ -331,7 +331,7 @@ components:
               type: string
             dspace:offer:
               $ref: "#/components/schemas/OdrlOffer"
-            dscpace:callbackAddress:
+            dspace:callbackAddress:
               type: string
 
     ContractAgreementMessage:
@@ -347,7 +347,7 @@ components:
               type: string
             dspace:agreement:
               $ref: "#/components/schemas/OdrlAgreement"
-            dscpace:callbackAddress:
+            dspace:callbackAddress:
               type: string
 
     
@@ -359,7 +359,7 @@ components:
             "@type":
               type: string
               default: "dspace:ContractNegotiation"
-            "dscpace:processId":
+            "dspace:processId":
               type: string
             "dspace:state":
               $ref: "#/components/schemas/TransferState"
@@ -382,7 +382,7 @@ components:
             dspace:dataAddress:
               type: string
               description: "The dataAddress property must only be provided if the dct:format requires a push transfer."
-            dscpace:callbackAddress:
+            dspace:callbackAddress:
               type: string
 
     TransferStartMessage:
@@ -406,7 +406,7 @@ components:
             "@type":
               type: string
               default: "dspace:TransferProcess"
-            dscpace:processId:
+            dspace:processId:
               type: string
             dspace:state:
               $ref: "#/components/schemas/TransferState"

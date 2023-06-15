@@ -129,8 +129,8 @@ class ContractRequestMessage(MyBaseModel):
         None, alias='dspace:processId', description='TODO: Deprecated? To be removed?'
     )
     dspace_offer: Optional[OdrlOffer] = Field(None, alias='dspace:offer')
-    dscpace_callback_address: Optional[str] = Field(
-        None, alias='dscpace:callbackAddress'
+    dspace_callback_address: Optional[str] = Field(
+        None, alias='dspace:callbackAddress'
     )
 
 
@@ -158,14 +158,14 @@ class ContractOfferMessage(JsonLd):
     field_type: Optional[str] = Field('dspace:ContractOfferMessage', alias='@type')
     dspace_process_id: Optional[str] = Field(None, alias='dspace:processId')
     dspace_offer: Optional[OdrlOffer] = Field(None, alias='dspace:offer')
-    dscpace_callback_address: Optional[str] = Field(
-        None, alias='dscpace:callbackAddress'
+    dspace_callback_address: Optional[str] = Field(
+        None, alias='dspace:callbackAddress'
     )
 
 
 class ContractNegotiation(JsonLd):
     field_type: Optional[str] = Field('dspace:ContractNegotiation', alias='@type')
-    dscpace_process_id: Optional[str] = Field(None, alias='dscpace:processId')
+    dspace_process_id: Optional[str] = Field(None, alias='dspace:processId')
     dspace_state: Optional[TransferState] = Field(None, alias='dspace:state')
 
 
@@ -186,8 +186,8 @@ class TransferRequestMessage(JsonLd):
         alias='dspace:dataAddress',
         description='The dataAddress property must only be provided if the dct:format requires a push transfer.',
     )
-    dscpace_callback_address: Optional[str] = Field(
-        None, alias='dscpace:callbackAddress'
+    dspace_callback_address: Optional[str] = Field(
+        None, alias='dspace:callbackAddress'
     )
 
 
@@ -199,7 +199,7 @@ class TransferStartMessage(JsonLd):
 
 class TransferProcess(JsonLd):
     field_type: Optional[str] = Field('dspace:TransferProcess', alias='@type')
-    dscpace_process_id: Optional[str] = Field(None, alias='dscpace:processId')
+    dspace_process_id: Optional[str] = Field(None, alias='dspace:processId')
     dspace_state: Optional[TransferState] = Field(None, alias='dspace:state')
 
 
@@ -238,6 +238,6 @@ class ContractAgreementMessage(JsonLd):
     field_type: Optional[str] = Field('dspace:ContractAgreementMessage', alias='@type')
     dspace_process_id: Optional[str] = Field(None, alias='dspace:processId')
     dspace_agreement: Optional[OdrlAgreement] = Field(None, alias='dspace:agreement')
-    dscpace_callback_address: Optional[str] = Field(
-        None, alias='dscpace:callbackAddress'
+    dspace_callback_address: Optional[str] = Field(
+        None, alias='dspace:callbackAddress'
     )

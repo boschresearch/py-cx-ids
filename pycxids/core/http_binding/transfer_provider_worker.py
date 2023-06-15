@@ -12,14 +12,14 @@ import requests
 from fastapi import status
 from pycxids.core.http_binding.models_local import DataAddress, TransferStateStore
 
-from pycxids.core.http_binding.settings import KEY_AGREEMENT_ID, KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_AGREEMENTS_FN, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_MODIFIED, PROVIDER_TRANSFER_STORAGE_FN
+from pycxids.core.http_binding.settings import AUTH_CODE_REFERENCES_FN, KEY_AGREEMENT_ID, KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_AGREEMENTS_FN, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_MODIFIED, PROVIDER_TRANSFER_STORAGE_FN
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.models import TransferStartMessage, TransferState
 
 storage_transfer = FileStorageEngine(storage_fn=PROVIDER_TRANSFER_STORAGE_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
 
 
-def transfer_transition_requested_started(item: TransferStateStore):
+async def transfer_transition_requested_started(item: TransferStateStore):
     """
     Transfer process state transition
 
@@ -49,16 +49,19 @@ def transfer_transition_requested_started(item: TransferStateStore):
         dspace_data_address = data_address_str
     )
     latest: TransferStateStore = TransferStateStore.parse_obj(storage_transfer.get(item.id))
-    latest.data_address = data_address_str
-    storage_transfer.put(item.id, latest)
+    latest.data_address = data_address
+    storage_transfer.put(item.id, latest.dict())
+    # store a reference from auth_code -> transfer
+    auth_code_storage = FileStorageEngine(storage_fn=AUTH_CODE_REFERENCES_FN)
+    auth_code_storage.put(auth_code, item.id)
 
-    r = requests.post(url=item.callback_address_request, json=transfer_start_message.dict())
+    r = requests.post(url=f"{item.callback_address_request}/transfers/{item.process_id}/start", json=transfer_start_message.dict())
     if r.status_code != 200:
         print(f"Transfer requested -> started error. Consumer callback response: {r.status_code} - {r.reason} - {r.content}")
         return None
     
     latest.state = TransferState.started
-    storage_transfer.put(item.id, latest)
+    storage_transfer.put(item.id, latest.dict())
 
 
 
