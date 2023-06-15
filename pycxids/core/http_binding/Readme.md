@@ -5,3 +5,8 @@ datamodel-codegen --base-class=pycxids.models.base_model.MyBaseModel --collapse-
 
 # Implementation specific questions
 - Do callbacks need to work or not in case the callback comes BEFORE the requesting call response?
+
+# Libraries
+- jwcrypto
+    For generating encrypted JWT (JWE) on the Provider side
+    https://jwcrypto.readthedocs.io/en/latest/jwe.html#asymmetric-keys
