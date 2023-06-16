@@ -15,6 +15,9 @@ PROVIDER_DATA_DEFAULT_BASE_URL = os.getenv('PROVIDER_DATA_DEFAULT_BASE_URL', 'ht
 
 PROVIDER_DISABLE_IN_CONTEXT_WORKER = os.getenv('PROVIDER_DISABLE_IN_CONTEXT_WORKER', 'False').lower() in ['true']
 
+# data management API
+PROVIDER_STORAGE_ASSETS_FN = os.getenv('PROVIDER_STORAGE_ASSETS_FN', 'provider_assets.json')
+
 # main storage
 CONSUMER_STORAGE_FN = os.getenv('CONSUMER_STORAGE_FN', 'consumer_storage.json')
 # used mainly for backup and as a reference - not the main storage
