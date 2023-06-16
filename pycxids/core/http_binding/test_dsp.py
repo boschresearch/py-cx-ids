@@ -8,6 +8,7 @@ from uuid import uuid4
 import pytest
 from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
+from pycxids.core.http_binding.models_edc import Asset, AssetEntryNewDto, DataAddress as EdcDataAddress
 
 from pycxids.core.http_binding.provider import app as provider_app
 from pycxids.core.http_binding.consumer import app as consumer_app
@@ -51,14 +52,49 @@ def test_dsp():
     """
     dsp means dataspace protocol and more specificly we mean the http binding of it
     """
-    # catalog
+
+    # Provider: create an asset
+    asset_id = str(uuid4())
+    asset:AssetEntryNewDto = AssetEntryNewDto(
+        asset=Asset(
+            id=asset_id,
+            properties={
+                'backend_public_key_pem': "XXX",
+            }
+        ),
+        dataAddress=EdcDataAddress(
+            properties={
+                'type': 'HttpData',
+                'baseUrl': f"{PROVIDER_CALLBACK_BASE_URL}/data/{asset_id}"
+            }
+        )
+    )
+    r = provider.post('/v2/assets', json=asset.dict())
+    assert r.status_code == 200, "Could not create asset"
+    j = r.json()
+    assert j.get('@id') == asset_id, "@id from asset creation response does not match the id we sent with the request."
+
+    # Consumer: catalog request
     catalog_request_message = CatalogRequestMessage()
     data = catalog_request_message.dict(exclude_unset=False)
     r = provider.post('/catalog/request', json=data)
     catalog = r.json()
     #print(catalog)
-    dataset = catalog.get('dcat:dataset', [None])[0]
-    assert dataset, "No dataset in catalog!"
+    dataset = None
+    datasets = catalog.get('dcat:dataset', [])
+    for item in datasets:
+        item_id = item.get('@id')
+        if item_id == asset_id:
+            # we found the one that we created earlier
+            dataset = item
+            break
+    assert dataset, f"Could not find created asset in the catalog. asset_id: {asset_id}"
+
+    # Consumer: alternative way of getting offers for an already known id
+    r = provider.get(f"/catalog/datasets/{asset_id}")
+    assert r.status_code == 200, f"Could not fetch dataset information for asset_id: {asset_id}"
+    dataset = r.json()
+    assert dataset.get('@id') == asset_id, f"The individual dataset fetched via the catalog with the asset_id {asset_id} does not match the response!"
 
     # negotiation
     # start -> requested
@@ -132,8 +168,5 @@ def test_dsp():
 
 
 
-
-
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
-
