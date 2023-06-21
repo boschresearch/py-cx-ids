@@ -5,15 +5,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
-from jwcrypto.jwk import JWKSet, JWK
-from jwcrypto.jwt import JWT, JWE
-# jwt lib does not support encyrption
 from time import time
+from pycxids.core.http_binding.crypto_utils import *
 
 DEFAULT_ISS = 'http://localhost'
 DEFAULT_EXP_SECONDS = 3600
 
-def generate_auth_code(claims: dict, public_key_pem: bytes):
+def generate_auth_code(claims: dict, encryption_public_key_pem: bytes, signing_private_key_pem: bytes):
     """
     See jwcrypt examples for jwt encryption (jwe) with asymetric keys here:
     https://jwcrypto.readthedocs.io/en/latest/jwe.html#asymmetric-keys
@@ -26,16 +24,6 @@ def generate_auth_code(claims: dict, public_key_pem: bytes):
 
     claims_str = json.dumps(claims)
 
-
-    pub_key_jwk = JWK()
-    pub_key_jwk.import_from_pem(data=public_key_pem)
-
-    protected_header = {
-        "alg": "RSA-OAEP-256",
-        "enc": "A256CBC-HS512",
-        "typ": "JWE",
-        "kid":  pub_key_jwk.thumbprint(),
-    }
-    jwetoken = JWE(claims_str.encode(), recipient=pub_key_jwk, protected=protected_header)
-    enc = jwetoken.serialize()
-    return enc
+    signed_message = sign(payload=claims_str.encode(), private_key_pem=signing_private_key_pem)
+    encrypted_message = encrypt(payload=signed_message, public_key_pem=encryption_public_key_pem)
+    return encrypted_message
