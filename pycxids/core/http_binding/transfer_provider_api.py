@@ -72,7 +72,7 @@ async def transfer_request(response: Response, transfer_request_message: Transfe
     storage_transfer.put(transfer_id, state_store.dict())
 
     if not PROVIDER_DISABLE_IN_CONTEXT_WORKER:
-        task = asyncio.create_task(transfer_transition_requested_started(item=state_store))
+        task = asyncio.create_task(transfer_transition_requested_started(item=state_store, negotiation_state=negotiation))
         fire_and_forget(task=task)
 
     transfer_process = TransferProcess(

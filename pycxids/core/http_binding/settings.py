@@ -1,5 +1,19 @@
 import os
+from pydantic import BaseSettings, PrivateAttr, Field
 from pycxids.core.http_binding.models import OdrlOffer, OdrlPolicy, OdrlRule
+
+
+# use settings management to better change values during testing
+class Settings(BaseSettings):
+    # backend encryption keys
+    BACKEND_PUBLIC_KEY_PEM_FN = 'backend_public_key.pem'
+    BACKEND_PRIVATE_KEY_PKCS8_FN = 'backend_private_key.pkcs8'
+    # provider signing keys
+    PROVIDER_PUBLIC_KEY_PEM_FN = 'provider_public_key.pem'
+    PROVIDER_PRIVATE_KEY_PKCS8_FN = 'provider_private_key.pkcs8'
+
+settings: Settings = Settings()
+
 
 # main storage
 PROVIDER_STORAGE_FN = os.getenv('PROVIDER_STORAGE_FN', 'provider_storage.json')
@@ -50,3 +64,5 @@ KEY_MODIFIED = 'modified'
 KEY_TRANSFER_REQUEST_ID = 'transfer_request_id'
 KEY_TRANSFER_ID = 'transfer_id'
 KEY_TRANSFER_TOKEN = 'transfer_token'
+
+ASSET_PROP_BACKEND_PUBLIC_KEY = 'backend_public_key_pem_b64'

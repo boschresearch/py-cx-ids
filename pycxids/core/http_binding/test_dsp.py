@@ -4,7 +4,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 from uuid import uuid4
+from base64 import b64encode, b64decode
+import tempfile
 import pytest
 from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
@@ -16,6 +19,20 @@ from pycxids.core.http_binding.consumer import app as consumer_app
 from pycxids.core.http_binding.models import CatalogRequestMessage, ContractAgreementMessage, ContractRequestMessage, OdrlOffer, ContractNegotiation, ContractAgreementVerificationMessage, TransferProcess, TransferRequestMessage, TransferStartMessage
 from pycxids.core.http_binding.models_local import DataAddress, TransferStateStore
 from pycxids.core.http_binding.settings import DCT_FORMAT_HTTP
+from pycxids.core.http_binding.crypto_utils import *
+
+from pycxids.core.http_binding.settings import settings, ASSET_PROP_BACKEND_PUBLIC_KEY
+
+
+TEMPDIR = tempfile.gettempdir()
+# backend keys
+TESTING_KEY_BACKEND_BASENAME = str(uuid4())
+settings.BACKEND_PUBLIC_KEY_PEM_FN = os.path.join(TEMPDIR, f"{TESTING_KEY_BACKEND_BASENAME}.pem")
+settings.BACKEND_PRIVATE_KEY_PKCS8_FN = os.path.join(TEMPDIR ,f"{TESTING_KEY_BACKEND_BASENAME}.pkcs8")
+# provider keys
+TESTING_KEY_PROVIDER_BASENAME = str(uuid4())
+settings.PROVIDER_PUBLIC_KEY_PEM_FN = os.path.join(TEMPDIR, f"{TESTING_KEY_BACKEND_BASENAME}.pem")
+settings.PROVIDER_PRIVATE_KEY_PKCS8_FN = os.path.join(TEMPDIR, f"{TESTING_KEY_PROVIDER_BASENAME}.pkcs8")
 
 PROVIDER_CALLBACK_BASE_URL = 'http://provider'
 CONSUMER_CALLBACK_BASE_URL = 'http://consumer'
@@ -53,13 +70,33 @@ def test_dsp():
     dsp means dataspace protocol and more specificly we mean the http binding of it
     """
 
+    # create a couple of keys that we need
+    backend_key = generate_rsa_key()
+    backend_private_key = key_to_private_pkcs8(key=backend_key)
+    backend_public_key = key_to_public_pem(key=backend_key)
+    # for the backend we also need those written to a file to be used in other places
+    with open(settings.BACKEND_PUBLIC_KEY_PEM_FN, 'wb') as f:
+        f.write(backend_public_key)
+    with open(settings.BACKEND_PRIVATE_KEY_PKCS8_FN, 'wb') as f:
+        f.write(backend_private_key)
+
+    # ... and keys for the provider to sign tokens (auth_codes)
+    provider_key = generate_rsa_key()
+    provider_private_key = key_to_private_pkcs8(key=provider_key)
+    provider_public_key = key_to_public_pem(key=provider_key)
+    with open(settings.PROVIDER_PUBLIC_KEY_PEM_FN, 'wb') as f:
+        f.write(provider_public_key)
+    with open(settings.PROVIDER_PRIVATE_KEY_PKCS8_FN, 'wb') as f:
+        f.write(provider_private_key)
+
+
     # Provider: create an asset
     asset_id = str(uuid4())
     asset:AssetEntryNewDto = AssetEntryNewDto(
         asset=Asset(
             id=asset_id,
             properties={
-                'backend_public_key_pem': "XXX",
+                ASSET_PROP_BACKEND_PUBLIC_KEY: b64encode(backend_public_key).decode(),
             }
         ),
         dataAddress=EdcDataAddress(
@@ -154,7 +191,7 @@ def test_dsp():
     data = r.json()
     transfer_state_received = TransferStateStore.parse_obj(data)
     data_address_received: DataAddress = transfer_state_received.data_address
-    assert data_address_received.auth_code, "Must contain a authCode!"
+    assert data_address_received.auth_code, "DataAddress in transfer token (TransferStartMessage) must contain an authCode!"
 
     ######
     # Start the actual data transfer with the above auth credentials
@@ -165,6 +202,8 @@ def test_dsp():
     r = provider.get(f"/data/{dataset_id}", headers=headers) # from the catalog / negotiation in first process step...
     assert r.status_code == 200, f"Could not fetch data for dataset id: {dataset_id}"
     print(r.content)
+    j = r.json()
+    assert j.get('dataset_id') == dataset_id, "Could not fetch data"
 
 
 
