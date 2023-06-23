@@ -138,7 +138,7 @@ def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
             catalog_endpoint = myconfig.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
         else:
             catalog_endpoint = provider_ids_endpoint
-        catalog = cli_dsp_utils.fetch_catalog(catalog_endpoint=catalog_endpoint, out_fn=out_fn)
+        catalog = cli_dsp_utils.fetch_catalog(catalog_base_url=catalog_endpoint, out_fn=out_fn)
         print(json.dumps(catalog, indent=4))
 
     else:
