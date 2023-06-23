@@ -10,7 +10,7 @@ import requests
 import sys
 import json
 import base64
-from cli_settings import *
+from pycxids.cli.cli_settings import *
 from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer
 
 

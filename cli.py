@@ -16,9 +16,9 @@ from uuid import uuid4
 import requests
 from requests.auth import HTTPBasicAuth
 
-from cli_settings import *
-import cli_multipart_utils
-import cli_dsp_utils
+from pycxids.cli.cli_settings import *
+from pycxids.cli import cli_multipart_utils
+from pycxids.cli import cli_dsp_utils
 from pycxids.core.http_binding.models_local import DataAddress, TransferStateStore
 
 from pycxids.core.settings import endpoint_check, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD

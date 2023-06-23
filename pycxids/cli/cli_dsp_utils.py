@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from cli_settings import *
+from pycxids.cli.cli_settings import *
 import requests
 from uuid import uuid4
 from pycxids.core.http_binding.settings import DCT_FORMAT_HTTP
