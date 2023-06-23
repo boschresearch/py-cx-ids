@@ -6,7 +6,11 @@
 
 import os
 
-PROVIDER_EDC_BASE_URL = os.getenv('PROVIDER_EDC_BASE_URL', 'http://provider-control-plane:9193/api/v1/data')
+USE_V1_DATA_MANAGEMENT_API = os.getenv('USE_V1_DATA_MANAGEMENT_API', "False").lower() in ("true")
+
+PROVIDER_EDC_BASE_URL = os.getenv('PROVIDER_EDC_BASE_URL', 'http://provider-control-plane:9193/api/v1/data/v2')
+if USE_V1_DATA_MANAGEMENT_API:
+    PROVIDER_EDC_BASE_URL = os.getenv('PROVIDER_EDC_BASE_URL', 'http://provider-control-plane:9193/api/v1/data')
 assert PROVIDER_EDC_BASE_URL
 
 PROVIDER_EDC_API_KEY = os.getenv('PROVIDER_EDC_API_KEY', 'dontuseinpublic')
@@ -14,18 +18,25 @@ assert PROVIDER_EDC_API_KEY
 
 PROVIDER_EDC_VALIDATION_ENDPOINT = os.getenv('PROVIDER_EDC_VALIDATION_ENDPOINT', 'http://provider-control-plane:9192/validation/token')
 
-IDS_PATH = os.getenv('IDS_PATH', '/api/v1/ids/data')
+IDS_PATH = os.getenv('IDS_PATH', '/api/v1/dsp')
+if USE_V1_DATA_MANAGEMENT_API:
+    IDS_PATH = os.getenv('IDS_PATH', '/api/v1/data')
 PROVIDER_IDS_BASE_URL = os.getenv('PROVIDER_IDS_BASE_URL', 'http://provider-control-plane:8282')
 PROVIDER_IDS_ENDPOINT = f"{PROVIDER_IDS_BASE_URL}{IDS_PATH}"
 
 # consumer side
-CONSUMER_EDC_BASE_URL = os.getenv('CONSUMER_EDC_BASE_URL', 'http://consumer-control-plane:9193/api/v1/data')
+CONSUMER_EDC_BASE_URL = os.getenv('CONSUMER_EDC_BASE_URL', 'http://consumer-control-plane:9193/api/v1/data/v2')
+if USE_V1_DATA_MANAGEMENT_API:
+    CONSUMER_EDC_BASE_URL = os.getenv('CONSUMER_EDC_BASE_URL', 'http://consumer-control-plane:9193/api/v1/data')
 assert CONSUMER_EDC_BASE_URL
 
 CONSUMER_EDC_API_KEY = os.getenv('CONSUMER_EDC_API_KEY', 'dontuseinpublic')
 assert CONSUMER_EDC_API_KEY
 
 CONSUMER_EDC_VALIDATION_ENDPOINT = os.getenv('CONSUMER_EDC_VALIDATION_ENDPOINT', 'http://consumer-control-plane:9192/validation/token')
+
+CONSUMER_IDS_BASE_URL = os.getenv('CONSUMEr_IDS_BASE_URL', 'http://consumer-control-plane:8282')
+CONSUMER_IDS_ENDPOINT = f"{CONSUMER_IDS_BASE_URL}{IDS_PATH}"
 
 API_WRAPPER_BASE_URL = os.getenv('API_WRAPPER_BASE_URL', 'http://api-wrapper:9191/api/service')
 assert API_WRAPPER_BASE_URL
