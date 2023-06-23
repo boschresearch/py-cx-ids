@@ -92,10 +92,9 @@ class Daps(IdsBase):
 
 
 def get_daps_access_token(audience: str = ''):
-    daps = get_daps_token(audience=audience)
-    return daps['access_token']
-
-daps = Daps(daps_endpoint=DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=CLIENT_ID)
+    daps = Daps(daps_endpoint=DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=CLIENT_ID)
+    token = daps.get_daps_token(audience=audience)
+    return token['access_token']
 
 
 if __name__ == '__main__':
