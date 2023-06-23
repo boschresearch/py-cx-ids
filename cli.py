@@ -67,6 +67,12 @@ def cli_config_add(config_name: str):
     if use_dsp:
         click.echo("Using new DSP protocol configuration (product-edc 0.4.0 and later)")
         config['PROTOCOL'] = PROTOCOL_DSP
+        config['PRIVATE_KEY_FN'] = click.prompt("Private key filename:",
+            default=config.get('PRIVATE_KEY_FN', "private.key"))
+        config['CLIENT_ID'] = click.prompt("CLIENT_ID:",
+            default=config.get('CLIENT_ID', ""))
+        config['DAPS_ENDPOINT'] = click.prompt("DAPS_ENDPOINT:",
+            default=config.get('DAPS_ENDPOINT', "https://daps1.int.demo.catena-x.net/token"))
         config['CONSUMER_CONNECTOR_BASE_URL'] = click.prompt("CONSUMER_CONNECTOR_BASE_URL",
             default=config.get('CONSUMER_CONNECTOR_BASE_URL', "http://localhost:6060"))
         config['DEFAULT_PROVIDER_CATALOG_BASE_URL'] = click.prompt("DEFAULT_PROVIDER_CATALOG_BASE_URL",
@@ -135,10 +141,18 @@ def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
     protocol = myconfig.get('PROTOCOL')
     if protocol == PROTOCOL_DSP:
         if not provider_ids_endpoint:
-            catalog_endpoint = myconfig.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
+            provider_base_url = myconfig.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
         else:
-            catalog_endpoint = provider_ids_endpoint
-        catalog = cli_dsp_utils.fetch_catalog(catalog_base_url=catalog_endpoint, out_fn=out_fn)
+            provider_base_url = provider_ids_endpoint
+
+        api = cli_dsp_utils.CliDspApiHelper(
+            provider_base_url=provider_base_url,
+            daps_endpoint=myconfig.get('DAPS_ENDPOINT'),
+            private_key_fn=myconfig.get('PRIVATE_KEY_FN'),
+            client_id=myconfig.get('CLIENT_ID'),
+        )
+
+        catalog = api.fetch_catalog(out_fn=out_fn)
         print(json.dumps(catalog, indent=4))
 
     else:

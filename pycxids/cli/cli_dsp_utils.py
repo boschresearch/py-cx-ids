@@ -9,19 +9,35 @@
 from pycxids.cli.cli_settings import *
 import requests
 from uuid import uuid4
+from pycxids.core.daps import Daps
 from pycxids.core.http_binding.settings import DCT_FORMAT_HTTP
 
 from pycxids.core.http_binding.models import ContractRequestMessage, OdrlOffer, TransferRequestMessage
+from pycxids.utils.api import GeneralApi
 
-def fetch_catalog(catalog_base_url: str, out_fn: str = ''):
-    catalog_endpoint = f"{catalog_base_url}/catalog/request"
-    data = {}
-    r = requests.post(catalog_endpoint, json=data)
-    if not r.status_code == 200:
-        print(f"status_code: {r.status_code} - reason: {r.reason} - details: {r.content}")
-        return None
-    j = r.json()
-    return j
+class CliDspApiHelper(GeneralApi):
+    def __init__(self, provider_base_url: str, daps_endpoint: str, private_key_fn: str, client_id: str) -> None:
+        super().__init__(base_url=provider_base_url)
+        self.daps = daps = Daps(daps_endpoint=daps_endpoint, private_key_fn=private_key_fn, client_id=client_id)
+        self.headers = {}
+
+    def update_daps_token(self, audience: str = ''):
+        token = self.daps.get_daps_token(audience=audience)
+        self.headers['Authorization'] = token['access_token']
+
+    def fetch_catalog(self, out_fn: str = ''):
+        data = {
+            "@context":  {
+                "dspace": "https://w3id.org/dspace/v0.8/"
+            },
+            "@type": "dspace:CatalogRequestMessage",
+            "dspace:filter": {
+            },
+
+        }
+        self.update_daps_token(audience=self.base_url)
+        j = self.post("/catalog/request", data=data)
+        return j
 
 def get_asset_ids_from_catalog(catalog):
     datasets = catalog.get('dcat:dataset', [])
