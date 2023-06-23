@@ -16,18 +16,16 @@ from uuid import uuid4
 import requests
 from requests.auth import HTTPBasicAuth
 
-from pycxids.core.ids_multipart.ids_multipart import IdsMultipartConsumer
+from cli_settings import *
+import cli_multipart_utils
+import cli_dsp_utils
+
 from pycxids.core.settings import endpoint_check, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
 
 from pycxids.utils.storage import FileStorageEngine
 
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
 
-AGREEMENT_CACHE_DIR = os.getenv('AGREEMENT_CACHE_DIR', 'agreementcache')
-os.makedirs(AGREEMENT_CACHE_DIR, exist_ok=True)
-
-SETTINGS_STORAGE = os.getenv('SETTINGS_STORAGE', 'cli_settings.json')
-config_storage = FileStorageEngine(storage_fn=SETTINGS_STORAGE)
 
 
 @click.group('A cli to interact with IDS / EDC data providers')
@@ -64,111 +62,92 @@ def cli_config_add(config_name: str):
     configs = config_storage.get('configs', {})
     config = configs.get(config_name, {})
 
-    config['PRIVATE_KEY_FN'] = click.prompt("Private key filename:",
-        default=config.get('PRIVATE_KEY_FN', "private.key"))
-    config['CLIENT_ID'] = click.prompt("CLIENT_ID:",
-        default=config.get('CLIENT_ID', ""))
-    config['DAPS_ENDPOINT'] = click.prompt("DAPS_ENDPOINT:",
-        default=config.get('DAPS_ENDPOINT', "https://daps1.int.demo.catena-x.net/token"))
-    config['CONSUMER_CONNECTOR_URN'] = click.prompt("CONSUMER_CONNECTOR_URN:",
-        default=config.get('CONSUMER_CONNECTOR_URN', ""))
-    config['CONSUMER_WEBHOOK'] = click.prompt("CONSUMER_WEBHOOK:",
-        default=config.get('CONSUMER_WEBHOOK', "https://changeme.localhost/webhook"))
-    config['CONSUMER_WEBHOOK_MESSAGE_BASE_URL'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_BASE_URL:",
-        default=config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL', "https://changme.localhost/messages"))
-    config['CONSUMER_WEBHOOK_MESSAGE_USERNAME'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_USERNAME:",
-        default=config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME', "someuser"))
-    config['CONSUMER_WEBHOOK_MESSAGE_PASSWORD'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_PASSWORD (stored in clear text!):",
-        default=config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD', "somepassword"), hide_input=True, show_default=False)
-    config['DEFAULT_PROVIDER_IDS_ENDPOINT'] = click.prompt("DEFAULT_PROVIDER_IDS_ENDPOINT - will be used as default if no other provider is set in specific functions:",
-        default=config.get('DEFAULT_PROVIDER_IDS_ENDPOINT', "https://provider:8282/api/v1/data"))
+    use_dsp = click.confirm("Use new DSP (Dataspace protocol) version? (product-edc 0.4.0 and higher) Y/n", default=True)
+    if use_dsp:
+        click.echo("Using new DSP protocol configuration (product-edc 0.4.0 and later)")
+        config['PROTOCOL'] = PROTOCOL_DSP
+        config['CONSUMER_CONNECTOR_BASE_URL'] = click.prompt("CONSUMER_CONNECTOR_BASE_URL",
+            default=config.get('CONSUMER_CONNECTOR_BASE_URL', "http://localhost:6060"))
+        config['DEFAULT_PROVIDER_CATALOG_ENDPOINT'] = click.prompt("DEFAULT_PROVIDER_CATALOG_ENDPOINT",
+            default=config.get("DEFAULT_PROVIDER_CATALOG_ENDPOINT", "http://localhost:8080/catalog/request"))
+    else:
+        click.echo("Using old multipart protocol configuration (before product-edc 0.4.0)")
+        config['PROTOCOL'] = PROTOCOL_MULTIPART
+        config['PRIVATE_KEY_FN'] = click.prompt("Private key filename:",
+            default=config.get('PRIVATE_KEY_FN', "private.key"))
+        config['CLIENT_ID'] = click.prompt("CLIENT_ID:",
+            default=config.get('CLIENT_ID', ""))
+        config['DAPS_ENDPOINT'] = click.prompt("DAPS_ENDPOINT:",
+            default=config.get('DAPS_ENDPOINT', "https://daps1.int.demo.catena-x.net/token"))
+        config['CONSUMER_CONNECTOR_URN'] = click.prompt("CONSUMER_CONNECTOR_URN:",
+            default=config.get('CONSUMER_CONNECTOR_URN', ""))
+        config['CONSUMER_WEBHOOK'] = click.prompt("CONSUMER_WEBHOOK:",
+            default=config.get('CONSUMER_WEBHOOK', "https://changeme.localhost/webhook"))
+        config['CONSUMER_WEBHOOK_MESSAGE_BASE_URL'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_BASE_URL:",
+            default=config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL', "https://changme.localhost/messages"))
+        config['CONSUMER_WEBHOOK_MESSAGE_USERNAME'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_USERNAME:",
+            default=config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME', "someuser"))
+        config['CONSUMER_WEBHOOK_MESSAGE_PASSWORD'] = click.prompt("CONSUMER_WEBHOOK_MESSAGE_PASSWORD (stored in clear text!):",
+            default=config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD', "somepassword"), hide_input=True, show_default=False)
+        config['DEFAULT_PROVIDER_IDS_ENDPOINT'] = click.prompt("DEFAULT_PROVIDER_IDS_ENDPOINT - will be used as default if no other provider is set in specific functions:",
+            default=config.get('DEFAULT_PROVIDER_IDS_ENDPOINT', "https://provider:8282/api/v1/data"))
 
     configs[config_name] = config
     config_storage.put('configs', configs)
     config_storage.put('use', config_name)
     click.echo("")
-    click.echo("Configuration done.")
+    click.echo("Configuration done. This config will be used by default now.")
     click.echo("")
 
-    test_webhook = click.confirm("Do you want to test the webhook?", default=True)
-    if test_webhook:
-        CONSUMER_WEBHOOK = config.get('CONSUMER_WEBHOOK')
-        assert CONSUMER_WEBHOOK
-        CONSUMER_WEBHOOK_MESSAGE_BASE_URL = config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL')
-        assert CONSUMER_WEBHOOK_MESSAGE_BASE_URL
-        CONSUMER_WEBHOOK_MESSAGE_USERNAME = config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME')
-        assert CONSUMER_WEBHOOK_MESSAGE_USERNAME
-        CONSUMER_WEBHOOK_MESSAGE_PASSWORD = config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD')
-        assert CONSUMER_WEBHOOK_MESSAGE_PASSWORD
+    if not use_dsp:
+        test_webhook = click.confirm("Do you want to test the webhook?", default=True)
+        if test_webhook:
+            CONSUMER_WEBHOOK = config.get('CONSUMER_WEBHOOK')
+            assert CONSUMER_WEBHOOK
+            CONSUMER_WEBHOOK_MESSAGE_BASE_URL = config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL')
+            assert CONSUMER_WEBHOOK_MESSAGE_BASE_URL
+            CONSUMER_WEBHOOK_MESSAGE_USERNAME = config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME')
+            assert CONSUMER_WEBHOOK_MESSAGE_USERNAME
+            CONSUMER_WEBHOOK_MESSAGE_PASSWORD = config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD')
+            assert CONSUMER_WEBHOOK_MESSAGE_PASSWORD
 
-        test_id = str(uuid4())
-        data = {'@id': test_id, 'hello': 'world'}
-        r = requests.post(CONSUMER_WEBHOOK, json=data)
-        assert r.ok, f"Could not post test data to WEBHOOK {CONSUMER_WEBHOOK}"
+            test_id = str(uuid4())
+            data = {'@id': test_id, 'hello': 'world'}
+            r = requests.post(CONSUMER_WEBHOOK, json=data)
+            assert r.ok, f"Could not post test data to WEBHOOK {CONSUMER_WEBHOOK}"
 
-        msg_url = f"{CONSUMER_WEBHOOK_MESSAGE_BASE_URL}/{test_id}"
-        r = requests.get(msg_url, json=data, auth=HTTPBasicAuth(username=CONSUMER_WEBHOOK_MESSAGE_USERNAME, password=CONSUMER_WEBHOOK_MESSAGE_PASSWORD))
-        assert r.ok, f"Could not fetch test data from webhook service: {msg_url}"
-        j = r.json()
-        assert j.get('hello') == 'world'
-        print("Successfully tested the reachability of the webhook.")
+            msg_url = f"{CONSUMER_WEBHOOK_MESSAGE_BASE_URL}/{test_id}"
+            r = requests.get(msg_url, json=data, auth=HTTPBasicAuth(username=CONSUMER_WEBHOOK_MESSAGE_USERNAME, password=CONSUMER_WEBHOOK_MESSAGE_PASSWORD))
+            assert r.ok, f"Could not fetch test data from webhook service: {msg_url}"
+            j = r.json()
+            assert j.get('hello') == 'world'
+            print("Successfully tested the reachability of the webhook.")
 
 
 @cli.command('catalog')
 @click.option('-o', '--out-fn', default='')
-@click.option('--provider-ids-endpoint', default='')
+@click.option('--provider-ids-endpoint', default='', help='IDS endpoint in multipart or catalog endpoint in DSP')
 def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
-    if not provider_ids_endpoint:
-        use_config = config_storage.get('use')
-        myconfig = config_storage.get('configs', {}).get(use_config)
-        provider_ids_endpoint = myconfig.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
-        print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
-            file=sys.stderr) # stderr to prevent | pipe content issues
-    catalog = fetch_catalog(ids_endpoint=provider_ids_endpoint, out_fn=out_fn)
-    print(json.dumps(catalog, indent=4))
+    use_config = config_storage.get('use')
+    myconfig = config_storage.get('configs', {}).get(use_config)
 
-def get_consumer(ids_endpoint: str):
-    """
-    Returns a consumer instance created from settings
-    """
+    protocol = myconfig.get('PROTOCOL')
+    if protocol == PROTOCOL_DSP:
+        if not provider_ids_endpoint:
+            catalog_endpoint = myconfig.get('DEFAULT_PROVIDER_CATALOG_ENDPOINT')
+        else:
+            catalog_endpoint = provider_ids_endpoint
+        catalog = cli_dsp_utils.fetch_catalog(catalog_endpoint=catalog_endpoint, out_fn=out_fn)
+        print(json.dumps(catalog, indent=4))
 
-    config_to_use = config_storage.get('use', None)
-    assert config_to_use, "Please add a config first"
-    print(f"Using {config_to_use}", file=sys.stderr)
-    configs = config_storage.get('configs', {})
-    config = configs.get(config_to_use, None)
-    assert config, f"Please configure {config_to_use} first."
+    else:
+        if not provider_ids_endpoint:
+            provider_ids_endpoint = myconfig.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
+            print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
+                file=sys.stderr) # stderr to prevent | pipe content issues
+        catalog = cli_multipart_utils.fetch_catalog(ids_endpoint=provider_ids_endpoint, out_fn=out_fn)
+        print(json.dumps(catalog, indent=4))
 
-    consumer = IdsMultipartConsumer(
-        private_key_fn=config.get('PRIVATE_KEY_FN'),
-        client_id=config.get('CLIENT_ID'),
-        daps_endpoint=config.get('DAPS_ENDPOINT'),
-        provider_connector_ids_endpoint=ids_endpoint,
-        consumer_connector_urn=config.get('CONSUMER_CONNECTOR_URN'),
-        consumer_connector_webhook_url=config.get('CONSUMER_WEBHOOK'),
-        consumer_webhook_message_base_url=config.get('CONSUMER_WEBHOOK_MESSAGE_BASE_URL'),
-        consumer_webhook_message_username=config.get('CONSUMER_WEBHOOK_MESSAGE_USERNAME'),
-        consumer_webhook_message_password=config.get('CONSUMER_WEBHOOK_MESSAGE_PASSWORD'),
-    )
-    return consumer
-
-def fetch_catalog(ids_endpoint: str, out_fn: str = ''):
-    """
-    Fetch the catalog from the given endpoint.
-
-    Returns None in case of an error
-    """
-    consumer = get_consumer(ids_endpoint=ids_endpoint)
-
-    catalog = consumer.get_catalog()
-
-    if out_fn:
-        os.makedirs(os.path.dirname(out_fn), exist_ok=True)
-        catalog_str = json.dumps(catalog, indent=4)
-        with open(out_fn, 'w') as f:
-            f.write(catalog_str)
-
-    return catalog
 
 @cli.command('assets', help="List asset:prop:id list from a given catalog via filename or stdin")
 @click.argument('catalog_filename', default='')
@@ -184,7 +163,14 @@ def list_assets_from_catalog(catalog_filename: str):
         catalog_str = click.get_text_stream('stdin').read().strip()
 
     catalog = json.loads(catalog_str)
-    asset_ids = IdsMultipartConsumer.get_asset_ids_from_catalog(catalog=catalog)
+    asset_ids = None
+    # check if DSP catalog result:
+    datasets = catalog.get('dcat:dataset', None)
+    if datasets:
+        # DSP case
+        asset_ids = cli_dsp_utils.get_asset_ids_from_catalog(catalog=catalog)
+    else:
+        asset_ids = cli_multipart_utils.get_asset_ids_from_catalog(catalog=catalog)
     print('\n'.join(asset_ids))
 
 @cli.command('fetch', help="Fetch a given asset id")
