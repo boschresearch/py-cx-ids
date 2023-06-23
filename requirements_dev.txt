@@ -1,0 +1,1 @@
+datamodel-code-generator @ git+https://github.com/koxudaxi/datamodel-code-generator.git@ef98fdb8379edc749d490ac7784a815e4f24360d
