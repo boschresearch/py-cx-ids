@@ -19,6 +19,7 @@ from requests.auth import HTTPBasicAuth
 from cli_settings import *
 import cli_multipart_utils
 import cli_dsp_utils
+from pycxids.core.http_binding.models_local import DataAddress, TransferStateStore
 
 from pycxids.core.settings import endpoint_check, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
 
@@ -68,8 +69,8 @@ def cli_config_add(config_name: str):
         config['PROTOCOL'] = PROTOCOL_DSP
         config['CONSUMER_CONNECTOR_BASE_URL'] = click.prompt("CONSUMER_CONNECTOR_BASE_URL",
             default=config.get('CONSUMER_CONNECTOR_BASE_URL', "http://localhost:6060"))
-        config['DEFAULT_PROVIDER_CATALOG_ENDPOINT'] = click.prompt("DEFAULT_PROVIDER_CATALOG_ENDPOINT",
-            default=config.get("DEFAULT_PROVIDER_CATALOG_ENDPOINT", "http://localhost:8080/catalog/request"))
+        config['DEFAULT_PROVIDER_CATALOG_BASE_URL'] = click.prompt("DEFAULT_PROVIDER_CATALOG_BASE_URL",
+            default=config.get("DEFAULT_PROVIDER_CATALOG_BASE_URL", "http://localhost:8080"))
     else:
         click.echo("Using old multipart protocol configuration (before product-edc 0.4.0)")
         config['PROTOCOL'] = PROTOCOL_MULTIPART
@@ -134,7 +135,7 @@ def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
     protocol = myconfig.get('PROTOCOL')
     if protocol == PROTOCOL_DSP:
         if not provider_ids_endpoint:
-            catalog_endpoint = myconfig.get('DEFAULT_PROVIDER_CATALOG_ENDPOINT')
+            catalog_endpoint = myconfig.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
         else:
             catalog_endpoint = provider_ids_endpoint
         catalog = cli_dsp_utils.fetch_catalog(catalog_endpoint=catalog_endpoint, out_fn=out_fn)
@@ -179,32 +180,68 @@ def list_assets_from_catalog(catalog_filename: str):
 @click.option('--provider-ids-endpoint', default='')
 @click.option('--agreement-id', default=None, help='Reuse existing agreement ID and save some negotiation time.')
 @click.argument('asset_id', default='')
-def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir:str, agreement_id: str):
+def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir:str, agreement_id: str, help="IDS endpoint or DSP catalog BASE URL"):
     before = datetime.now().timestamp()
 
-    if not provider_ids_endpoint:
-        # TODO: change this
-        config_to_use = config_storage.get('use')
-        assert config_to_use, "Please add a config first."
-        configs = config_storage.get('configs', {})
-        config = configs.get(config_to_use)
-        assert config, "Please add config first"
-        provider_ids_endpoint = config.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
-        print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
-            file=sys.stderr)
+    config_to_use = config_storage.get('use')
+    assert config_to_use, "Please add a config first."
+    configs = config_storage.get('configs', {})
+    config = configs.get(config_to_use)
+    assert config, "Please add config first"
 
-    try:
-        data_result = fetch_asset(asset_id=asset_id, raw_data=raw_data, provider_ids_endpoint=provider_ids_endpoint)
-    except Exception as ex:
-        print(ex)
-        os._exit(1) # this is a first class cli function, here we can immediately exit
+    if config.get('PROTOCOL', '') == PROTOCOL_DSP:
+        catalog_base_url = ''
+        if not provider_ids_endpoint:
+            catalog_base_url = config.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
+        offers = cli_dsp_utils.get_offers_for_asset(catalog_base_url=catalog_base_url, asset_id=asset_id)
+        print(offers)
+        consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
+        # TODO catalog_base_url should not be used here, but rather the endpoint from the catalog result!
+        negotiation = cli_dsp_utils.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url, provider_base_url=catalog_base_url)
+        print(negotiation)
+        negotiation_process_id = negotiation.get('dspace:processId')
+        # and now get the message from the receiver api (proprietary api)
+        agreement = cli_dsp_utils.negotiation_callback_result(id=negotiation_process_id, consumer_callback_base_url=consumer_callback_base_url)
+        print(agreement)
+        agreement_id = agreement.get('@id')
+        transfer = cli_dsp_utils.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url, provider_base_url=catalog_base_url)
+        print(transfer)
+        transfer_id = transfer.get('@id')
+        transfer_process_id = transfer.get('dspace:processId')
+        transfer_message = cli_dsp_utils.transfer_callback_result(id=transfer_process_id, consumer_callback_base_url=consumer_callback_base_url)
+        print(transfer_message)
+        transfer_state_received = TransferStateStore.parse_obj(transfer_message)
+        data_address_received: DataAddress = transfer_state_received.data_address
+        # actual request of the data
+        headers = {
+            data_address_received.auth_key: data_address_received.auth_code
+        }
+        r = requests.get(data_address_received.base_url, headers=headers)
+        data_result = r.content
+        #print(data_result)
+
+    else:
+        if not provider_ids_endpoint:
+            # TODO: change this
+            provider_ids_endpoint = config.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
+            print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
+                file=sys.stderr)
+
+        try:
+            data_result = cli_multipart_utils.fetch_asset(asset_id=asset_id, raw_data=raw_data, provider_ids_endpoint=provider_ids_endpoint)
+        except Exception as ex:
+            print(ex)
+            os._exit(1) # this is a first class cli function, here we can immediately exit
     after = datetime.now().timestamp()
     duration = after - before
     data_str = None
     if raw_data:
         data_str = data_result
     else:
-        data_str = json.dumps(data_result, indent=4)
+        try:
+            data_str = json.dumps(data_result, indent=4)
+        except Exception as ex:
+            data_str = data_result
     if out_dir:
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
@@ -218,79 +255,6 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
     print(f"request duration in seconds: {duration}", file=sys.stderr)
     os._exit(1) # this does also stop the webhook thread
 
-def fetch_asset(asset_id: str, raw_data: bool = False, start_webhook=True, test_webhook=False, provider_ids_endpoint=None, suburl=None, query_params=None, agreement_id:str = None):
-    """
-    Starts the webhook to receive async messages
-    Does the negotiation with the provider control plane and the actual data fetch from the provider data plane.
-    """
-
-    """
-    if start_webhook:
-        server_thread = Thread(target=uvicorn.run, args=[webhook_fastapi.app], kwargs={'host': '0.0.0.0', 'port': settings.WEBHOOK_PORT})
-        server_thread.start()
-
-    if test_webhook:
-        webhook_test = webhook_fastapi.webhook_test(CONSUMER_WEBHOOK)
-        if not webhook_test:
-            raise Exception('webhook not reachable. exit.')
-    """
-
-    ids_endpoint = provider_ids_endpoint
-    ids_endpoint_b64 = base64.urlsafe_b64encode(ids_endpoint.encode()).decode()
-    cache_fn = os.path.join(AGREEMENT_CACHE_DIR, ids_endpoint_b64)
-    cache = FileStorageEngine(storage_fn=cache_fn)
-
-    consumer = get_consumer(ids_endpoint=ids_endpoint)
-
-    if not agreement_id:
-        # if not given, next lookup in cache
-        # disable cache for now - until we know when to clean it up
-        # agreement_id = cache.get(key=asset_id, default=None)
-        if not agreement_id:
-            # find offers from the catalog
-            offers = consumer.get_offers(asset_id=asset_id)
-            offer = offers[0] # TODO: check which offer to use
-            # negotiate
-            agreement_id = consumer.negotiate(contract_offer=offer)
-            # and cache it for later
-            cache.put(key=asset_id, value=agreement_id)
-    # transfer
-    provider_edr = consumer.transfer(asset_id=asset_id, agreement_id=agreement_id)
-
-    # actually fetch the data from the provider data plane
-    headers = {
-        provider_edr.get('authKey'): provider_edr.get('authCode')
-    }
-
-    params = {}
-    endpoint = provider_edr.get('endpoint')
-    if not raw_data:
-        if suburl:
-            endpoint = endpoint + '/' + suburl
-        else:
-            endpoint = endpoint + '/submodel'
-        if query_params:
-            params = query_params
-        else:
-            params['content'] = 'value'
-            params['extent'] = 'withBlobValue'
-    else:
-        # data plane trailing '/' bug workaround
-        # https://github.com/eclipse-edc/Connector/issues/2242
-        if not endpoint.endswith('/'):
-            endpoint = endpoint + '/'
-    r = requests.get(endpoint, headers=headers, params=params)
-    if not r.ok:
-        print(r.content)
-        return None
-    if raw_data:
-        content = r.content
-        with(open('data_result_raw.txt', 'wb')) as f:
-            f.write(content)
-        return content
-
-    j = r.json()
-    return j
 
 if __name__ == '__main__':
     cli()

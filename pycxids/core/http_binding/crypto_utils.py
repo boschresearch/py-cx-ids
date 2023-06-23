@@ -104,3 +104,17 @@ def key_to_private_pkcs8(key: rsa.RSAPrivateKey) -> bytes:
             encryption_algorithm=_serialization.NoEncryption(),
     )
     return private_key
+
+def generate_rsa_keys_to_file(public_key_fn: str, private_key_fn: str):
+    """
+    Generate new RSA key pari and write to file.
+    private key file is PKCS8 format
+    both in PEM
+    """
+    key = generate_rsa_key()
+    private_key = key_to_private_pkcs8(key=key)
+    public_key = key_to_public_pem(key=key)
+    with open(public_key_fn, "wb") as f:
+        f.write(public_key)
+    with open(private_key_fn, "wb") as f:
+        f.write(private_key)

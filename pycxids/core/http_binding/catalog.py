@@ -9,7 +9,7 @@ from fastapi import APIRouter, Body, Request, HTTPException, status
 from pycxids.core.http_binding.models import CatalogRequestMessage, DcatCatalog, DcatDataset
 from pycxids.core.http_binding.models_edc import AssetEntryNewDto
 
-from pycxids.core.http_binding.policies import default_policy
+from pycxids.core.http_binding.policies import default_policy, default_offer_policy
 from pycxids.core.http_binding.settings import KEY_MODIFIED, PROVIDER_STORAGE_ASSETS_FN
 from pycxids.utils.storage import FileStorageEngine
 
@@ -30,7 +30,7 @@ def catalog_post(catalog_request_message: CatalogRequestMessage = Body(...)):
         dcat_dataset = DcatDataset(
             field_id = asset.asset.id,
             odrl_has_policy=[
-                default_policy
+                default_offer_policy
             ],
         )
         catalog.dcat_dataset.append(dcat_dataset)
@@ -44,7 +44,7 @@ def catalog_get(id: str):
         dcat_dataset = DcatDataset(
             field_id = asset.asset.id,
                 odrl_has_policy=[
-                    default_policy
+                    default_offer_policy
                 ],
         )
         return dcat_dataset

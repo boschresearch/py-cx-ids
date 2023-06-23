@@ -44,7 +44,7 @@ async def negotiation_request(contract_request: ContractRequestMessage = Body(..
     # prepare response
     contract_negotiation = ContractNegotiation(
         field_id = id,
-        dspace_process_id=id, # is the correlcation to the incoming request
+        dspace_process_id=contract_request.field_id, # this is a consumer id and used as a correlation id
         dspace_state=NegotiationState.requested,
     )
     # TODO: fix type with default

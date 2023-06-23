@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from pycxids.core.http_binding.models import OdrlPolicy, OdrlRule, OdrlOperand, OdrlConstraint, OdrlOperand
+from pycxids.core.http_binding.models import OdrlOffer, OdrlPolicy, OdrlRule, OdrlOperand, OdrlConstraint, OdrlOperand
 
 
 default_policy = OdrlPolicy(
@@ -20,3 +20,5 @@ default_policy = OdrlPolicy(
         )
     ]
 )
+
+default_offer_policy = OdrlOffer.parse_obj(default_policy.dict())

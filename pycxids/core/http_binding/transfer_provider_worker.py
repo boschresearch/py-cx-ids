@@ -57,7 +57,7 @@ async def transfer_transition_requested_started(item: TransferStateStore, negoti
     auth_code = generate_auth_code(claims=auth_code_claims, encryption_public_key_pem=backend_pub_key, signing_private_key_pem=signing_private_key)
     data_address = DataAddress(
         auth_code = auth_code, # TODO:
-        base_url = PROVIDER_CALLBACK_BASE_URL, # TODO: append asset id
+        base_url = asset.data_address.properties.get('baseUrl'),
     )
     data_address_str = json.dumps(data_address.dict(exclude_unset=False))
     transfer_start_message = TransferStartMessage(

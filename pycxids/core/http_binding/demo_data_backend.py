@@ -29,13 +29,23 @@ def get_data(id: str, auth_code: str = Header(alias=HTTP_HEADER_DEFAULT_AUTH_KEY
     private_key = None
     with open(settings.BACKEND_PRIVATE_KEY_PKCS8_FN, 'rb') as f:
         private_key = f.read()
-    decrypted = decrypt(payload=auth_code, private_key_pem=private_key)
+    decrypted = ''
+    try:
+        decrypted = decrypt(payload=auth_code, private_key_pem=private_key)
+    except Exception as ex:
+        print(ex)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Could not decrypt token!")
     # and verify the provider signature on the token
     # TODO: get this pub key from a jwks endpoint of the provider, not from the file
     provider_public_key = None
     with open(settings.PROVIDER_PUBLIC_KEY_PEM_FN, 'rb') as f:
         provider_public_key = f.read()
-    verified_claims_str = verify(payload=decrypted, public_key_pem=provider_public_key)
+    verified_claims_str = ''
+    try:
+        verified_claims_str = verify(payload=decrypted, public_key_pem=provider_public_key)
+    except Exception as ex:
+        print(ex)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Could not verify token signature!")
     print(verified_claims_str)
     verified_claims = json.loads(verified_claims_str)
 
