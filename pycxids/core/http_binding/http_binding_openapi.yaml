@@ -236,56 +236,59 @@ paths:
 
 components:
   schemas:
+
     DspaceFilter:
       type: object
+
     CatalogRequestMessage:
-      type: object
-      properties:
-        "@context":
-          type: string
-          default: "https://w3id.org/dspace/v0.8/context.json"
-        "@type":
-          type: string
-          default: "dspace:CatalogRequestMessage"
-        filter:
-          $ref: "#/components/schemas/DspaceFilter"
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "TODO: not finished yet"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:CatalogRequestMessage"
+            filter:
+              $ref: "#/components/schemas/DspaceFilter"
 
     ContractRequestMessage:
-      type: object
-      properties:
-        "@context":
-          type: string
-          default: "https://w3id.org/dspace/v0.8/context.json"
-        "@id":
-          type: string
-        dspace:dataset:
-          type: string
-          description: "@id of the dataset"
-        dspace:processId:
-          type: string
-          description: "TODO: Deprecated? To be removed?"
-        dspace:offer:
-          $ref: "#/components/schemas/OdrlOffer"
-        dspace:callbackAddress:
-          type: string
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "TODO: not finished yet"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:ContractRequestMessage"
+            dspace:dataset:
+              type: string
+              description: "@id of the dataset"
+            dspace:processId:
+              type: string
+              description: "TODO: Deprecated? To be removed?"
+            dspace:offer:
+              $ref: "#/components/schemas/OdrlOffer"
+            dspace:callbackAddress:
+              type: string
     
     ContracNegotiationEventMessage:
-      type: object
-      properties:
-        "@context":
-          type: string
-          default: "https://w3id.org/dspace/v0.8/context.json"
-        "@type":
-          type: string
-          default: "dspace:ContractNegotiationEventMessage"
-        "dspace:processId":
-          type: string
-        "dspace:eventType":
-          type: string
-          enum:
-            - FINALIZED
-            - ACCEPTED
-            - TERMINATED
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          description: "TODO: not finished yet"
+          properties:
+            "@type":
+              type: string
+              default: "dspace:ContractNegotiationEventMessage"
+            "dspace:processId":
+              type: string
+            "dspace:eventType":
+              type: string
+              enum:
+                - FINALIZED
+                - ACCEPTED
+                - TERMINATED
 
     ContractAgreementVerificationMessage:
       allOf:
@@ -298,6 +301,7 @@ components:
               default: "dspace:ContractAgreementVerificationMessage"
             "dspace:processId":
               type: string
+  
     ContractNegotiationTerminationMessage:
       allOf:
         - $ref: "#/components/schemas/JsonLd"
@@ -398,6 +402,7 @@ components:
               type: string
             dspace:dataAddress:
               type: string
+
     TransferProcess:
       allOf:
         - $ref: "#/components/schemas/JsonLd"
@@ -439,12 +444,22 @@ components:
           type: string
         "@language":
           type: string
+
     JsonLd:
       type: object
       properties:
         "@context":
-          type: string
-          default: "https://w3id.org/dspace/v0.8/context.json"
+          type: object
+          items:
+            type: string
+          default: {
+              "dct": "https://purl.org/dc/terms/",
+              "tx": "https://w3id.org/tractusx/v0.0.1/ns/",
+              "edc": "https://w3id.org/edc/v0.0.1/ns/",
+              "dcat": "https://www.w3.org/ns/dcat/",
+              "odrl": "http://www.w3.org/ns/odrl/2/",
+              "dspace": "https://w3id.org/dspace/v0.8/"
+          }
         "@id":
           type: string
       
@@ -456,6 +471,7 @@ components:
           type: string
         "@type":
           type: string
+          default: "dcat:Dataset"
         dct:title:
           type: string
         dct:description:
@@ -470,29 +486,30 @@ components:
             $ref: "#/components/schemas/OdrlPolicy"
         dcat:distribution:
           $ref: "#/components/schemas/DcatDistribution"
+
     DcatCatalog:
-      type: object
-      properties:
-        "@context":
-          type: string
-        "@id":
-          type: string
-        "@type":
-          type: string
-        "dct:title":
-          type: string
-        "dct:publisher":
-          type: string
-        "dcat:keyword":
-          type: array
-          items:
-            type: string
-        dcat:service:
-          $ref: "#/components/schemas/DcatService"
-        dcat:dataset:
-          type: array
-          items:
-            $ref: "#/components/schemas/DcatDataset"
+      allOf:
+        - $ref: "#/components/schemas/JsonLd"
+        - type: object
+          properties:
+            "@type":
+              type: string
+              default: "dcat:Catalog"
+            "dct:title":
+              type: string
+            "dct:publisher":
+              type: string
+            "dcat:keyword":
+              type: array
+              items:
+                type: string
+            dcat:service:
+              $ref: "#/components/schemas/DcatService"
+            dcat:dataset:
+              type: array
+              items:
+                $ref: "#/components/schemas/DcatDataset"
+
     DcatDistribution:
       type: object
       properties:
@@ -502,6 +519,7 @@ components:
           type: string
         dcat:accessService:
           type: string
+  
     DcatService:
       type: object
       properties:
