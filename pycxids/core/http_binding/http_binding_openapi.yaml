@@ -509,6 +509,7 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/DcatDataset"
+              default: []
 
     DcatDistribution:
       type: object
