@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     SCOPE = "idsc:IDS_CONNECTOR_ATTRIBUTES_ALL"
     ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
     PROVIDER_CONNECTOR_URL = ""
+    PROVIDER_CONNECTOR_URN = 'urn:uuid:provider'
     PROVIDER_CONNECTOR_IDS_ENDPOINT_PATH = "/api/v1/ids/data"
     # webhook service usage
     CONSUMER_WEBHOOK_MESSAGE_BASE_URL = ""
