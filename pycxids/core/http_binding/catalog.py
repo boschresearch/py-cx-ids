@@ -20,9 +20,7 @@ app = APIRouter(tags=['Catalog'])
 
 @app.post('/catalog/request', response_model=DcatCatalog)
 def catalog_post(catalog_request_message: CatalogRequestMessage = Body(...)):
-    catalog = DcatCatalog(
-        dcat_dataset=[],
-    )
+    catalog = DcatCatalog()
 
     data = storage_assets.get_all().items()
     for item_id, item in data:

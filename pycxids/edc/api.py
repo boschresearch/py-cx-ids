@@ -106,6 +106,7 @@ class EdcProvider(EdcDataManagement):
                 #"edc": EDC_NAMESPACE,
             },
             #"@type": EDC_ASSET_TYPE,
+            "@id": asset_id,
             "asset": {
                 "@id": asset_id,
                 "properties": {
@@ -170,17 +171,16 @@ class EdcProvider(EdcDataManagement):
     def create_policy(self, asset_id: str):
         policy_id = str(uuid4())
         data = {
-            "@context": {},
+            "@context": {
+                "odrl": "http://www.w3.org/ns/odrl/2/"
+            },
+            "@type": "PolicyDefinitionRequestDto",
             "@id": policy_id,
             "policy": {
-                #"@type": "set", # TODO: do we need it or is this default anyways?
-                "permissions": [
+                "@type": "Policy",
+                "odrl:permission": [ # TODO: permission or permissionS
                     {
-                        "target": asset_id,
-                        "action": {
-                            "type": "USE"
-                        },
-                        "edctype": "dataspaceconnector:permission"
+                        "odrl:action": "USE",
                     }
                 ],
             },
@@ -296,10 +296,27 @@ class EdcConsumer(EdcDataManagement):
         TODO: We do NOT check which policy it contains!
         """
         if not USE_V1_DATA_MANAGEMENT_API:
-            for offer in catalog['dcat:dataset']:
-                if offer['asset:prop:id'] == asset_id:
-                    return offer
-            return None
+            dataset_match = None
+            for dataset in catalog['dcat:dataset']:
+                id = dataset.get('@id')
+                if id == asset_id:
+                    dataset_match = dataset
+                    break
+                edc_id = dataset.get('edc:id')
+                if edc_id == asset_id:
+                    dataset_match = dataset
+                    break
+            if not dataset_match:
+                return None
+            # now the offers, just get the first
+            offers = dataset_match.get('odrl:hasPolicy')
+            if not offers:
+                return None
+            if not isinstance(offers, list):
+                offers = [offers]
+            
+            # just return the first
+            return offers[0]
 
 
         # old (before 0.4.0) fallback - keep for backward compatibility for a while
@@ -322,7 +339,9 @@ class EdcConsumer(EdcDataManagement):
 
             # 0.4.0 changes
             data = {
-                "@context": {},
+                "@context": {
+                    "dspace": "https://w3id.org/dspace/v0.8/",
+                },
                 "protocol": DATASPACE_PROTOCOL_HTTP, # TODO: what is this actually used for?
                 'providerUrl': provider_ids_endpoint,
             }
@@ -349,25 +368,37 @@ class EdcConsumer(EdcDataManagement):
         agreement_id = negotiated_contract.get('contractAgreementId', None)
         return agreement_id
 
-    def negotiate_contract_and_wait(self, provider_ids_endpoint, contract_offer, timeout = 30):
+    def negotiate_contract_and_wait(self, provider_ids_endpoint, contract_offer, timeout = 30, asset_id: str = None):
         """
         Result: The negotiated contract (contains the agreementId)
         """
         #negotiation_contract_offer = EdcConsumer.catalog_contract_offer_into_negotiation_contract_offer(catalog_contract_offer=contract_offer, connector_address=provider_ids_endpoint)
         #negotiation_contract_offer = contract_offer # TODO
         from pycxids.edc.settings import CONSUMER_IDS_ENDPOINT
+        if not asset_id:
+            # try
+            contract_offer.get('asset:prop:id') # EDC?
+
         data = {
-            "@context": {},
-            "connectorAddress": CONSUMER_IDS_ENDPOINT, # TODO: needs to be fixed!
-            "connectorId": CONSUMER_IDS_ENDPOINT, # TODO: needs to be fixed
+            "@context": {
+                "odrl": "http://www.w3.org/ns/odrl/2/"
+            },
+            "@type": "NegotiationInitiateRequestDto",
+            "connectorAddress": provider_ids_endpoint,
+            "connectorId": "consumer", # TODO: needs to be fixed
+            "providerId": "provider",
             "protocol": DATASPACE_PROTOCOL_HTTP,
             "offer": {
-                "assetId": contract_offer['asset:prop:id'],
                 "offerId": contract_offer['@id'],
-                "policy": contract_offer['odrl:hasPolicy']
+                "assetId": asset_id,
+                "policy": {
+                    'odrl:permission': contract_offer['permission'],
+                    'odrl:prohibition': contract_offer['prohibition'],
+                    'odrl:obligation': contract_offer['obligation'],
+                }
             }
         }
-        data = self.post(path="/contractnegotiations", data=data)
+        result = self.post(path="/contractnegotiations", data=data)
         negotiation_id = data['@id']
         if USE_V1_DATA_MANAGEMENT_API:
             negotiation_id = data['id']
@@ -442,7 +473,7 @@ class EdcConsumer(EdcDataManagement):
         catalog = self.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
         contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
         negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint,
-            contract_offer=contract_offer)
+            contract_offer=contract_offer, asset_id=asset_id)
         negotiated_contract_id = negotiated_contract.get('id', '')
         agreement_id = negotiated_contract.get('contractAgreementId', '')
         print(f"agreementId: {agreement_id}")

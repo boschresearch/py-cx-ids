@@ -264,6 +264,9 @@ components:
             dspace:dataset:
               type: string
               description: "@id of the dataset"
+            dspace:dataSet:
+              type: string
+              description: "Only there for compatibility reasons. Seems to be a type in the spec"
             dspace:processId:
               type: string
               description: "TODO: Deprecated? To be removed?"

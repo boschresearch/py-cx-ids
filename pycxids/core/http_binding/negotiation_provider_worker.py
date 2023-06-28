@@ -10,7 +10,9 @@ from uuid import uuid4
 import requests
 from fastapi import status
 
-from pycxids.core.http_binding.settings import KEY_AGREEMENT_ID, KEY_DATASET, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_AGREEMENTS_FN, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_MODIFIED
+from pycxids.core.daps import Daps
+from pycxids.core.settings import settings as core_settings
+from pycxids.core.http_binding.settings import KEY_AGREEMENT_ID, KEY_DATASET, KEY_PROCESS_ID, KEY_STATE, PROVIDER_CALLBACK_BASE_URL, PROVIDER_STORAGE_AGREEMENTS_FN, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_MODIFIED
 from pycxids.core.http_binding.policies import default_policy
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.http_binding.models import ContractAgreementMessage, ContractRequestMessage, ContractOfferMessage, DspaceTimestamp, OdrlAgreement, OdrlOffer, NegotiationState
@@ -73,6 +75,7 @@ async def requested_agreed(item):
     item: custom storage item
     """
     request_id = item.get(KEY_NEGOTIATION_REQUEST_ID)
+    process_id = item.get(KEY_PROCESS_ID)
     item_id = item.get(KEY_ID)
     if not request_id:
         return
@@ -85,21 +88,28 @@ async def requested_agreed(item):
 
     agreement = OdrlAgreement.parse_obj(default_policy)
     agreement.odrl_target = item.get(KEY_DATASET)
-    now = datetime.now()
-    agreement.dspace_timestamp = DspaceTimestamp(field_value=now.isoformat())
-    agreement.dspace_provider_id = 'TODO'
-    agreement.dspace_consumer_id = 'TODO'
+    now = datetime.utcnow()
+    agreement.dspace_timestamp = DspaceTimestamp(field_value=now.strftime('%Y-%m-%dT%H:%M:%SZ')) # TODO: py does not support military Z, put in utils
+    agreement.dspace_provider_id = core_settings.PROVIDER_CONNECTOR_URN
+    agreement.dspace_consumer_id = 'TODO' # TODO: get from message
     agreement_id = str(uuid4()) # the agreement id must be newly created, don't reuse an existing id to avoid id mis-use
     # store reference agreement_id -> negotiation id
     storage_agreements.put(agreement_id, item_id)
     agreement_message = ContractAgreementMessage(
         field_id = agreement_id,
-        dspace_process_id = request_id,
+        dspace_process_id = process_id,
         dspace_agreement = agreement,
         dspace_callback_address = PROVIDER_CALLBACK_BASE_URL,
     )
-
-    r = requests.post(url=f"{callback}/negotiations/{request_id}/agreement", json=agreement_message.dict())
+    data = agreement_message.dict()
+    # we need a daps token first
+    daps = Daps(daps_endpoint=core_settings.DAPS_ENDPOINT, private_key_fn=core_settings.PRIVATE_KEY_FN, client_id=core_settings.CLIENT_ID)
+    token = daps.get_daps_token(audience=callback)
+    headers = {
+        'Authorization': token['access_token']
+    }
+    # TODO: check if the process_id here is correct behavior from EDC and this is DSP spec compliant
+    r = requests.post(url=f"{callback}/negotiations/{process_id}/agreement", json=data, headers=headers)
     if not r.status_code == status.HTTP_200_OK:
         print(f"{r.status_code} - {r.reason} - {r.content}")
         return

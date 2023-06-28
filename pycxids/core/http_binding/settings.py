@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     # provider signing keys
     PROVIDER_PUBLIC_KEY_PEM_FN = 'provider_public_key.pem'
     PROVIDER_PRIVATE_KEY_PKCS8_FN = 'provider_private_key.pkcs8'
+    # debug all api messages to dir? Set to empty to disable
+    DEBUG_DIR = './debug_messages'
 
 settings: Settings = Settings()
 
@@ -58,6 +60,7 @@ KEY_NEGOTIATION_REQUEST_ID = 'negotiation_request_id'
 KEY_ID = 'id'
 KEY_STATE = 'state'
 KEY_DATASET = 'dataset'
+KEY_PROCESS_ID = 'process_id'
 KEY_AGREEMENT_ID  = 'agreement_id'
 KEY_MODIFIED = 'modified'
 

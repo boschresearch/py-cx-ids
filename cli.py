@@ -130,6 +130,16 @@ def cli_config_add(config_name: str):
             assert j.get('hello') == 'world'
             print("Successfully tested the reachability of the webhook.")
 
+def get_DSP_api_helper(provider_base_url:str):
+    use_config = config_storage.get('use')
+    myconfig = config_storage.get('configs', {}).get(use_config)
+
+    return cli_dsp_utils.CliDspApiHelper(
+        provider_base_url=provider_base_url,
+        daps_endpoint=myconfig.get('DAPS_ENDPOINT'),
+        private_key_fn=myconfig.get('PRIVATE_KEY_FN'),
+        client_id=myconfig.get('CLIENT_ID'),
+    )
 
 @cli.command('catalog')
 @click.option('-o', '--out-fn', default='')
@@ -145,12 +155,7 @@ def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
         else:
             provider_base_url = provider_ids_endpoint
 
-        api = cli_dsp_utils.CliDspApiHelper(
-            provider_base_url=provider_base_url,
-            daps_endpoint=myconfig.get('DAPS_ENDPOINT'),
-            private_key_fn=myconfig.get('PRIVATE_KEY_FN'),
-            client_id=myconfig.get('CLIENT_ID'),
-        )
+        api = get_DSP_api_helper(provider_base_url=provider_base_url)
 
         catalog = api.fetch_catalog(out_fn=out_fn)
         print(json.dumps(catalog, indent=4))
@@ -183,7 +188,7 @@ def list_assets_from_catalog(catalog_filename: str):
     datasets = catalog.get('dcat:dataset', None)
     if datasets:
         # DSP case
-        asset_ids = cli_dsp_utils.get_asset_ids_from_catalog(catalog=catalog)
+        asset_ids = cli_dsp_utils.CliDspApiHelper.get_asset_ids_from_catalog(catalog=catalog)
     else:
         asset_ids = cli_multipart_utils.get_asset_ids_from_catalog(catalog=catalog)
     print('\n'.join(asset_ids))
@@ -204,25 +209,26 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
     assert config, "Please add config first"
 
     if config.get('PROTOCOL', '') == PROTOCOL_DSP:
-        catalog_base_url = ''
+        provider_base_url = ''
         if not provider_ids_endpoint:
-            catalog_base_url = config.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
-        offers = cli_dsp_utils.get_offers_for_asset(catalog_base_url=catalog_base_url, asset_id=asset_id)
+            provider_base_url = config.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
+        api = get_DSP_api_helper(provider_base_url=provider_base_url)
+        offers = api.get_offers_for_asset(asset_id=asset_id)
         print(offers)
         consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
         # TODO catalog_base_url should not be used here, but rather the endpoint from the catalog result!
-        negotiation = cli_dsp_utils.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url, provider_base_url=catalog_base_url)
+        negotiation = api.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url, provider_base_url=provider_base_url)
         print(negotiation)
         negotiation_process_id = negotiation.get('dspace:processId')
         # and now get the message from the receiver api (proprietary api)
-        agreement = cli_dsp_utils.negotiation_callback_result(id=negotiation_process_id, consumer_callback_base_url=consumer_callback_base_url)
+        agreement = api.negotiation_callback_result(id=negotiation_process_id, consumer_callback_base_url=consumer_callback_base_url)
         print(agreement)
         agreement_id = agreement.get('@id')
-        transfer = cli_dsp_utils.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url, provider_base_url=catalog_base_url)
+        transfer = api.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url, provider_base_url=provider_base_url)
         print(transfer)
         transfer_id = transfer.get('@id')
         transfer_process_id = transfer.get('dspace:processId')
-        transfer_message = cli_dsp_utils.transfer_callback_result(id=transfer_process_id, consumer_callback_base_url=consumer_callback_base_url)
+        transfer_message = api.transfer_callback_result(id=transfer_process_id, consumer_callback_base_url=consumer_callback_base_url)
         print(transfer_message)
         transfer_state_received = TransferStateStore.parse_obj(transfer_message)
         data_address_received: DataAddress = transfer_state_received.data_address
