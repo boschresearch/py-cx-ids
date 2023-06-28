@@ -270,7 +270,7 @@ components:
             dspace:processId:
               type: string
               description: "TODO: Deprecated? To be removed?"
-            dspace:offer:
+            odrl:offer:
               $ref: "#/components/schemas/OdrlOffer"
             dspace:callbackAddress:
               type: string
@@ -336,7 +336,7 @@ components:
               default: "dspace:ContractOfferMessage"
             dspace:processId:
               type: string
-            dspace:offer:
+            odrl:offer:
               $ref: "#/components/schemas/OdrlOffer"
             dspace:callbackAddress:
               type: string
@@ -551,12 +551,20 @@ components:
           $ref: "#/components/schemas/OdrlOperand"
         operator:
           type: string
-        
+
+    Action:
+      type: object
+      properties:
+        odrl:type:
+          type: string
+
     OdrlRule:
       type: object
       properties:
         action:
-          type: string
+          oneOf:
+            - type: string
+            - $ref: "#/components/schemas/Action"
         constraint:
           $ref: "#/components/schemas/OdrlConstraint"
         duty:
