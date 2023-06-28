@@ -378,28 +378,63 @@ class EdcConsumer(EdcDataManagement):
         if not asset_id:
             # try
             contract_offer.get('asset:prop:id') # EDC?
-
+        """
         data = {
             "@context": {
                 "odrl": "http://www.w3.org/ns/odrl/2/"
             },
             "@type": "NegotiationInitiateRequestDto",
             "connectorAddress": provider_ids_endpoint,
+            "protocol": DATASPACE_PROTOCOL_HTTP,
             "connectorId": "consumer", # TODO: needs to be fixed
             "providerId": "provider",
-            "protocol": DATASPACE_PROTOCOL_HTTP,
             "offer": {
                 "offerId": contract_offer['@id'],
                 "assetId": asset_id,
+                "odrl:target": asset_id,
                 "policy": {
+                    "@type": "odrl:Set",
                     'odrl:permission': contract_offer['permission'],
                     'odrl:prohibition': contract_offer['prohibition'],
                     'odrl:obligation': contract_offer['obligation'],
                 }
             }
         }
+        data['offer']['policy']['odrl:permission'][0]['odrl:target'] = asset_id
+        data['offer']['policy']['odrl:permission'][0]['odrl:action']= {
+            "odrl:type": "USE"
+        }
+        """
+        offer_id = contract_offer.get('@id')
+        data = {
+            "@context": {
+                "odrl": "http://www.w3.org/ns/odrl/2/"
+            },
+            "@type": "NegotiationInitiateRequestDto",
+            "connectorAddress": provider_ids_endpoint,
+            "protocol": "dataspace-protocol-http",
+            "connectorId": "consumer",
+            "providerId": "provider",
+            "offer": {
+                "offerId": offer_id,
+                "assetId": asset_id,
+                "policy": {
+                    "@type": "odrl:Set",
+                    "odrl:permission": {
+                        "odrl:target": asset_id,
+                        "odrl:action": "USE",
+                        # "odrl:action": {
+                        #     "odrl:type": "USE"
+                        # },
+                    },
+                    "odrl:prohibition": [],
+                    "odrl:obligation": [],
+                    "odrl:target": asset_id
+                }
+            }
+        }
         result = self.post(path="/contractnegotiations", data=data)
-        negotiation_id = data['@id']
+        negotiation_id = result.get('@id')
         if USE_V1_DATA_MANAGEMENT_API:
             negotiation_id = data['id']
         negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='CONFIRMED')

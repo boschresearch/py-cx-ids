@@ -87,7 +87,7 @@ class OdrlConstraint(MyBaseModel):
 
 
 class OdrlRule(MyBaseModel):
-    action: Optional[str] = None
+    action: Optional[Union[str, dict]] = None
     constraint: Optional[OdrlConstraint] = None
     duty: Optional[List[str]] = None
 

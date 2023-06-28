@@ -50,7 +50,7 @@ async def negotiation_request(request: Request, contract_request: ContractReques
     storage.put(id, custom_storage_item)
     if not PROVIDER_DISABLE_IN_CONTEXT_WORKER:
         # sends and immediate agreed response to the consumer
-        task = asyncio.create_task(requested_agreed(item=custom_storage_item))
+        task = asyncio.create_task(requested_agreed(item=custom_storage_item, offer=contract_request.dspace_offer))
         fire_and_forget(task=task)
     # prepare response
     contract_negotiation = ContractNegotiation(

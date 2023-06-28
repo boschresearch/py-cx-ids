@@ -68,7 +68,7 @@ def requested_offered(item):
         item[KEY_STATE] = NegotiationState.offered
         storage.put(id, item)
 
-async def requested_agreed(item):
+async def requested_agreed(item, offer: OdrlOffer = None):
     """
     Requested -> Agreeed
 
@@ -76,6 +76,7 @@ async def requested_agreed(item):
     """
     request_id = item.get(KEY_NEGOTIATION_REQUEST_ID)
     process_id = item.get(KEY_PROCESS_ID)
+    dataset_id = item.get(KEY_DATASET)
     item_id = item.get(KEY_ID)
     if not request_id:
         return
@@ -86,13 +87,19 @@ async def requested_agreed(item):
     # send an agreement
     # TODO: of course in reality, we would need to check some details
 
-    agreement = OdrlAgreement.parse_obj(default_policy)
-    agreement.odrl_target = item.get(KEY_DATASET)
-    now = datetime.utcnow()
-    agreement.dspace_timestamp = DspaceTimestamp(field_value=now.strftime('%Y-%m-%dT%H:%M:%SZ')) # TODO: py does not support military Z, put in utils
-    agreement.dspace_provider_id = core_settings.PROVIDER_CONNECTOR_URN
-    agreement.dspace_consumer_id = 'TODO' # TODO: get from message
-    agreement_id = str(uuid4()) # the agreement id must be newly created, don't reuse an existing id to avoid id mis-use
+
+    # agreement = OdrlAgreement.parse_obj(default_policy)
+    # agreement.odrl_target = item.get(KEY_DATASET)
+    # now = datetime.utcnow()
+    # agreement.dspace_timestamp = DspaceTimestamp(field_value=now.strftime('%Y-%m-%dT%H:%M:%SZ')) # TODO: py does not support military Z, put in utils
+    # agreement.dspace_provider_id = 'BPNLprovider' # TODO:
+    # agreement.dspace_consumer_id = 'TODO' # TODO: get from message
+    # # workaround for EDC issue https://github.com/eclipse-edc/Connector/issues/3240
+    # agreement.field_id = f"{str(uuid4())}:{str(uuid4())}:{str(uuid4())}"
+    agreement = OdrlAgreement.parse_obj(offer.dict())
+    agreement.odrl_target = dataset_id
+    
+    agreement_id = str(uuid4())  # the agreement id must be newly created, don't reuse an existing id to avoid id mis-use
     # store reference agreement_id -> negotiation id
     storage_agreements.put(agreement_id, item_id)
     agreement_message = ContractAgreementMessage(
@@ -102,6 +109,9 @@ async def requested_agreed(item):
         dspace_callback_address = PROVIDER_CALLBACK_BASE_URL,
     )
     data = agreement_message.dict()
+    # data['dspace:agreement']['permission'][0]['action'] = {
+    #     "odrl:type": "USE"
+    # }
     # we need a daps token first
     daps = Daps(daps_endpoint=core_settings.DAPS_ENDPOINT, private_key_fn=core_settings.PRIVATE_KEY_FN, client_id=core_settings.CLIENT_ID)
     token = daps.get_daps_token(audience=callback)

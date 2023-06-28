@@ -11,6 +11,9 @@ default_policy = OdrlPolicy(
     field_id = 'default_policy',
     permission=[
         OdrlRule(
+            # action={
+            #     'odrl:type':'USE'
+            # },
             action='USE',
             constraint=OdrlConstraint(
                 leftOperand=OdrlOperand(value='idsc:PURPOSE'),
