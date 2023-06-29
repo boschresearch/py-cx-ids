@@ -413,8 +413,8 @@ class EdcConsumer(EdcDataManagement):
             "@type": "NegotiationInitiateRequestDto",
             "connectorAddress": provider_ids_endpoint,
             "protocol": "dataspace-protocol-http",
-            "connectorId": "consumer",
-            "providerId": "provider",
+            "connectorId": "BPNLprovider", # TODO
+            "providerId": "BPNLprovider", # TODO
             "offer": {
                 "offerId": offer_id,
                 "assetId": asset_id,
@@ -437,7 +437,8 @@ class EdcConsumer(EdcDataManagement):
         negotiation_id = result.get('@id')
         if USE_V1_DATA_MANAGEMENT_API:
             negotiation_id = data['id']
-        negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='CONFIRMED')
+        # TODO: it seems there is no transition possible to AGREED in 0.1.0 - let's try with what can be reached
+        negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='FINALIZED')
         return negotiation_data
 
     def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str):
@@ -509,8 +510,10 @@ class EdcConsumer(EdcDataManagement):
         contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
         negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint,
             contract_offer=contract_offer, asset_id=asset_id)
-        negotiated_contract_id = negotiated_contract.get('id', '')
-        agreement_id = negotiated_contract.get('contractAgreementId', '')
+        negotiated_contract_id = negotiated_contract.get('@id', '')
+        if USE_V1_DATA_MANAGEMENT_API:
+            negotiated_contract_id = negotiated_contract.get('id', '')
+        agreement_id = negotiated_contract.get('edc:contractAgreementId', '')
         print(f"agreementId: {agreement_id}")
 
         transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint,

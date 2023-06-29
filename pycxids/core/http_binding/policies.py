@@ -4,21 +4,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from uuid import uuid4
 from pycxids.core.http_binding.models import OdrlOffer, OdrlPolicy, OdrlRule, OdrlOperand, OdrlConstraint, OdrlOperand
 
 
 default_policy = OdrlPolicy(
-    field_id = 'default_policy',
-    permission=[
+    # workaround for EDC issue https://github.com/eclipse-edc/Connector/issues/3240
+    field_id = f"{str(uuid4())}:{str(uuid4())}:{str(uuid4())}",
+    odrl_permission=[
         OdrlRule(
             # action={
             #     'odrl:type':'USE'
             # },
-            action='USE',
-            constraint=OdrlConstraint(
-                leftOperand=OdrlOperand(value='idsc:PURPOSE'),
-                rightOperand=OdrlOperand(value='R2_Traceability'),
-                operator='EQ'
+            odrl_action='USE',
+            odrl_constraint=OdrlConstraint(
+                odrl_leftOperand=OdrlOperand(value='idsc:PURPOSE'),
+                odrl_rightOperand=OdrlOperand(value='R2_Traceability'),
+                odrl_operator='EQ'
             )
         )
     ]

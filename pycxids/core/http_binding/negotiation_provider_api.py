@@ -9,10 +9,13 @@ import json
 from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status
 
-from pycxids.core.http_binding.models import ContractRequestMessage, ContractNegotiation, NegotiationState
+from pyld import jsonld
+from pycxids.core.http_binding.models_local import default_context
+
+from pycxids.core.http_binding.models import ContractAgreementVerificationMessage, ContractRequestMessage, ContractNegotiation, NegotiationState
 from pycxids.core.http_binding.settings import KEY_DATASET, KEY_MODIFIED, KEY_PROCESS_ID, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
 from pycxids.utils.storage import FileStorageEngine
-from pycxids.core.http_binding.negotiation_provider_worker import requested_agreed
+from pycxids.core.http_binding.negotiation_provider_worker import requested_agreed, verified_finalized
 from pycxids.utils.tasks import fire_and_forget
 
 storage = FileStorageEngine(storage_fn=PROVIDER_STORAGE_FN)
@@ -21,10 +24,17 @@ storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQ
 app = APIRouter(tags=['Negotiaion'])
 
 @app.post('/negotiations/request', response_model=ContractNegotiation)
-async def negotiation_request(request: Request, contract_request: ContractRequestMessage = Body(...)):
+async def negotiation_request(request: Request):
+    body = await request.json()
     with open('contract_request_message.json', 'wt') as f:
-        data_str = json.dumps(contract_request.dict(), indent=4)
-        f.write(data_str)
+        body_str = json.dumps(body, indent=4)
+        f.write(body_str)
+    expanded = jsonld.expand(body)
+    our_compacted = jsonld.compact(expanded, ctx=default_context, options={'compactArrays': True})
+    offer = body.get('dspace:offer')
+    contract_request: ContractRequestMessage = ContractRequestMessage.parse_obj(body)
+    contract_request.dspace_offer.odrl_obligation = []
+    contract_request.dspace_offer.odrl_prohibition = []
     if not contract_request.field_id:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='no @id field given.')
     if storage_negotiation_requests.get(contract_request.field_id):
@@ -50,7 +60,7 @@ async def negotiation_request(request: Request, contract_request: ContractReques
     storage.put(id, custom_storage_item)
     if not PROVIDER_DISABLE_IN_CONTEXT_WORKER:
         # sends and immediate agreed response to the consumer
-        task = asyncio.create_task(requested_agreed(item=custom_storage_item, offer=contract_request.dspace_offer))
+        task = asyncio.create_task(requested_agreed(item=custom_storage_item, offer=offer))
         fire_and_forget(task=task)
     # prepare response
     contract_negotiation = ContractNegotiation(
@@ -75,3 +85,27 @@ def negotiation_get(id: str):
     )
     return contract_negotiation
 
+@app.post('/negotiations/{id}/agreement/verification')
+async def negotiation_agreement(request: Request, id: str):
+    """
+    We just confirm every message we received. No matter we know it or not.
+    We store it and send a 200 OK, which means state is transitioned to 'VERIFIED'
+    """
+    body = await request.json()
+    with open('contract_agreement_verification_message.json', 'wt') as f:
+        body_str = json.dumps(body, indent=4)
+        f.write(body_str)
+
+    # TODO: verify signature on the agreement
+
+    if not PROVIDER_DISABLE_IN_CONTEXT_WORKER:
+        # sends and immediate agreed response to the consumer
+        task = asyncio.create_task(verified_finalized(id=id, msg=body))
+        fire_and_forget(task=task)
+
+    return {}
+
+@app.post('/negotiations/{id}/termination')
+async def negotiation_agreement(request: Request, id: str):
+    print(f"Termination of contract / negotiation with id: {id}")
+    return {}
