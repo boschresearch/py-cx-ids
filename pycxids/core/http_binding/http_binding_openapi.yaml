@@ -129,7 +129,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ContracNegotiationEventMessage"
+              $ref: "#/components/schemas/ContractNegotiationEventMessage"
       responses:
         "200":
           description: "Result"
@@ -270,12 +270,12 @@ components:
             dspace:processId:
               type: string
               description: "TODO: Deprecated? To be removed?"
-            odrl:offer:
+            dspace:offer:
               $ref: "#/components/schemas/OdrlOffer"
             dspace:callbackAddress:
               type: string
     
-    ContracNegotiationEventMessage:
+    ContractNegotiationEventMessage:
       allOf:
         - $ref: "#/components/schemas/JsonLd"
         - type: object
@@ -289,9 +289,9 @@ components:
             "dspace:eventType":
               type: string
               enum:
-                - FINALIZED
-                - ACCEPTED
-                - TERMINATED
+                - "https://w3id.org/dspace/v0.8/FINALIZED"
+                - "https://w3id.org/dspace/v0.8/ACCEPTED"
+                - "https://w3id.org/dspace/v0.8/TERMINATED"
 
     ContractAgreementVerificationMessage:
       allOf:
@@ -336,7 +336,7 @@ components:
               default: "dspace:ContractOfferMessage"
             dspace:processId:
               type: string
-            odrl:offer:
+            dspace:offer:
               $ref: "#/components/schemas/OdrlOffer"
             dspace:callbackAddress:
               type: string
@@ -545,11 +545,11 @@ components:
     OdrlConstraint:
       type: object
       properties:
-        leftOperand:
+        odrl:leftOperand:
           $ref: "#/components/schemas/OdrlOperand"
-        rightOperand:
+        odrl:rightOperand:
           $ref: "#/components/schemas/OdrlOperand"
-        operator:
+        odrl:operator:
           type: string
 
     Action:
@@ -561,13 +561,13 @@ components:
     OdrlRule:
       type: object
       properties:
-        action:
+        odrl:action:
           oneOf:
             - type: string
             - $ref: "#/components/schemas/Action"
-        constraint:
+        odrl:constraint:
           $ref: "#/components/schemas/OdrlConstraint"
-        duty:
+        odrl:duty:
           type: array
           items:
             type: string # TODO: what is this exactly?
@@ -580,18 +580,24 @@ components:
         "@type":
           type: string
           default: "odrl:Policy"
-        permission:
-          type: array
-          items:
-            $ref: "#/components/schemas/OdrlRule"
-        prohibition:
-          type: array
-          items:
-            $ref: "#/components/schemas/OdrlRule"
-        obligation:
-          type: array
-          items:
-            $ref: "#/components/schemas/OdrlRule"
+        odrl:permission:
+          oneOf:
+            - $ref: "#/components/schemas/OdrlRule"
+            - type: array
+              items:
+                $ref: "#/components/schemas/OdrlRule"
+        odrl:prohibition:
+          oneOf:
+            - $ref: "#/components/schemas/OdrlRule"
+            - type: array
+              items:
+                $ref: "#/components/schemas/OdrlRule"
+        odrl:obligation:
+          oneOf:
+            - $ref: "#/components/schemas/OdrlRule"
+            - type: array
+              items:
+                $ref: "#/components/schemas/OdrlRule"
     OdrlOffer:
       description: "Only addition compared to the Policy: the target field"
       allOf:
