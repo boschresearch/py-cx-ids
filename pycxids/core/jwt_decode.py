@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2023 - for information on the respective copyright owner
 # see the NOTICE file and/or the repository
 # https://github.com/boschresearch/py-cx-ids
@@ -17,20 +19,22 @@ def decode_signed(data, pub_key):
     return jwt.api_jwt.decode_complete(data, key=pub_key, algorithms=['RS256'])
 
 if __name__ == '__main__':
-    pub_key_fn = sys.argv[1]
-    data = sys.argv[2]
-
-    if not os.path.isfile(pub_key_fn):
-        print("Provide a filename with the public key as 1st param")
+    args_len = len(sys.argv)
+    decoded = {}
+    # we don't want to depend on click library here
+    if args_len == 1:
+        print("Please provide at least the jwt content.")
         sys.exit()
-    if not data:
-        print("Provide the jwt encoded string as 2nd param")
-        sys.exit()
+    if args_len == 2:
+        decoded = decode(data=sys.argv[1])
+    if args_len == 3:
+        pub_key = ''
+        with open(sys.argv[2], 'r') as f:
+            pub_key = f.read()
+        if not pub_key:
+            print(f"Could not read pub key file {sys.argv[2]}")
+        decoded = decode_signed(data=sys.argv[1], pub_key=pub_key)
 
-    pub_key = ''
-    with open(pub_key_fn, 'r') as f:
-        pub_key = f.read()
-
-    decoded = decode_signed(data=data, pub_key=pub_key)
-    
-    print(json.dumps(decoded, indent=4))
+    print(decoded)
+    payload = decoded.get('payload')
+    print(json.dumps(payload, indent=4))
