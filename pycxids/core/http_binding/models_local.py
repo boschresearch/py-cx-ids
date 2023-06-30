@@ -24,9 +24,10 @@ class DataAddress(MyBaseModel):
     """
     TODO: This is only temporary. We need to find out what EDC uses here exactly
     """
-    auth_key: Optional[str] = Field(HTTP_HEADER_DEFAULT_AUTH_KEY, alias='authKey')
-    auth_code: Optional[str] = Field(None, alias='authCode')
-    base_url: Optional[str] = Field(None, alias='baseUrl')
+    field_type: Optional[str] = Field('DataAddress', alias='edc:type') # TODO: EDC compat
+    auth_key: Optional[str] = Field(HTTP_HEADER_DEFAULT_AUTH_KEY, alias='edc:authKey')
+    auth_code: Optional[str] = Field(None, alias='edc:authCode')
+    base_url: Optional[str] = Field(None, alias='edc:baseUrl')
 
 class TransferStateStore(MyBaseModel):
     id: str

@@ -89,6 +89,8 @@ async def requested_agreed(item, offer: dict = None):
 
     now = datetime.utcnow()
 
+    agreement_id = f"{str(uuid4())}:{str(uuid4())}:{str(uuid4())}"  # the agreement id must be newly created, don't reuse an existing id to avoid id mis-use
+
     # agreement = OdrlAgreement.parse_obj(offer.dict())
     # agreement.odrl_target = dataset_id
     # agreement.dspace_provider_id = 'BPNLprovider' # TODO:
@@ -100,11 +102,13 @@ async def requested_agreed(item, offer: dict = None):
     agreement['dspace:consumerId'] = 'consumer'
     agreement['dspace:timestamp'] = DspaceTimestamp(field_value=now.strftime('%Y-%m-%dT%H:%M:%SZ')).dict() # TODO: py does not support military Z, put in utils
 
-    agreement_id = str(uuid4())  # the agreement id must be newly created, don't reuse an existing id to avoid id mis-use
+    # at least EDC uses the agreement id from here, not from the enclosing message
+    agreement['@id']= agreement_id
+    
     # store reference agreement_id -> negotiation id
     storage_agreements.put(agreement_id, item_id)
     agreement_message = ContractAgreementMessage(
-        field_id = agreement_id,
+        field_id = str(uuid4()), # not relevant, since not used in EDC anywhere
         dspace_process_id = process_id,
         #dspace_agreement = agreement,
         dspace_callback_address = PROVIDER_CALLBACK_BASE_URL,

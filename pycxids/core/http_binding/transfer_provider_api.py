@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import asyncio
+import json
 from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status, Response
 
@@ -22,7 +23,7 @@ storage_agreements = FileStorageEngine(storage_fn=PROVIDER_STORAGE_AGREEMENTS_FN
 app = APIRouter(tags=['Transfer'])
 
 @app.post('/transfers/request', response_model=TransferProcess)
-async def transfer_request(response: Response, transfer_request_message: TransferRequestMessage = Body(...)):
+async def transfer_request(request: Request, response: Response):
     """
     Look into the negotatiation process first if already in proper state to start the transfer.
 
@@ -35,6 +36,18 @@ async def transfer_request(response: Response, transfer_request_message: Transfe
 
     Asyncronously send the response to the given callbackAddress
     """
+    body = await request.json()
+    with open('transfer_request_message.json', 'wt') as f:
+        body_str = json.dumps(body, indent=4)
+        f.write(body_str)
+
+    msg_process_id = body.get('dspace:processId')
+    msg_id = body.get('@id')
+    process_id = msg_id
+    if msg_process_id:
+        # this is EDC issue https://github.com/eclipse-edc/Connector/issues/3253
+        process_id = msg_process_id
+    transfer_request_message = TransferRequestMessage.parse_obj(body)
     # check some bar minimum prerequisites
     if not transfer_request_message.dspace_agreement_id:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="agreementId rquired!")
@@ -62,7 +75,7 @@ async def transfer_request(response: Response, transfer_request_message: Transfe
 
     state_store = TransferStateStore(
         id = transfer_id,
-        process_id = transfer_request_message.field_id,
+        process_id = process_id,
         state = TransferState.requested,
         agreement_id = negotiation.agreement_id,
         callback_address_request = transfer_request_message.dspace_callback_address,
@@ -83,7 +96,10 @@ async def transfer_request(response: Response, transfer_request_message: Transfe
     response.headers[HTTP_HEADER_LOCATION] =  f"/transfers/{transfer_id}"
     return transfer_process
 
-
+@app.post('/transfers/{id}/completion')
+async def transfer_request(request: Request, id: str):
+    print(f"/transfers/{id}/completion")
+    return {}
 
 @app.get('/transfers/{id}', response_model=TransferProcess)
 def get_transfer_process(id: str):

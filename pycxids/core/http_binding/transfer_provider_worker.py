@@ -11,6 +11,8 @@ from uuid import uuid4
 from base64 import b64decode
 import requests
 from fastapi import status
+from pycxids.core.daps import Daps
+from pycxids.core.settings import settings as core_settings
 from pycxids.core.http_binding.auth_code_generator import generate_auth_code
 from pycxids.core.http_binding.models_edc import AssetEntryNewDto
 from pycxids.core.http_binding.models_local import DataAddress, NegotiationStateStore, TransferStateStore
@@ -71,7 +73,18 @@ async def transfer_transition_requested_started(item: TransferStateStore, negoti
     auth_code_storage = FileStorageEngine(storage_fn=AUTH_CODE_REFERENCES_FN)
     auth_code_storage.put(auth_code, item.id)
 
-    r = requests.post(url=f"{item.callback_address_request}/transfers/{item.process_id}/start", json=transfer_start_message.dict())
+    callback = item.callback_address_request
+    daps = Daps(daps_endpoint=core_settings.DAPS_ENDPOINT, private_key_fn=core_settings.PRIVATE_KEY_FN, client_id=core_settings.CLIENT_ID)
+    token = daps.get_daps_token(audience=callback)
+    headers = {
+        'Authorization': token['access_token']
+    }
+
+    data = transfer_start_message.dict()
+    #data_address.field_type = 'HttpProxy'
+    data_data_address = data_address.dict()
+    data['dspace:dataAddress'] = data_data_address
+    r = requests.post(url=f"{callback}/transfers/{item.process_id}/start", json=data, headers=headers)
     if r.status_code != 200:
         print(f"Transfer requested -> started error. Consumer callback response: {r.status_code} - {r.reason} - {r.content}")
         return None

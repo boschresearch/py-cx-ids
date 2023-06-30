@@ -445,19 +445,55 @@ class EdcConsumer(EdcDataManagement):
         """
         Probably we don't need to wait for the state to change, because we'll receive  the EDR token when everything is ok
         """
-        transfer_request = {
-            'id': str(uuid4()),
-            'connectorId': 'foo', # TODO:
-            'connectorAddress': provider_ids_endpoint,
-            'contractId': agreement_id,
-            'assetId': asset_id,
-            'managedResource': False,
-            'dataDestination': {
-                'type': 'HttpProxy'
+        if USE_V1_DATA_MANAGEMENT_API:
+            transfer_request = {
+                'id': str(uuid4()),
+                'connectorId': 'foo', # TODO:
+                'connectorAddress': provider_ids_endpoint,
+                'contractId': agreement_id,
+                'assetId': asset_id,
+                'managedResource': False,
+                'dataDestination': {
+                    'type': 'HttpProxy'
+                }
             }
+            data = self.post("/transferprocess", data=transfer_request)
+            return data['id']
+        else:
+            transfer_request = {
+                "@context": {
+                    "odrl": "http://www.w3.org/ns/odrl/2/"
+                },
+                "assetId": asset_id,
+                "connectorAddress": provider_ids_endpoint,
+                "contractId": agreement_id,
+                "dataDestination": {
+                    "properties": {
+                        "type": "HttpProxy"
+                    }
+                },
+                "managedResources": False,
+                "privateProperties": {
+                    "receiverHttpEndpoint": "http://localhost:8000/datareference"
+                },
+                "protocol": "dataspace-protocol-http",
+                "transferType": {
+                    "contentType": "application/octet-stream",
+                    "isFinite": True,
+                }
+            }
+            data = self.post("/transferprocesses", data=transfer_request)
+            return data['@id']
+
+    def edr_tokens(self, agreement_id: str):
+        base_url_without_v2 = self.base_url.replace('/v2', '')
+        path = "/adapter/edrs"
+        params = {
+            'agreementId' : agreement_id
         }
-        data = self.post("/transferprocess", data=transfer_request)
-        return data['id']
+        r = requests.get(f"{base_url_without_v2}{path}", headers=self.headers, params=params)
+        result = r.json()
+        return result
 
     def transfer_and_wait_consumer_edr(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str, timeout = 30):
         """
@@ -510,7 +546,7 @@ class EdcConsumer(EdcDataManagement):
         contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
         negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint,
             contract_offer=contract_offer, asset_id=asset_id)
-        negotiated_contract_id = negotiated_contract.get('@id', '')
+        #negotiated_contract_id = negotiated_contract.get('@id', '')
         if USE_V1_DATA_MANAGEMENT_API:
             negotiated_contract_id = negotiated_contract.get('id', '')
         agreement_id = negotiated_contract.get('edc:contractAgreementId', '')

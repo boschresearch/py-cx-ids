@@ -32,7 +32,9 @@ def test():
     asset_id = 'demo_asset'
     provider_base_url = 'http://dev:8080'
     agreement_id, transfer_id = consumer.negotiate_and_transfer(provider_ids_endpoint=provider_base_url, asset_id=asset_id)
-    provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
+    #provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
+    edrs = consumer.edr_tokens(agreement_id=agreement_id)
+    print(edrs)
 
     provider_data_plane_endpoint = provider_edr.get('baseUrl')
 
