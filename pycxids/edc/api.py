@@ -485,12 +485,21 @@ class EdcConsumer(EdcDataManagement):
             data = self.post("/transferprocesses", data=transfer_request)
             return data['@id']
 
-    def edr_tokens(self, agreement_id: str):
+    def edr_tp(self, transfer_id: str):
+        base_url_without_v2 = self.base_url.replace('/v2', '')
+        path = f"/adapter/edrs/{transfer_id}"
+        r = requests.get(f"{base_url_without_v2}{path}", headers=self.headers)
+        result = r.json()
+        return result
+
+    def edr_tokens(self, agreement_id: None, asset_id: None):
         base_url_without_v2 = self.base_url.replace('/v2', '')
         path = "/adapter/edrs"
-        params = {
-            'agreementId' : agreement_id
-        }
+        params = {}
+        if agreement_id:
+            params['agreementId'] = agreement_id
+        if asset_id:
+            params['assetId'] = asset_id
         r = requests.get(f"{base_url_without_v2}{path}", headers=self.headers, params=params)
         result = r.json()
         return result
