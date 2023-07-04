@@ -97,6 +97,13 @@ def get_transfer_token_plain(transfer_process_id: str, timeout: int = Query(defa
     return decrypted_token['properties']
 
 @app.post('/datareference')
+def post_datareference_dprecated(request: Request, body = Body(...)):
+    """
+    Deprecated. Use /transfer/datareference instead to have the same base url.
+    """
+    return post_datareference(request, body)
+
+@app.post('/transfer/datareference')
 def post_datareference(request: Request, body = Body(...)):
     cid = body.get('properties', {}).get('cid', '')
     if not cid:
