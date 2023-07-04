@@ -33,7 +33,7 @@ assert CONSUMER_EDC_BASE_URL
 CONSUMER_EDC_API_KEY = os.getenv('CONSUMER_EDC_API_KEY', 'dontuseinpublic')
 assert CONSUMER_EDC_API_KEY
 
-CONSUMER_EDC_VALIDATION_ENDPOINT = os.getenv('CONSUMER_EDC_VALIDATION_ENDPOINT', 'http://consumer-control-plane:9192/validation/token')
+CONSUMER_EDC_VALIDATION_ENDPOINT = os.getenv('CONSUMER_EDC_VALIDATION_ENDPOINT', 'http://consumer-control-plane:9191/api/token')
 
 CONSUMER_IDS_BASE_URL = os.getenv('CONSUMEr_IDS_BASE_URL', 'http://consumer-control-plane:8282')
 CONSUMER_IDS_ENDPOINT = f"{CONSUMER_IDS_BASE_URL}{IDS_PATH}"
