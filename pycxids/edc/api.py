@@ -10,7 +10,7 @@ from time import sleep
 import requests
 from pycxids.utils.api import GeneralApi
 
-from pycxids.edc.settings import USE_V1_DATA_MANAGEMENT_API
+from pycxids.edc.settings import USE_V1_DATA_MANAGEMENT_API, RECEIVER_SERVICE_BASE_URL
 
 
 EDC_NAMESPACE = 'https://w3id.org/edc/v0.0.1/ns/'
@@ -116,7 +116,8 @@ class EdcProvider(EdcDataManagement):
                 }
             },
             "dataAddress": {
-                "properties": {
+                "@type": "edc:DataAddress",
+                "properties": { # TODO: do we still need the properties?
                     "type": "HttpData",
                     "proxyPath": str(proxyPath).lower(),
                     "proxyQueryParams": str(proxyQueryParams).lower(),
@@ -250,7 +251,15 @@ class EdcProvider(EdcDataManagement):
         Returns the number of elements for a requested path, e.g. assets, policydefinitions, contractdefinitions
         """
         try:
-            j = self.get(path=path, params={ 'limit': limit })
+            if USE_V1_DATA_MANAGEMENT_API:
+                j = self.get(path=path, params={ 'limit': limit })
+            else:
+                if not path.endswith('/request'):
+                    path = path + '/request'
+                data = {
+
+                }
+                j = self.post(path=path, data=data)
             return len(j)
         except Exception as ex:
             print(ex)
@@ -415,6 +424,7 @@ class EdcConsumer(EdcDataManagement):
             "protocol": "dataspace-protocol-http",
             "connectorId": "BPNLprovider", # TODO
             "providerId": "BPNLprovider", # TODO
+            "consumerId": "BPNLprovider", # TODO
             "offer": {
                 "offerId": offer_id,
                 "assetId": asset_id,
@@ -460,6 +470,10 @@ class EdcConsumer(EdcDataManagement):
             data = self.post("/transferprocess", data=transfer_request)
             return data['id']
         else:
+            receiver_service_base_url = self.token_receiver_service_base_url
+            if not receiver_service_base_url:
+                receiver_service_base_url = RECEIVER_SERVICE_BASE_URL
+                print("token_receiver_service_base_url not given, using default from settings: {receiver_service_base_url}")
             transfer_request = {
                 "@context": {
                     "odrl": "http://www.w3.org/ns/odrl/2/"
@@ -474,7 +488,7 @@ class EdcConsumer(EdcDataManagement):
                 },
                 "managedResources": False,
                 "privateProperties": {
-                    "receiverHttpEndpoint": "http://localhost:8000/datareference"
+                    "receiverHttpEndpoint": f"{receiver_service_base_url}/datareference"
                 },
                 "protocol": "dataspace-protocol-http",
                 "transferType": {
