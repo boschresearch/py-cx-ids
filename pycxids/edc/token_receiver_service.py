@@ -14,7 +14,7 @@ import requests
 from fastapi import FastAPI, Request, Header, Body, Query, HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND
 
-from pycxids.edc.settings import CONSUMER_EDC_VALIDATION_ENDPOINT, CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY
+from pycxids.edc.settings import CONSUMER_EDC_VALIDATION_ENDPOINT, CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY, USE_V1_DATA_MANAGEMENT_API
 from pycxids.edc.api import EdcConsumer
 
 from pycxids.utils.storage import FileStorageEngine
@@ -41,8 +41,13 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
 
     # Since the mapping is done via contract_id, we need to find this first
     edc = EdcConsumer(edc_data_managment_base_url=CONSUMER_EDC_BASE_URL, auth_key=CONSUMER_EDC_API_KEY)
-    transfer = edc.get(path=f"/transferprocess/{transfer_process_id}")
-    contract_id = transfer.get('dataRequest', {}).get('contractId', None)
+    contract_id = None
+    if USE_V1_DATA_MANAGEMENT_API:
+        transfer = edc.get(path=f"/transferprocess/{transfer_process_id}")
+        contract_id = transfer.get('dataRequest', {}).get('contractId', None)
+    else:
+        transfer = edc.get(path=f"/transferprocesses/{transfer_process_id}")
+        contract_id = transfer.get('edc:dataRequest', {}).get('edc:contractId', None)
     if not contract_id:
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not find contract_id for given transfer_process_id: {transfer_process_id}")
 
@@ -80,7 +85,10 @@ def get_transfer_token_plain(transfer_process_id: str, timeout: int = Query(defa
 
     # extract from consumer EDR
     consumer_edr_auth_code = token.get('authCode', None)
-    r = requests.get(CONSUMER_EDC_VALIDATION_ENDPOINT, headers={'Authorization': consumer_edr_auth_code})
+    #validation_endpoint = CONSUMER_EDC_BASE_URL.replace('/v2', '') + '/token'
+    #if USE_V1_DATA_MANAGEMENT_API:
+    validation_endpoint = CONSUMER_EDC_VALIDATION_ENDPOINT
+    r = requests.get(validation_endpoint, headers={'Authorization': consumer_edr_auth_code})
     if not r.ok:
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not decode token transfer_process_id:{transfer_process_id}")
 
@@ -91,6 +99,9 @@ def get_transfer_token_plain(transfer_process_id: str, timeout: int = Query(defa
 @app.post('/datareference')
 def post_datareference(request: Request, body = Body(...)):
     cid = body.get('properties', {}).get('cid', '')
+    if not cid:
+        # DSP protocol / product-edc 0.4.x and higher
+        cid = body.get('properties', {}).get('https://w3id.org/edc/v0.0.1/ns/cid', '')
     if not cid:
         raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not find cid in  properties.")
     storage.put(key=cid, value=body)
