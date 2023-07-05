@@ -15,6 +15,10 @@ datamodel-codegen --base-class=pycxids.models.base_model.MyBaseModel --collapse-
 - dataset id is different on every request. It is randomly generated!
 - edc.dsp.callback.address used for callbacks, but not documented
 
+# TODO:
+- DspaceTimestamp string or object?
+- dspaceDataAddress string or object?
+
 # notes
 
 SsiHttpConsumerPullWithProxyInMemoryTest

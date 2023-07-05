@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status
 
@@ -20,11 +21,13 @@ def negotiation_offer(id: str, contract_offer: ContractOfferMessage = Body(...))
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Not implemented yet')
 
 @app.post('/negotiations/{id}/agreement')
-def negotiation_agreement(id: str, contract_agreement: ContractAgreementMessage = Body(...)):
+def negotiation_agreement(id: str, body: dict = Body(...)):
     """
     We just confirm every agreement we received. No matter we know it or not.
     We store it and send a 200 OK, which means state is transitioned to 'AGREED'
     """
+    print(json.dumps(body, indent=4))
+    contract_agreement = ContractAgreementMessage.parse_obj(body)
     process_id = contract_agreement.dspace_process_id
     data = contract_agreement.dict()
     storage_agreements_received.put(
@@ -33,3 +36,7 @@ def negotiation_agreement(id: str, contract_agreement: ContractAgreementMessage 
     )
     return {}
 
+@app.post('/negotiations/{id}/termination')
+def negotiation_termination(id: str, body: dict = Body(...)):
+    print(f"termination id: {id}")
+    return {}

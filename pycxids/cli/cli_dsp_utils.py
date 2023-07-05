@@ -140,16 +140,13 @@ class CliDspApiHelper(GeneralApi):
         data['datasetId'] = dataset_id
         data['edc:assetId'] = dataset_id
         data['dspace:offer']['https://w3id.org/edc/v0.0.1/ns/assetId'] = dataset_id
+        data['dspace:offer']['odrl:target'] = dataset_id # TODO: this is required by EDC, check with spec!
         offer_id = data.get('dspace:offer').get('@id')
         data['dspace:offer']['https://w3id.org/edc/v0.0.1/ns/offerId'] = offer_id # workaround for EDC
 
         # the next step uses an internal 'requests' call that is mocked with the @patch test case annotation
-        r = self.post("/negotiations/request", data=data)
-        if not r.status_code == 200:
-            print(f"status_code: {r.status_code} - reason: {r.reason} - details: {r.content}")
-            return None
-        j = r.json()
-        return j
+        result = self.post("/negotiations/request", data=data)
+        return result
 
     def negotiation_callback_result(self, id: str, consumer_callback_base_url: str):
         r = requests.get(f"{consumer_callback_base_url}/negotiations/{id}/agreement")
@@ -166,14 +163,16 @@ class CliDspApiHelper(GeneralApi):
             dspace_agreement_id = agreement_id_received,
             dct_format = DCT_FORMAT_HTTP,
             dspace_callback_address = consumer_callback_base_url,
+            dspace_data_address = 'HttpData'
         )
         data = transfer_request_message.dict(exclude_unset=False)
-        r = requests.post(f"{provider_base_url}/transfers/request", json=data)
-        if not r.status_code == 200:
-            print(f"status_code: {r.status_code} - reason: {r.reason} - details: {r.content}")
-            return None
-        j = r.json()
-        return j
+        data['dspace:processId'] = transfer_request_id # EDC requires this https://github.com/eclipse-edc/Connector/issues/3253
+        data['dspace:dataAddress'] = {
+                "https://w3id.org/edc/v0.0.1/ns/type":"HttpProxy"
+        }
+        #r = requests.post(f"{provider_base_url}/transfers/request", json=data)
+        result = self.post(path="/transfers/request", data=data)
+        return result
 
     def transfer_callback_result(self, id: str, consumer_callback_base_url: str):
         r = requests.get(f"{consumer_callback_base_url}/private/transfers/{id}")

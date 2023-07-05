@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 from uuid import uuid4
 from fastapi import APIRouter, Body, Request, HTTPException, status, Response
 
@@ -18,7 +19,7 @@ from pycxids.utils.storage import FileStorageEngine
 app = APIRouter(tags=['Transfer Common API - endponts for both, Consumer and Provider'])
 
 @app.post('/transfers/{id}/start')
-def post_transfer_start(transfer_start_message: TransferStartMessage = Body(...)):
+def post_transfer_start(id: str, body: dict = Body(...)):
     """
     Use on Consumer side
 
@@ -28,6 +29,8 @@ def post_transfer_start(transfer_start_message: TransferStartMessage = Body(...)
 
     TODO: is the provider transition similar enough to use it also on Provider side?
     """
+    print(json.dumps(body, indent=4))
+    transfer_start_message = TransferStartMessage.parse_obj(body)
     # check some bar minimum prerequisites
     if not transfer_start_message.dspace_process_id:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="processId rquired!")
@@ -60,10 +63,18 @@ def post_transfer_start(transfer_start_message: TransferStartMessage = Body(...)
         print(f"WARNING: data_address already set to: {transfer.data_address}")
         print(f"received new dataAddress is: {transfer_start_message.dspace_data_address}")
         print("TODO: Check this behavior in detail!")
-    data_address_received = DataAddress.parse_raw(transfer_start_message.dspace_data_address.encode())
+    data_address_received = None
+    if isinstance(transfer_start_message.dspace_data_address, str):
+        data_address_received = DataAddress.parse_raw(transfer_start_message.dspace_data_address.encode())
+    else:
+        data_address_received = DataAddress.parse_obj(transfer_start_message.dspace_data_address)
     transfer.data_address = data_address_received
     storage_transfer.put(transfer_id, transfer.dict())
 
     # result is a 200 ok
     return
 
+@app.post('/transfers/{id}/termination')
+def post_transfer_termination(id: str, body:dict = Body(...)):
+    print(f"Transfer termination: {id}")
+    return {}
