@@ -404,7 +404,11 @@ components:
             dspace:processId:
               type: string
             dspace:dataAddress:
-              type: string
+              oneOf:
+                - type: object
+                  additionalProperties:
+                    type: string
+                - type: string
 
     TransferProcess:
       allOf:
@@ -621,7 +625,9 @@ components:
             odrl:target:
               type: string
             dspace:timestamp:
-              $ref: "#/components/schemas/DspaceTimestamp"
+              oneOf:
+                - $ref: "#/components/schemas/DspaceTimestamp"
+                - type: string
             dspace:consumerId:
               type: string
             dspace:providerId:
