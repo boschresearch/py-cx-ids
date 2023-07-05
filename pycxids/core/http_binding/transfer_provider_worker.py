@@ -58,13 +58,17 @@ async def transfer_transition_requested_started(item: TransferStateStore, negoti
         signing_private_key = f.read()
     auth_code = generate_auth_code(claims=auth_code_claims, encryption_public_key_pem=backend_pub_key, signing_private_key_pem=signing_private_key)
     data_address = DataAddress(
-        auth_code = auth_code, # TODO:
-        base_url = asset.data_address.properties.get('baseUrl'),
+        edc_cid = negotiation_state.agreement_id, # required by EDC?
+        edc_auth_code = auth_code, # TODO:
+        edc_endpoint = asset.data_address.properties.get('baseUrl'),
+        edc_id = item.process_id, # TODO: does EDC require the mapping here to the processId?
     )
-    data_address_str = json.dumps(data_address.dict(exclude_unset=False))
+    # data_address_str = json.dumps(data_address.dict(exclude_unset=False))
+    data_address_data = data_address.dict()
+
     transfer_start_message = TransferStartMessage(
         dspace_process_id = item.process_id,
-        dspace_data_address = data_address_str
+        dspace_data_address = data_address_data,
     )
     latest: TransferStateStore = TransferStateStore.parse_obj(storage_transfer.get(item.id))
     latest.data_address = data_address
@@ -81,9 +85,7 @@ async def transfer_transition_requested_started(item: TransferStateStore, negoti
     }
 
     data = transfer_start_message.dict()
-    #data_address.field_type = 'HttpProxy'
-    data_data_address = data_address.dict()
-    data['dspace:dataAddress'] = data_data_address
+
     r = requests.post(url=f"{callback}/transfers/{item.process_id}/start", json=data, headers=headers)
     if r.status_code != 200:
         print(f"Transfer requested -> started error. Consumer callback response: {r.status_code} - {r.reason} - {r.content}")

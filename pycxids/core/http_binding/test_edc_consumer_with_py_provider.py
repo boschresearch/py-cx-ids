@@ -39,6 +39,8 @@ def test():
     if not r.ok:
         print(f"{r.status_code} {r.reason} {r.content}")
         assert False, "Could not fetch data via CONSUMER data plane"
+    j = r.json()
+    assert 'agreement_id' in j
 
     # test call directly against the PROVIDER
     provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
@@ -47,9 +49,8 @@ def test():
     if not r.ok:
         print(f"{r.status_code} {r.reason} {r.content}")
         assert False, "Could not fetch data via PROVIDER data plane"
-
     j = r.json()
-    assert 'keys' in j
+    assert 'agreement_id' in j
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
