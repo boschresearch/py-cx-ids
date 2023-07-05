@@ -17,4 +17,4 @@ def fire_and_forget(task:Task):
     Further details:     https://docs.python.org/3/library/asyncio-task.html#creating-tasks
     """
     background_tasks.add(task)
-    task.add_done_callback(background_tasks.discard(task))
+    task.add_done_callback(background_tasks.discard)
