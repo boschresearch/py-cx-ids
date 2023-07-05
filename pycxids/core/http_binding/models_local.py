@@ -6,6 +6,7 @@
 
 from typing import Optional
 from pycxids.core.http_binding.settings import HTTP_HEADER_DEFAULT_AUTH_KEY
+from pycxids.edc.api import EDC_NAMESPACE
 from pycxids.models.base_model import MyBaseModel
 from pycxids.core.http_binding.models import NegotiationState, TransferState
 
@@ -24,7 +25,7 @@ class DataAddress(MyBaseModel):
     """
     TODO: This is only temporary. We need to find out what EDC uses here exactly
     """
-    field_type: Optional[str] = Field('DataAddress', alias='edc:type') # TODO: EDC compat
+    field_type: Optional[str] = Field(f"{EDC_NAMESPACE}DataAddress", alias='edc:type') # TODO: EDC compat
     auth_key: Optional[str] = Field(HTTP_HEADER_DEFAULT_AUTH_KEY, alias='edc:authKey')
     auth_code: Optional[str] = Field(None, alias='edc:authCode')
     base_url: Optional[str] = Field(None, alias='edc:baseUrl')
