@@ -51,6 +51,7 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
     if not contract_id:
         raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not find contract_id for given transfer_process_id: {transfer_process_id}")
 
+    print(f"transfer_process_id: {transfer_process_id}, contract_id: {contract_id}")
 
     counter = 0
     while True:
@@ -111,7 +112,9 @@ def post_datareference(request: Request, body = Body(...)):
         cid = body.get('properties', {}).get('https://w3id.org/edc/v0.0.1/ns/cid', '')
     if not cid:
         raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not find cid in  properties.")
+    print(f"cid: {cid}")
     storage.put(key=cid, value=body)
+    print(json.dumps(body, indent=4))
     return {}
 
 if __name__ == '__main__':
