@@ -23,12 +23,15 @@ class NegotiationStateStore(MyBaseModel):
 
 class DataAddress(MyBaseModel):
     """
-    TODO: This is only temporary. We need to find out what EDC uses here exactly
+    This is EDC specific. TODO: where to stanardize this?
     """
-    field_type: Optional[str] = Field(f"{EDC_NAMESPACE}DataAddress", alias='edc:type') # TODO: EDC compat
-    auth_key: Optional[str] = Field(HTTP_HEADER_DEFAULT_AUTH_KEY, alias='edc:authKey')
-    auth_code: Optional[str] = Field(None, alias='edc:authCode')
-    base_url: Optional[str] = Field(None, alias='edc:baseUrl')
+    field_type: Optional[str] = Field(f"{EDC_NAMESPACE}DataAddress", alias='@type') # TODO: EDC compat
+    edc_cid: Optional[str] = Field(None, alias='edc:cid')
+    edc_type: Optional[str] = Field("EDR", alias='edc:type')
+    edc_auth_code: Optional[str] = Field(None, alias='edc:authCode')
+    edc_endpoint: Optional[str] = Field(None, alias='edc:endpoint')
+    edc_id: Optional[str] = Field(None, alias='edc:id')
+    edc_auth_key: Optional[str] = Field(HTTP_HEADER_DEFAULT_AUTH_KEY, alias='edc:authKey')
 
 class TransferStateStore(MyBaseModel):
     id: str

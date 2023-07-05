@@ -1,0 +1,22 @@
+{
+    "@id": "b1330e65-3ed2-406c-b205-6c3e5f1ee955",
+    "@type": "dspace:TransferStartMessage",
+    "dspace:processId": "3c083793-bb7b-4eea-9680-c87a91badc8f",
+    "dspace:dataAddress": {
+        "@type": "edc:DataAddress",
+        "edc:cid": "7279b5f2-7c81-418a-80e6-ed7eee4e5648:74257005-a6f3-4d11-aeb7-be8e7c3f4b69:f2244670-c0d3-410f-8907-1cc2fb164ad5",
+        "edc:type": "EDR",
+        "edc:authCode": "eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE2ODg1NjcxNDYsImRhZCI6IjlZcW53MW1LdE9nWWd3eDZBQUFBQ1RMbkJCSTFZZDBtWmtST2RFRm5FQmFKeFlaMXFoVElFcG9TSUh4TDVRbnVDcmh5UmJPQTRqVkh5NWdLbG1hVmpCL2FFb25VbXZaZFR6RzVyeGtGU0gxVytXQldXQUNQY3dTV29LV1N5UnhGNTNpWExMbmNoeU8wRWN0cFR4NXdaK25yczJzMElpVEg5cDYycVYzWmYzbERzb3VEK0s3TElVR1c0bHcvaUJpeUtLd1N1Y1Frck9yVnI3QmdUQjgzeUNIVlJUTmNjMFBoNC96V3BYa28yYXRiUEFHdjJ6TmpjVHFDR3NMaVJkamM5eGlwcHFTZThla3lud0lldlhualM5Qkt5TVZ6K1djMkFZQU90TjVyYkdBYThXWWZCNHJtdmZDU3dQd2VNbFVaMEl4OGlnR0xqWWR1aS82YWkzTU44WXo5ZHhOeGkvd1poVHdrL1RIQThxd1JvL2VQejBEaENnZ1FISjFtdU8xVHZHWVFwK3Npejl6RDJEbjg2QXlYWUZiWmxIM25SZy9LY0h5V3AzalNqSnVHdmczOEtSeTBmMCt0ZGJHbFhuSCsyV2J1b1FPczlwemNoZlMvRkNOTmJsTFFjUHlkNC8vcWtoOHpDY0UvNm50Yy9FeWJLa2djVHdmd2hIamdSVEorQUdzRkJIT0VnZjJGQzFtaXNRRjVyS0FkWEZnbkJuOW15ZkZremNSZXlpUzlVUzY3eTFwM1pUZWg1ZVoreUtLR2RYdUEyOGNTejRSZkwwOUJSUDBVQUVYd2JLeElIbjQ0MzFSVDExSWJHaFlxQkxSS1VOeGZzemxJdmRaOEk1WGpxOC9RdFBPK1hFTzN1OHZlQ2N1NVVYc0Q2N0VxNWxudXppSXBwbnZMaVZiWnkveXRzUG5vSTV3QnYrVW9xT0sySWJnVEtqaEZLUFdHdkZCUVM1dk9BRTQ9IiwiY2lkIjoiNzI3OWI1ZjItN2M4MS00MThhLTgwZTYtZWQ3ZWVlNGU1NjQ4Ojc0MjU3MDA1LWE2ZjMtNGQxMS1hZWI3LWJlOGU3YzNmNGI2OTpmMjI0NDY3MC1jMGQzLTQxMGYtODkwNy0xY2MyZmIxNjRhZDUifQ.Wo2MkMWd0yJVd4Ttw3Z-Bda7jaPWqOq_MPKsfvEDzGpzerHYwN58t3VqKRaoCxz8T5O5NsAHxvCl2HUXCkhY3g5Mu1bF-PTcKWJN4adyD3McJEBnJP_ErFQvM79QRxkDqyw2bgTpg0oQMxZfKqFpkGXtNAy20R2AtZOByGkFFSFmV_-iMM1l2um2Kr58S1OSVTa8aNXH6PMgbCrcFiQxA4TZpw5P7PZdHK7-VKGL2lXkKcfDTJhSxQBP2CsmDKV6GRm5vjuW40utqnd-6ANY1NE3DaA2OKtcZSYKYq3SJdgZqqfkt3jUZHa12w3tcSKVSVkkqcux4NxRUYNZFQjkvA",
+        "edc:endpoint": "http://provider-data-plane:9192/public",
+        "edc:id": "3c083793-bb7b-4eea-9680-c87a91badc8f",
+        "edc:authKey": "Authorization"
+    },
+    "@context": {
+        "dct": "https://purl.org/dc/terms/",
+        "tx": "https://w3id.org/tractusx/v0.0.1/ns/",
+        "edc": "https://w3id.org/edc/v0.0.1/ns/",
+        "dcat": "https://www.w3.org/ns/dcat/",
+        "odrl": "http://www.w3.org/ns/odrl/2/",
+        "dspace": "https://w3id.org/dspace/v0.8/"
+    }
+}
