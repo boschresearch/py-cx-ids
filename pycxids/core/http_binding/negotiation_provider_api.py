@@ -7,11 +7,12 @@
 import asyncio
 import json
 from uuid import uuid4
-from fastapi import APIRouter, Body, Request, HTTPException, status
+from fastapi import APIRouter, Body, Header, Request, HTTPException, status
 
 from pyld import jsonld
-from pycxids.core.http_binding.models_local import default_context
+from pycxids.utils.jsonld import default_context
 
+from pycxids.core.jwt_decode import decode
 from pycxids.core.http_binding.models import ContractAgreementVerificationMessage, ContractRequestMessage, ContractNegotiation, NegotiationState
 from pycxids.core.http_binding.settings import KEY_DATASET, KEY_MODIFIED, KEY_PROCESS_ID, PROVIDER_DISABLE_IN_CONTEXT_WORKER, PROVIDER_STORAGE_FN, PROVIDER_STORAGE_REQUESTS_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
 from pycxids.utils.storage import FileStorageEngine
@@ -24,8 +25,9 @@ storage_negotiation_requests = FileStorageEngine(storage_fn=PROVIDER_STORAGE_REQ
 app = APIRouter(tags=['Negotiaion'])
 
 @app.post('/negotiations/request', response_model=ContractNegotiation)
-async def negotiation_request(request: Request):
+async def negotiation_request(request: Request, authorization: str = Header(...)):
     body = await request.json()
+    auth_token = decode(data=authorization)
     with open('contract_request_message.json', 'wt') as f:
         body_str = json.dumps(body, indent=4)
         f.write(body_str)

@@ -56,6 +56,10 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
     counter = 0
     while True:
         data = storage.get(key=contract_id)
+        if not data:
+            # seems to be the case in product-edc 0.5.0-RC5 we don't get the cid anymore and thus, we
+            # use the @id which seems to be the transfer_process_id
+            data = storage.get(key=transfer_process_id)
         if data:
             # once there is data, we should check if the token is still valid before we return it
             decoded_data = decode(data.get('authCode'))
@@ -106,14 +110,20 @@ def post_datareference_dprecated(request: Request, body = Body(...)):
 
 @app.post('/transfer/datareference')
 def post_datareference(request: Request, body = Body(...)):
+    """
+    If cid (contractId) ist NOT available, store with @id which is the transfer process id (it seems)
+    """
+    storage_id = None
     cid = body.get('properties', {}).get('cid', '')
     if not cid:
         # DSP protocol / product-edc 0.4.x and higher
         cid = body.get('properties', {}).get('https://w3id.org/edc/v0.0.1/ns/cid', '')
-    if not cid:
-        raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not find cid in  properties.")
+    storage_id = cid
+    if not storage_id:
+        storage_id = body.get('id')
     print(f"cid: {cid}")
-    storage.put(key=cid, value=body)
+    print(f"stoarage_id: {storage_id}")
+    storage.put(key=storage_id, value=body)
     print(json.dumps(body, indent=4))
     return {}
 

@@ -16,7 +16,11 @@ from uuid import uuid4
 
 from pycxids.edc.api import EdcConsumer, EdcProvider
 from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD, PROVIDER_IDS_ENDPOINT, RECEIVER_SERVICE_BASE_URL
-from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
+from pycxids.edc.settings import PROVIDER_IDS_BASE_URL, DUMMY_BACKEND
+from pycxids.core.settings import settings
+
+TEST_BEFORE_0_5_0_VERSION = os.getenv('TEST_BEFORE_0_5_0_VERSION', '').lower() in ["true"]
+
 
 # actual test case
 def test_create_and_delete():
@@ -30,7 +34,7 @@ def test_create_and_delete():
     nr_of_contractdefinitions = provider.get_number_of_elements("/contractdefinitions")
 
     # we create a new asset (and friends)
-    asset_id = provider.create_asset(base_url='http://daps-mock:8000/.well-known/jwks.json')
+    asset_id = provider.create_asset(base_url=DUMMY_BACKEND)
     policy_id = provider.create_policy(asset_id=asset_id)
     contract_id = provider.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
     #cd = get_contract_definition(id=contract_id)
@@ -49,26 +53,34 @@ def test_create_and_delete():
         auth_key=CONSUMER_EDC_API_KEY,
         token_receiver_service_base_url=RECEIVER_SERVICE_BASE_URL,
         )
-    agreement_id, transfer_id = consumer.negotiate_and_transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=asset_id)
+    agreement_id, transfer_id = consumer.negotiate_and_transfer(
+        provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
+        asset_id=asset_id,
+        provider_participant_id=settings.PROVIDER_PARTICIPANT_ID,
+        consumer_participant_id=settings.CONSUMER_PARTICIPANT_ID,
+    )
 
-    # test call via CONSUMER data plane
+    # starting with 0.5.x there is no 2 EDRs any more, just 1 from the provider
     consumer_edr = consumer.edr_consumer_wait(transfer_id=transfer_id)
     consumer_data_plane_endpoint = consumer_edr.get('endpoint')
     r = requests.get(consumer_data_plane_endpoint, headers={consumer_edr['authKey']: consumer_edr['authCode']})
     if not r.ok:
         print(f"{r.status_code} {r.reason} {r.content}")
         assert False, "Could not fetch data via CONSUMER data plane"
-
-    # test call directly against the PROVIDER
-    provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
-    provider_data_plane_endpoint = provider_edr.get('baseUrl')
-    r = requests.get(provider_data_plane_endpoint, headers={provider_edr['authKey']: provider_edr['authCode']})
-    if not r.ok:
-        print(f"{r.status_code} {r.reason} {r.content}")
-        assert False, "Could not fetch data via PROVIDER data plane"
-
     j = r.json()
-    assert 'keys' in j
+    assert 'headers' in j
+
+
+    if TEST_BEFORE_0_5_0_VERSION:
+        provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
+        provider_data_plane_endpoint = provider_edr.get('baseUrl')
+        r = requests.get(provider_data_plane_endpoint, headers={provider_edr['authKey']: provider_edr['authCode']})
+        if not r.ok:
+            print(f"{r.status_code} {r.reason} {r.content}")
+            assert False, "Could not fetch data via PROVIDER data plane"
+
+        j = r.json()
+        assert 'headers' in j
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])

@@ -54,4 +54,4 @@ DAPS_JWKS = os.getenv('DAPS_JWKS', 'http://daps-mock:8000/.well-known/jwks.json'
 
 RECEIVER_SERVICE_BASE_URL = os.getenv('RECEIVER_SERVICE_BASE_URL', 'http://receiver-service:8000/transfer')
 
-DUMMY_BACKEND = os.getenv('DUMMY_BACKEND', 'http://dummy-backend:8000/returnparams')
+DUMMY_BACKEND = os.getenv('DUMMY_BACKEND', 'http://dummy-backend:8000/returnparams/')

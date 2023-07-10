@@ -11,10 +11,11 @@ import requests
 from pycxids.utils.api import GeneralApi
 
 from pycxids.edc.settings import USE_V1_DATA_MANAGEMENT_API, RECEIVER_SERVICE_BASE_URL
-
+from pycxids.utils.jsonld import default_context
 
 EDC_NAMESPACE = 'https://w3id.org/edc/v0.0.1/ns/'
 EDC_ASSET_TYPE = EDC_NAMESPACE + 'AssetEntryDto'
+EDC_DATA_ADDRESS_TYPE = EDC_NAMESPACE + "DataAddress"
 EDC_SIMPLE_TYPE = EDC_NAMESPACE + 'type'
 #EDC_ASSET_DATA_ADDRESS = EDC_NAMESPACE + 'dataAddress'
 EDC_CATALOG_REQUEST_PROTOCOL = EDC_NAMESPACE + "protocol"
@@ -101,13 +102,10 @@ class EdcProvider(EdcDataManagement):
         # default is data management V2 now
         # or overwrite below
         data = {
-            "@context": {
-                #"@vocab": EDC_NAMESPACE,
-                #"edc": EDC_NAMESPACE,
-            },
-            #"@type": EDC_ASSET_TYPE,
+            "@context": default_context,
+            "@type": EDC_ASSET_TYPE,
             "@id": asset_id,
-            "asset": {
+            "edc:asset": {
                 "@id": asset_id,
                 "properties": {
                     "asset:prop:id": asset_id,
@@ -115,16 +113,15 @@ class EdcProvider(EdcDataManagement):
                     "asset:prop:policy-id": "use-eu",
                 }
             },
-            "dataAddress": {
-                "@type": "edc:DataAddress",
-                "properties": { # TODO: do we still need the properties?
-                    "type": "HttpData",
-                    "proxyPath": str(proxyPath).lower(),
-                    "proxyQueryParams": str(proxyQueryParams).lower(),
-                    "proxyMethod": str(proxyMethod).lower(),
-                    "proxyBody": str(proxyBody).lower(),
-                    "baseUrl": base_url,
-                }
+            "edc:dataAddress": {
+                #"@type": EDC_DATA_ADDRESS_TYPE,
+                "edc:type": "HttpData",
+                "proxyPath": str(proxyPath).lower(),
+                "proxyQueryParams": str(proxyQueryParams).lower(),
+                "proxyMethod": str(proxyMethod).lower(),
+                "proxyBody": str(proxyBody).lower(),
+                "baseUrl": base_url,
+
             }
         }
         with open('asset_v2.json', 'w') as f:
@@ -259,7 +256,8 @@ class EdcProvider(EdcDataManagement):
                 data = {
 
                 }
-                j = self.post(path=path, data=data)
+                data['@context'] = default_context
+                j = self.post(path=path, data=None)
             return len(j)
         except Exception as ex:
             print(ex)
@@ -377,7 +375,9 @@ class EdcConsumer(EdcDataManagement):
         agreement_id = negotiated_contract.get('contractAgreementId', None)
         return agreement_id
 
-    def negotiate_contract_and_wait(self, provider_ids_endpoint, contract_offer, timeout = 30, asset_id: str = None):
+    def negotiate_contract_and_wait(self, provider_ids_endpoint, contract_offer, timeout = 30, asset_id: str = None,
+                                    provider_participant_id: str = 'BPNLprovider',
+                                    consumer_participant_id: str = 'BPNLconsumer'):
         """
         Result: The negotiated contract (contains the agreementId)
         """
@@ -422,9 +422,9 @@ class EdcConsumer(EdcDataManagement):
             "@type": "NegotiationInitiateRequestDto",
             "connectorAddress": provider_ids_endpoint,
             "protocol": "dataspace-protocol-http",
-            "connectorId": "BPNLprovider", # TODO
-            "providerId": "BPNLprovider", # TODO
-            "consumerId": "BPNLprovider", # TODO
+            "connectorId": provider_participant_id, # TODO
+            "providerId": provider_participant_id, # TODO
+            "consumerId": consumer_participant_id, # TODO
             "offer": {
                 "offerId": offer_id,
                 "assetId": asset_id,
@@ -443,6 +443,9 @@ class EdcConsumer(EdcDataManagement):
                 }
             }
         }
+        with open('contractnegotiation_request_to_edc.json', 'wt') as f:
+            mystr = json.dumps(data, indent=4)
+            f.write(mystr)
         result = self.post(path="/contractnegotiations", data=data)
         negotiation_id = result.get('@id')
         if USE_V1_DATA_MANAGEMENT_API:
@@ -451,7 +454,10 @@ class EdcConsumer(EdcDataManagement):
         negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='FINALIZED')
         return negotiation_data
 
-    def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str):
+    def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str,
+                    provider_participant_id: str = 'BPNLprovider',
+                    consumer_participant_id: str = 'BPNLconsumer'):
+
         """
         Probably we don't need to wait for the state to change, because we'll receive  the EDR token when everything is ok
         """
@@ -475,16 +481,13 @@ class EdcConsumer(EdcDataManagement):
                 receiver_service_base_url = RECEIVER_SERVICE_BASE_URL
                 print("token_receiver_service_base_url not given, using default from settings: {receiver_service_base_url}")
             transfer_request = {
-                "@context": {
-                    "odrl": "http://www.w3.org/ns/odrl/2/"
-                },
+                "@context": default_context,
                 "assetId": asset_id,
+                "connectorId": provider_participant_id,
                 "connectorAddress": provider_ids_endpoint,
                 "contractId": agreement_id,
-                "dataDestination": {
-                    "properties": {
-                        "type": "HttpProxy"
-                    }
+                "edc:dataDestination": {
+                    "edc:type": "HttpProxy"
                 },
                 "managedResources": False,
                 "privateProperties": {
@@ -561,14 +564,17 @@ class EdcConsumer(EdcDataManagement):
         j = r.json()
         return j
 
-    def negotiate_and_transfer(self, provider_ids_endpoint: str, asset_id: str) -> str:
+    def negotiate_and_transfer(self, provider_ids_endpoint: str, asset_id: str,
+                               provider_participant_id: str = 'BPNLprovider',
+                               consumer_participant_id: str = 'BPNLconsumer') -> str:
         """
         Returns the transer_id
         """
         catalog = self.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
         contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
         negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint,
-            contract_offer=contract_offer, asset_id=asset_id)
+            contract_offer=contract_offer, asset_id=asset_id, provider_participant_id=provider_participant_id,
+            consumer_participant_id=consumer_participant_id)
         #negotiated_contract_id = negotiated_contract.get('@id', '')
         if USE_V1_DATA_MANAGEMENT_API:
             negotiated_contract_id = negotiated_contract.get('id', '')
@@ -576,5 +582,5 @@ class EdcConsumer(EdcDataManagement):
         print(f"agreementId: {agreement_id}")
 
         transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint,
-            asset_id=asset_id, agreement_id=agreement_id)
+            asset_id=asset_id, agreement_id=agreement_id, provider_participant_id=provider_participant_id, consumer_participant_id=consumer_participant_id)
         return agreement_id, transfer_id

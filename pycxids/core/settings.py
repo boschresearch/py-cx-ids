@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     PRIVATE_KEY_FN = './edc-dev-env/vault_secrets/consumer.key'
     CONSUMER_CONNECTOR_URL = ""
     CONSUMER_CONNECTOR_URN = 'urn:uuid:consumer'
+    CONSUMER_PARTICIPANT_ID = 'BPNLconsumer'
     CONSUMER_WEBHOOK = "http://dev:6060/webhook"
     WEBHOOK_PORT = 6060
     DAPS_ENDPOINT = 'http://daps-mock:8000/token'
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
     ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
     PROVIDER_CONNECTOR_URL = ""
     PROVIDER_CONNECTOR_URN = 'urn:uuid:provider'
+    PROVIDER_PARTICIPANT_ID = 'BPNLprovider'
     PROVIDER_CONNECTOR_IDS_ENDPOINT_PATH = "/api/v1/ids/data"
     # webhook service usage
     CONSUMER_WEBHOOK_MESSAGE_BASE_URL = ""
