@@ -18,3 +18,4 @@ agreementcache/
 out_file.jpg
 out_file_origin.jpg
 *.pkcs8
+edc-dev-env/vault_secrets/*

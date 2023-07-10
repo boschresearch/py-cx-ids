@@ -17,6 +17,7 @@ services:
       - ${PROVIDER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/provider/control-plane.properties}:/app/configuration.properties
     environment:
           - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${PROVIDER_EDC_RECEIVER_HTTP_ENDPOINT:-http://provider-receiver-service:8000/datareference}
+          - EDC_JSONLD_HTTPS_ENABLED=true
 
   provider-data-plane:
     extends:
@@ -35,6 +36,7 @@ services:
     environment:
       # renamed in 0.3.0
       - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${EDC_RECEIVER_HTTP_ENDPOINT:-http://receiver-service:8000/datareference}
+      - EDC_JSONLD_HTTPS_ENABLED=true
 
   consumer-data-plane:
     extends:
