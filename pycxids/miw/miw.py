@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+from typing import Optional, Union
 import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
@@ -15,6 +16,9 @@ class Miw(GeneralApi):
     """
     Access the Managed Identity Wallet (MIW) API
     """
+    SUMMARY_CREDENTIAL = 'SummaryCredential'
+    MEMBERSHIP_CREDENTIAL = 'MembershipCredential'
+
     def __init__(self, base_url: str, headers = None, client_id: str = None, client_secret: str = None, token_url: str = None, scope:str = None) -> None:
         """
         If client_id is given, try to fetch a token with the required other fields.
@@ -45,6 +49,41 @@ class Miw(GeneralApi):
         result = self.get(path="/api/credentials")
         return result
 
+    def create_presentation(self, verifiable_credential: Union[dict, list], aud: str = '', jwt = True):
+        """
+        A single VC or a list of VCs
+        """
+        vcs = verifiable_credential
+        if not isinstance(verifiable_credential, list):
+            vcs = [vcs]
+        params = {
+            'audience' : aud,
+            'asJwt': jwt,
+        }
+        data = {
+            'verifiableCredentials': vcs,
+        }
+        result = self.post(path="/api/presentations", data=data, params=params)
+        return result
+
+    def get_vp_for_type(self, credential_type: str = SUMMARY_CREDENTIAL, aud: str = '', jwt = True):
+        """
+        Search the list of credentials for the given type (use first match)
+        and create and return a VP from it.
+        Default is 'SummaryCredential'
+        """
+        credentials = self.get_credentials()
+        for cred in credentials.get('content', []):
+            cred_type = cred.get('type')
+            if isinstance(cred_type, str):
+                cred_type = [cred_type] # make sure it is a list
+            if credential_type in cred_type:
+                vp = self.create_presentation(verifiable_credential=cred, aud=aud)
+                return vp['vp']
+        return None
+
+
+
 
 if __name__ == '__main__':
     secret_fn = './edc-dev-env/vault_secrets/provider.miw.secret'
@@ -66,4 +105,8 @@ if __name__ == '__main__':
     print(credentials_str)
     with open('miw_token.json', 'wt') as f:
         f.write(credentials_str)
+    
+    vp_jwt = miw.get_vp_for_type(aud='http://dev:8000')
+    print(vp_jwt)
+
 
