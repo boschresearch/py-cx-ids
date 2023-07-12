@@ -18,7 +18,8 @@ from requests.auth import HTTPBasicAuth
 
 from pycxids.cli.cli_settings import *
 from pycxids.cli import cli_multipart_utils
-from pycxids.cli import cli_dsp_utils
+from pycxids.core.auth.auth_factory import DapsAuthFactory
+from pycxids.core.http_binding import dsp_client_consumer_api
 from pycxids.core.http_binding.models_local import DataAddress, TransferStateStore
 
 from pycxids.core.settings import endpoint_check, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
@@ -134,12 +135,12 @@ def get_DSP_api_helper(provider_base_url:str):
     use_config = config_storage.get('use')
     myconfig = config_storage.get('configs', {}).get(use_config)
 
-    return cli_dsp_utils.CliDspApiHelper(
-        provider_base_url=provider_base_url,
+    daps_auth_factory = DapsAuthFactory(
         daps_endpoint=myconfig.get('DAPS_ENDPOINT'),
         private_key_fn=myconfig.get('PRIVATE_KEY_FN'),
         client_id=myconfig.get('CLIENT_ID'),
     )
+    return dsp_client_consumer_api.DspClientConsumerApi(provider_base_url=provider_base_url, auth=daps_auth_factory)
 
 @cli.command('catalog')
 @click.option('-o', '--out-fn', default='')
@@ -188,7 +189,7 @@ def list_assets_from_catalog(catalog_filename: str):
     datasets = catalog.get('dcat:dataset', None)
     if datasets:
         # DSP case
-        asset_ids = cli_dsp_utils.CliDspApiHelper.get_asset_ids_from_catalog(catalog=catalog)
+        asset_ids = dsp_client_consumer_api.DspClientConsumerApi.get_asset_ids_from_catalog(catalog=catalog)
     else:
         asset_ids = cli_multipart_utils.get_asset_ids_from_catalog(catalog=catalog)
     print('\n'.join(asset_ids))
