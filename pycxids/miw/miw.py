@@ -19,14 +19,14 @@ class Miw(GeneralApi):
     SUMMARY_CREDENTIAL = 'SummaryCredential'
     MEMBERSHIP_CREDENTIAL = 'MembershipCredential'
 
-    def __init__(self, base_url: str, headers = None, client_id: str = None, client_secret: str = None, token_url: str = None, scope:str = None) -> None:
+    def __init__(self, base_url: str, headers = None, client_id: str = None, client_secret: str = None, token_url: str = None) -> None:
         """
         If client_id is given, try to fetch a token with the required other fields.
         If not, you can pass in 'headers' (with an Authorization) that will be used.
         """
         if client_id:
             client = BackendApplicationClient(client_id=client_id)
-            oauth_session = OAuth2Session(client=client, scope=scope)
+            oauth_session = OAuth2Session(client=client) # scope not required in MIW API right now
             token = oauth_session.fetch_token(token_url=token_url, client_id=client_id, client_secret=client_secret)
             access_token = token.get('access_token', None)
             if not access_token:
@@ -66,7 +66,7 @@ class Miw(GeneralApi):
         result = self.post(path="/api/presentations", data=data, params=params)
         return result
 
-    def get_vp_for_type(self, credential_type: str = SUMMARY_CREDENTIAL, aud: str = '', jwt = True):
+    def get_vp(self, credential_type: str = SUMMARY_CREDENTIAL, aud: str = '', jwt = True):
         """
         Search the list of credentials for the given type (use first match)
         and create and return a VP from it.
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     with open('miw_token.json', 'wt') as f:
         f.write(credentials_str)
     
-    vp_jwt = miw.get_vp_for_type(aud='http://dev:8000')
+    vp_jwt = miw.get_vp(aud='http://dev:8000')
     print(vp_jwt)
 
 
