@@ -76,7 +76,9 @@ def cli_config_add(config_name: str):
         config['MIW_TOKEN_ENDPOINT'] = click.prompt("MIW_TOKEN_ENDPOINT:",
             default=config.get('MIW_TOKEN_ENDPOINT', "https://centralidp.int.demo.catena-x.net/auth/realms/CX-Central/protocol/openid-connect/token"))
         config['MIW_BASE_URL'] = click.prompt("MIW_BASE_URL",
-            default=config.get('CONSUMER_CONNECTOR_BASE_URL', "https://managed-identity-wallets-new.int.demo.catena-x.net"))
+            default=config.get('MIW_BASE_URL', "https://managed-identity-wallets-new.int.demo.catena-x.net"))
+        config['CONSUMER_CONNECTOR_BASE_URL'] = click.prompt("CONSUMER_CONNECTOR_BASE_URL",
+            default=config.get('CONSUMER_CONNECTOR_BASE_URL', "http://dev:6060"))
         config['DEFAULT_PROVIDER_CATALOG_BASE_URL'] = click.prompt("DEFAULT_PROVIDER_CATALOG_BASE_URL",
             default=config.get("DEFAULT_PROVIDER_CATALOG_BASE_URL", 'http://provider-control-plane:8282/api/v1/dsp'))
 
@@ -258,21 +260,30 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
         # and now get the message from the receiver api (proprietary api)
         agreement = api.negotiation_callback_result(id=negotiation_process_id, consumer_callback_base_url=consumer_callback_base_url)
         print(agreement)
-        agreement_id = agreement.get('@id')
+        agreement_id = agreement.get('dspace:agreement', {}).get('@id')
+        assert agreement_id
         transfer = api.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url, provider_base_url=provider_base_url)
         print(transfer)
         transfer_id = transfer.get('@id')
         transfer_process_id = transfer.get('dspace:processId')
+        # EDC workaround
+        correlation_id = transfer.get('dspace:correlationId')
+        if correlation_id:
+            transfer_process_id = correlation_id
         transfer_message = api.transfer_callback_result(id=transfer_process_id, consumer_callback_base_url=consumer_callback_base_url)
+        assert transfer_message
         print(transfer_message)
         transfer_state_received = TransferStateStore.parse_obj(transfer_message)
         data_address_received: DataAddress = transfer_state_received.data_address
         # actual request of the data
         headers = {
-            data_address_received.auth_key: data_address_received.auth_code
+            data_address_received.edc_auth_key: data_address_received.edc_auth_code
         }
-        r = requests.get(data_address_received.base_url, headers=headers)
-        data_result = r.content
+        r = requests.get(data_address_received.edc_endpoint, headers=headers)
+        if raw_data:
+            data_result = r.content
+        else:
+            data_result = r.json()
         #print(data_result)
 
     else:

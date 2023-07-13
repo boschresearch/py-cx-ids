@@ -85,6 +85,7 @@ class DspClientConsumerApi(GeneralApi):
         """
         catalog_dataset_endpoint = f"/catalog/datasets/{asset_id}"
         #r = self.get(catalog_dataset_endpoint)
+        self._update_auth_token()
         r = requests.get(f"{self.base_url}{catalog_dataset_endpoint}", headers=self.headers)
         if r.status_code == 404:
             # this is probably the missing endpoint in EDC use a workaround for now
@@ -111,6 +112,8 @@ class DspClientConsumerApi(GeneralApi):
             return None
         j = r.json()
         offers = j.get('odrl:hasPolicy', [])
+        if not isinstance(offers, list):
+            offers = [offers]
         return offers
 
     def get_catalog_edc_workaround(self, asset_id: str):
