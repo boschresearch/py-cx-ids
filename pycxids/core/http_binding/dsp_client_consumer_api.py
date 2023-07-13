@@ -23,10 +23,10 @@ class DspClientConsumerApi(GeneralApi):
         super().__init__(base_url=provider_base_url)
         self.auth = auth
         self.headers = {}
-        self.update_daps_token(audience=self.base_url)
+        self._update_auth_token()
 
-    def update_daps_token(self, audience: str = ''):
-        token = self.auth.get_token(aud=audience)
+    def _update_auth_token(self):
+        token = self.auth.get_token(aud=self.base_url) # audience is always only the base_url
         self.headers['Authorization'] = token
 
     def fetch_catalog(self, out_fn: str = '', filter: dict = None):
@@ -41,7 +41,7 @@ class DspClientConsumerApi(GeneralApi):
         }
         if filter:
             data['dspace:filter'] = filter
-        #self.update_daps_token(audience=self.base_url)
+        self._update_auth_token()
         j = self.post("/catalog/request", data=data)
         dataset = j.get('dcat:dataset')
         if not isinstance(dataset, list):

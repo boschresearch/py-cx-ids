@@ -18,7 +18,7 @@ from requests.auth import HTTPBasicAuth
 
 from pycxids.cli.cli_settings import *
 from pycxids.cli import cli_multipart_utils
-from pycxids.core.auth.auth_factory import DapsAuthFactory
+from pycxids.core.auth.auth_factory import DapsAuthFactory, MiwAuthFactory
 from pycxids.core.http_binding import dsp_client_consumer_api
 from pycxids.core.http_binding.models_local import DataAddress, TransferStateStore
 
@@ -64,7 +64,25 @@ def cli_config_add(config_name: str):
     configs = config_storage.get('configs', {})
     config = configs.get(config_name, {})
 
-    use_dsp = click.confirm("Use new DSP (Dataspace protocol) version? (product-edc 0.4.0 and higher) Y/n", default=True)
+    use_dsp_ssi = click.confirm("Use (Dataspace protocol) with SSI (Self Sovereign Identity) (product-edc 0.5.0 and higher) Y/n", default=True)
+    if use_dsp_ssi:
+        click.echo("Using new DSP protocol configuration (product-edc 0.4.0 and later)")
+        config['PROTOCOL'] = PROTOCOL_DSP
+        config['AUTH'] = AUTH_SSI
+        config['MIW_CLIENT_ID'] = click.prompt("MIW_CLIENT_ID:",
+            default=config.get('MIW_CLIENT_ID', ""))
+        config['MIW_CLIENT_SECRET'] = click.prompt("MIW_CLIENT_SECRET (beware: stored in plain text!):",
+            default=config.get('MIW_CLIENT_SECRET', ""))
+        config['MIW_TOKEN_ENDPOINT'] = click.prompt("MIW_TOKEN_ENDPOINT:",
+            default=config.get('MIW_TOKEN_ENDPOINT', "https://centralidp.int.demo.catena-x.net/auth/realms/CX-Central/protocol/openid-connect/token"))
+        config['MIW_BASE_URL'] = click.prompt("MIW_BASE_URL",
+            default=config.get('CONSUMER_CONNECTOR_BASE_URL', "https://managed-identity-wallets-new.int.demo.catena-x.net"))
+        config['DEFAULT_PROVIDER_CATALOG_BASE_URL'] = click.prompt("DEFAULT_PROVIDER_CATALOG_BASE_URL",
+            default=config.get("DEFAULT_PROVIDER_CATALOG_BASE_URL", 'http://provider-control-plane:8282/api/v1/dsp'))
+
+    use_dsp = False
+    if not use_dsp_ssi:
+        use_dsp = click.confirm("Use new DSP (Dataspace protocol) version? (product-edc 0.4.0 and higher) Y/n", default=True)
     if use_dsp:
         click.echo("Using new DSP protocol configuration (product-edc 0.4.0 and later)")
         config['PROTOCOL'] = PROTOCOL_DSP
@@ -78,7 +96,8 @@ def cli_config_add(config_name: str):
             default=config.get('CONSUMER_CONNECTOR_BASE_URL', "http://localhost:6060"))
         config['DEFAULT_PROVIDER_CATALOG_BASE_URL'] = click.prompt("DEFAULT_PROVIDER_CATALOG_BASE_URL",
             default=config.get("DEFAULT_PROVIDER_CATALOG_BASE_URL", "http://localhost:8080"))
-    else:
+    
+    if not use_dsp and not use_dsp_ssi:
         click.echo("Using old multipart protocol configuration (before product-edc 0.4.0)")
         config['PROTOCOL'] = PROTOCOL_MULTIPART
         config['PRIVATE_KEY_FN'] = click.prompt("Private key filename:",
@@ -100,14 +119,6 @@ def cli_config_add(config_name: str):
         config['DEFAULT_PROVIDER_IDS_ENDPOINT'] = click.prompt("DEFAULT_PROVIDER_IDS_ENDPOINT - will be used as default if no other provider is set in specific functions:",
             default=config.get('DEFAULT_PROVIDER_IDS_ENDPOINT', "https://provider:8282/api/v1/data"))
 
-    configs[config_name] = config
-    config_storage.put('configs', configs)
-    config_storage.put('use', config_name)
-    click.echo("")
-    click.echo("Configuration done. This config will be used by default now.")
-    click.echo("")
-
-    if not use_dsp:
         test_webhook = click.confirm("Do you want to test the webhook?", default=True)
         if test_webhook:
             CONSUMER_WEBHOOK = config.get('CONSUMER_WEBHOOK')
@@ -131,16 +142,39 @@ def cli_config_add(config_name: str):
             assert j.get('hello') == 'world'
             print("Successfully tested the reachability of the webhook.")
 
-def get_DSP_api_helper(provider_base_url:str):
+
+    configs[config_name] = config
+    config_storage.put('configs', configs)
+    config_storage.put('use', config_name)
+    click.echo("")
+    click.echo("Configuration done. This config will be used by default now.")
+    click.echo("")
+
+
+
+def get_DspClient(provider_base_url:str):
+    """
+    Depending on the setting, we return a client api with DAPS or MIW (SSI)
+    """
     use_config = config_storage.get('use')
     myconfig = config_storage.get('configs', {}).get(use_config)
 
-    daps_auth_factory = DapsAuthFactory(
-        daps_endpoint=myconfig.get('DAPS_ENDPOINT'),
-        private_key_fn=myconfig.get('PRIVATE_KEY_FN'),
-        client_id=myconfig.get('CLIENT_ID'),
-    )
-    return dsp_client_consumer_api.DspClientConsumerApi(provider_base_url=provider_base_url, auth=daps_auth_factory)
+    auth_settings = myconfig.get('AUTH', '')
+    auth_factory = None
+    if auth_settings == AUTH_SSI:
+        auth_factory = MiwAuthFactory(
+            miw_base_url=myconfig.get('MIW_BASE_URL'),
+            client_id=myconfig.get('MIW_CLIENT_ID'),
+            client_secret=myconfig.get('MIW_CLIENT_SECRET'),
+            token_url=myconfig.get('MIW_TOKEN_ENDPOINT')
+        )
+    else:
+        auth_factory = DapsAuthFactory(
+            daps_endpoint=myconfig.get('DAPS_ENDPOINT'),
+            private_key_fn=myconfig.get('PRIVATE_KEY_FN'),
+            client_id=myconfig.get('CLIENT_ID'),
+        )
+    return dsp_client_consumer_api.DspClientConsumerApi(provider_base_url=provider_base_url, auth=auth_factory)
 
 @cli.command('catalog')
 @click.option('-o', '--out-fn', default='')
@@ -156,7 +190,7 @@ def fetch_catalog_cli(provider_ids_endpoint: str, out_fn):
         else:
             provider_base_url = provider_ids_endpoint
 
-        api = get_DSP_api_helper(provider_base_url=provider_base_url)
+        api = get_DspClient(provider_base_url=provider_base_url)
 
         catalog = api.fetch_catalog(out_fn=out_fn)
         print(json.dumps(catalog, indent=4))
@@ -213,7 +247,7 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
         provider_base_url = ''
         if not provider_ids_endpoint:
             provider_base_url = config.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
-        api = get_DSP_api_helper(provider_base_url=provider_base_url)
+        api = get_DspClient(provider_base_url=provider_base_url)
         offers = api.get_offers_for_asset(asset_id=asset_id)
         print(offers)
         consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')

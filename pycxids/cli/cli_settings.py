@@ -13,6 +13,7 @@ from pycxids.utils.storage import FileStorageEngine
 
 PROTOCOL_DSP = 'DSP'
 PROTOCOL_MULTIPART = 'multipart'
+AUTH_SSI = 'SSI'
 
 AGREEMENT_CACHE_DIR = os.getenv('AGREEMENT_CACHE_DIR', 'agreementcache')
 os.makedirs(AGREEMENT_CACHE_DIR, exist_ok=True)
