@@ -9,6 +9,7 @@ from typing import Optional, Union
 import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
+from pycxids.core.jwt_decode import decode_signed, decode
 
 from pycxids.utils.api import GeneralApi
 
@@ -82,6 +83,16 @@ class Miw(GeneralApi):
                 return vp['vp']
         return None
 
+    def verify_vp(self, vp, jwt = True):
+        params = {
+            'asJwt': jwt
+        }
+        data = {
+            'vp': vp
+        }
+        result = self.post(path="/api/presentations/validation", data=data, params=params)
+        return result
+
 
 
 
@@ -93,8 +104,11 @@ if __name__ == '__main__':
     assert secret
     # TODO: get from settings
 
-    tx_ssi_miw_url="https://managed-identity-wallets-new.int.demo.catena-x.net"
-    tx_ssi_oauth_token_url="https://centralidp.int.demo.catena-x.net/auth/realms/CX-Central/protocol/openid-connect/token"
+    # tx_ssi_miw_url="https://managed-identity-wallets-new.int.demo.catena-x.net"
+    # tx_ssi_oauth_token_url="https://centralidp.int.demo.catena-x.net/auth/realms/CX-Central/protocol/openid-connect/token"
+    tx_ssi_miw_url="http://dev:9000/miw"
+    tx_ssi_oauth_token_url="http://dev:9000/miw/token"
+
     tx_ssi_oauth_client_id="sa209"
     tx_ssi_endpoint_audience="http://consumer-control-plane:8282/api/v1/dsp"
     miw = Miw(base_url=tx_ssi_miw_url, client_id=tx_ssi_oauth_client_id, client_secret=secret, token_url=tx_ssi_oauth_token_url)
@@ -108,5 +122,9 @@ if __name__ == '__main__':
     
     vp_jwt = miw.get_vp(aud='http://dev:8000')
     print(vp_jwt)
-
+    verified = miw.verify_vp(vp=vp_jwt)
+    print(json.dumps(verified, indent=4))
+    decoded_vp = decode(verified.get('vp'))
+    del decoded_vp['signature']
+    print(json.dumps(decoded_vp, indent=4))
 
