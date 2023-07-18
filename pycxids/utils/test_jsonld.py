@@ -7,6 +7,7 @@
 import json
 import pytest
 from pyld import jsonld
+import pycxids.utils.jsonld as myjsonld
 
 context = {
     "dspace": "https://w3id.org/dspace/v0.8/",
@@ -23,6 +24,9 @@ context_myprefix = {
 
 
 def test_dsp_timestamps():
+    """
+    Reference: https://github.com/International-Data-Spaces-Association/ids-specification/issues/132
+    """
     doc1 = {
         "@context": context,
         "dspace:timestamp" : "2023-01-01T01:00:00Z"
@@ -61,7 +65,36 @@ def test_dsp_timestamps():
     print(json.dumps(co_3_correct, indent=4))
     assert isinstance(co_3_correct.get('myprefix:timestamp'), str), "The correct prefix myprefix is not there!"
 
+def test_array_object():
+    """
+    Reference: https://github.com/International-Data-Spaces-Association/ids-specification/issues/125
+    """
+    doc1 = {
+        'dspace:policy': [
+            {
+                '@id': '1'
+            }
+        ]
+    }
+    doc2 = {
+        'dspace:policy': {
+                '@id': '1'
+            }
+    }
+    
+    co1 = myjsonld.compact(doc1, context=context_myprefix)
+    print(json.dumps(co1, indent=4))
+    assert isinstance(co1.get('myprefix:policy'), list), "We always want a list here"
+
+    co2 = myjsonld.compact(doc2, context=context_myprefix)
+    print(json.dumps(co2, indent=4))
+    assert isinstance(co2.get('myprefix:policy'), list), "We always want a list here"
+
+    # and just for fun, test it with the default_context
+    co1 = myjsonld.compact(doc1)
+    print(json.dumps(co1, indent=4))
+    assert isinstance(co1.get('dspace:policy'), list), "Should be prefixed with the default_context dspace"
 
 
 if __name__ == '__main__':
-    pytest.main([__file__, "-s"])
+    pytest.main([__file__, "-s", "-k", "test_array_object"])
