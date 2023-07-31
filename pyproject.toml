@@ -14,21 +14,10 @@ authors = [
 
 urls.homepage = "https://github.com/boschresearch/py-cx-ids"
 
-dependencies = [
-    "click",
-    "requests-toolbelt",
-    "fastapi",
-    "requests",
-    "PyJWT",
-    "cryptography",
-    "jwcrypto",
-    "python-multipart",
-    "uvicorn",
-    "requests-oauthlib", # portal access with oauth
-]
+# to use requirements.txt instead of a second list here
+dynamic = ["dependencies"]
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools]
 packages = ["pycxids"]
-
-[tool.setuptools.package-data]
-pycxids = ["pycxids/miw/miw_mock_credentials_consumer.json", "pycxids/miw/miw_mock_credentials_provider.json"]
