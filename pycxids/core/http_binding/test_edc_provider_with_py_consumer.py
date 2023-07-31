@@ -13,15 +13,16 @@ import requests
 from requests.auth import HTTPBasicAuth
 import pytest
 from uuid import uuid4
+from pycxids.core.auth.auth_factory import MiwAuthFactory
 from pycxids.core.http_binding.models_local import TransferStateStore
 from pycxids.core.http_binding.settings import CONSUMER_CALLBACK_BASE_URL
 from pycxids.core.settings import DAPS_ENDPOINT
 
 from pycxids.edc.api import EdcConsumer, EdcProvider
-from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD, PROVIDER_EDC_BASE_URL, PROVIDER_IDS_ENDPOINT, RECEIVER_SERVICE_BASE_URL
+from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, DUMMY_BACKEND, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD, PROVIDER_EDC_BASE_URL, PROVIDER_IDS_ENDPOINT, RECEIVER_SERVICE_BASE_URL
 from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
 from pycxids.core.settings import settings
-from pycxids.cli.cli_dsp_utils import *
+from pycxids.core.http_binding.dsp_client_consumer_api import *
 
 
 def test():
@@ -35,7 +36,7 @@ def test():
     nr_of_contractdefinitions = provider.get_number_of_elements("/contractdefinitions")
 
     # we create a new asset (and friends)
-    asset_id = provider.create_asset(base_url='http://daps-mock:8000/.well-known/jwks.json')
+    asset_id = provider.create_asset(base_url=DUMMY_BACKEND)
     policy_id = provider.create_policy(asset_id=asset_id)
     contract_id = provider.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
     #cd = get_contract_definition(id=contract_id)
@@ -51,7 +52,13 @@ def test():
 
     # now consume via the pycxids implementation
     consumer_callback_base_url = CONSUMER_CALLBACK_BASE_URL
-    consumer = CliDspApiHelper(provider_base_url=PROVIDER_IDS_ENDPOINT, daps_endpoint=DAPS_ENDPOINT, private_key_fn=settings.PRIVATE_KEY_FN, client_id=settings.CLIENT_ID)
+    auth_factory = MiwAuthFactory(
+        miw_base_url='http://miw-server:8080/miw',
+        client_id='consumer',
+        client_secret='000',
+        token_url='http://miw-server:8080/miw/token'
+    )
+    consumer = DspClientConsumerApi(provider_base_url=PROVIDER_IDS_ENDPOINT, auth=auth_factory)
     #catalog = consumer.fetch_catalog()
     # we already know which asset_id
     offers = consumer.get_offers_for_asset(asset_id=asset_id)
@@ -72,6 +79,8 @@ def test():
     if not transfer_process_id:
         # TODO: it seem EDC uses old correlationId here
         transfer_process_id = transfer.get('https://w3id.org/dspace/v0.8/correlationId')
+    if not transfer_process_id:
+        transfer_process_id = transfer.get('dspace:correlationId')
     transfer_message = consumer.transfer_callback_result(id=transfer_process_id, consumer_callback_base_url=consumer_callback_base_url)
     print(transfer_message)
     transfer_state_received = TransferStateStore.parse_obj(transfer_message)
@@ -86,7 +95,7 @@ def test():
     }
     r = requests.get(endpoint, headers=headers)
     j = r.json()
-    assert 'keys' in j
+    assert 'headers' in j
 
 
 if __name__ == '__main__':
