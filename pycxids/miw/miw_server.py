@@ -18,7 +18,7 @@ from pycxids.core.http_binding.crypto_utils import generate_rsa_key
 from pycxids.core.jwt_decode import decode
 from pycxids.utils.storage import FileStorageEngine
 
-STORAGE_BASE_DIR = os.path.dirname(__file__)
+STORAGE_BASE_DIR = os.getenv('STORAGE_BASE_DIR', os.path.dirname(__file__))
 STORAGE_FN_PREFIX = 'miw_mock_credentials_'
 
 router = APIRouter(tags=['MIW Mocks'])
