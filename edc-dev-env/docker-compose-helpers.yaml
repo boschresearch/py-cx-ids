@@ -1,6 +1,14 @@
 version: "3.9"
 
 services:
+  dsp-consumer:
+    build: ./docker/dsp-consumer
+    ports:
+      - "127.0.0.1:8005:8080"
+    environment:
+      - CONSUMER_CALLBACK_BASE_URL=http://dsp-consumer:8005
+      - CONSUMER_PARTICIPANT_ID=BPNLconsumer
+
   provider-receiver-service:
     build: ./docker/receiver-service
     environment:

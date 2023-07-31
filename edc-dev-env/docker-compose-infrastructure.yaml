@@ -6,6 +6,11 @@ services:
     volumes:
       - ./daps-mock/daps.crt:/app/daps.crt
       - ./daps-mock/daps.key:/app/daps.key
+  
+  miw-server:
+    build: ./docker/miw-server/
+    ports:
+      - "127.0.0.1:9000:8080"
 
   vault:
     build: ./docker/vault/
