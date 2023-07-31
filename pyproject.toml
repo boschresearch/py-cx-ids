@@ -29,3 +29,6 @@ dependencies = [
 
 [tool.setuptools]
 packages = ["pycxids"]
+
+[tool.setuptools.package-data]
+pycxids = ["pycxids/miw/miw_mock_credentials_consumer.json", "pycxids/miw/miw_mock_credentials_provider.json"]
