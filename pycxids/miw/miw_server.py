@@ -16,6 +16,10 @@ from jwcrypto.jwt import JWT
 
 from pycxids.core.http_binding.crypto_utils import generate_rsa_key
 from pycxids.core.jwt_decode import decode
+from pycxids.utils.storage import FileStorageEngine
+
+STORAGE_BASE_DIR = os.path.dirname(__file__)
+STORAGE_FN_PREFIX = 'miw_mock_credentials_'
 
 router = APIRouter(tags=['MIW Mocks'])
 
@@ -28,7 +32,7 @@ def get_credentials_from_file(client_id: str):
     Load credentials from file with given client_id
     """
     try:
-        fn = os.path.join(os.path.dirname(__file__), f'miw_mock_credentials_{client_id}.json')
+        fn = os.path.join(STORAGE_BASE_DIR, f'{STORAGE_FN_PREFIX}{client_id}.json')
         data = ''
         with open(fn, 'rt') as f:
             data = f.read()
@@ -98,24 +102,38 @@ def extract_client_id_from_auth_header(authorization: str):
 @router.get('/miw/api/credentials')
 def get_credentials(request: Request, authorization: str = Header()):
     client_id = extract_client_id_from_auth_header(authorization)
-    credentials = get_credentials_from_file(client_id=client_id)
+    fn = os.path.join(STORAGE_BASE_DIR, f'{STORAGE_FN_PREFIX}{client_id}.json')
+    storage = FileStorageEngine(storage_fn=fn)
+    credentials = storage.get('credentials')
     if not credentials:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Could not find credentials for client_id: {client_id}")
-    return credentials
+    return {"content": credentials }
 
 @router.post('/miw/api/presentations')
 def create_presentation(request: Request, audience: str = Query(), body: dict = Body(...), authorization: str = Header()):
     print(request.query_params)
     print(body)
     client_id = extract_client_id_from_auth_header(authorization)
-    credentials = get_credentials_from_file(client_id=client_id).get('content')
+
+    fn = os.path.join(STORAGE_BASE_DIR, f'{STORAGE_FN_PREFIX}{client_id}.json')
+    storage = FileStorageEngine(storage_fn=fn)
+    credentials = storage.get('credentials')
+    assert credentials, "Could not read credentials"
+    sub = credentials[0].get('credentialSubject', [{}])[0].get('id')
+    vp_id = str(uuid4())
+
+    # if isinstance(credentials, list) and len(credentials) == 1:
+    #     credentials = credentials[0]
+    #     if isinstance(credentials['credentialSubject'], list):
+    #         credentials['credentialSubject'] = credentials['credentialSubject'][0]
+
     now = datetime.now()
     payload = {
-        "sub": "did:web:something:BPNLconsumer",
+        "sub": sub,
         "aud": audience,
-        "iss": "did:web:something:BPNLconsumer",
+        "iss": sub, # self issued
         "vp": {
-            "id": "did:web:something:BPNLconsumer#c47a04e0-13b3-4e14-b576-4c1d197bb5fb",
+            "id": f"{sub}#{vp_id}", # TODO: proper keyid required?
             "type": [
                 "VerifiablePresentation"
             ],

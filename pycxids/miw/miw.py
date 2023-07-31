@@ -106,10 +106,11 @@ if __name__ == '__main__':
 
     # tx_ssi_miw_url="https://managed-identity-wallets-new.int.demo.catena-x.net"
     # tx_ssi_oauth_token_url="https://centralidp.int.demo.catena-x.net/auth/realms/CX-Central/protocol/openid-connect/token"
+    # tx_ssi_oauth_client_id="sa209"
     tx_ssi_miw_url="http://dev:9000/miw"
     tx_ssi_oauth_token_url="http://dev:9000/miw/token"
+    tx_ssi_oauth_client_id="provider"
 
-    tx_ssi_oauth_client_id="sa209"
     tx_ssi_endpoint_audience="http://consumer-control-plane:8282/api/v1/dsp"
     miw = Miw(base_url=tx_ssi_miw_url, client_id=tx_ssi_oauth_client_id, client_secret=secret, token_url=tx_ssi_oauth_token_url)
     bearer_token = miw.get_auth_header()
