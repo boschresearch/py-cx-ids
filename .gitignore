@@ -1,4 +1,6 @@
 .*
+!.gitignore
+!.dockerignore
 __pycache__
 *.json
 *.txt
