@@ -6,8 +6,10 @@
 
 import json
 import pytest
+from unittest.mock import Mock, patch
 from pyld import jsonld
 import pycxids.utils.jsonld as myjsonld
+from pycxids.utils.jsonld_contexts import dsp_context
 
 context = {
     "dspace": "https://w3id.org/dspace/v0.8/",
@@ -96,5 +98,36 @@ def test_array_object():
     assert isinstance(co1.get('dspace:policy'), list), "Should be prefixed with the default_context dspace"
 
 
+def requests_get_mock(*args, **kwargs):
+    print(args)
+    print(kwargs)
+    context = json.dumps(dsp_context, indent=4).encode()
+    return context
+
+def document_loader(url, optioons):
+    doc = {
+        'contentType': None,
+        'contextUrl': None,
+        'documentUrl': url,
+        'document': dsp_context
+    }
+
+    return doc
+
+@patch('requests.get', Mock(side_effect=requests_get_mock))
+def test_policy_references():
+    fn = './pycxids/core/http_binding/examples/catalog_dsp_spec_example_modified_with_policy_references.json'
+    #fn = './pycxids/core/http_binding/examples/catalog_dsp_spec_example.json'
+    catalog_text = ''
+    with open(fn, 'rt') as f:
+        catalog_text = f.read()
+    doc = json.loads(catalog_text)
+
+    jsonld.set_document_loader(document_loader)
+    co = jsonld.compact(doc, ctx=context, options={'expandContext': dsp_context})
+    print(json.dumps(co, indent=4))
+
+
+
 if __name__ == '__main__':
-    pytest.main([__file__, "-s", "-k", "test_array_object"])
+    pytest.main([__file__, "-s", "-k", "test_policy_references"])
