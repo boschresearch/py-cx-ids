@@ -44,7 +44,10 @@ dsp_context = {
     "dcat:keyword": { "@container": "@set" },
     "dcat:service": { "@container": "@set" },
     "dcat:dataset": { "@container": "@set" },
-    "odrl:hasPolicy": { "@container": "@set" },
+    "odrl:hasPolicy": {
+        # "@type": "@id",
+        "@container": "@index"
+    },
     "odrl:permission": { "@container": "@set" },
     "odrl:prohibition": { "@container": "@set" },
     "odrl:duty": { "@container": "@set" },
