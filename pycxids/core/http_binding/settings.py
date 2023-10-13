@@ -41,7 +41,7 @@ CONSUMER_STORAGE_FN = os.getenv('CONSUMER_STORAGE_FN', 'consumer_storage.json')
 CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN = os.getenv('CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN', 'consumer_agreements_received.json')
 CONSUMER_TRANSFER_STORAGE_FN = os.getenv('CONSUMER_TRANSFER_STORAGE_FN', 'consumer_transfer_storage.json')
 
-CONSUMER_CALLBACK_BASE_URL = os.getenv('CONSUMER_CALLBACK_BASE_URL', 'http://localhost:6060')
+CONSUMER_CALLBACK_BASE_URL = os.getenv('CONSUMER_CALLBACK_BASE_URL', 'http://dsp-consumer:8080')
 
 CONSUMER_DISABLE_RECEIVER_API = os.getenv('CONSUMER_DISABLE_RECEIVER_API', 'False').lower() in ['true']
 
