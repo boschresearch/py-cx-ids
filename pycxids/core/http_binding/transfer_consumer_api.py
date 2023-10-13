@@ -18,6 +18,7 @@ from pycxids.utils.storage import FileStorageEngine
 
 app = APIRouter(tags=['Transfer Common API - endponts for both, Consumer and Provider'])
 
+
 @app.post('/transfers/{id}/start')
 def post_transfer_start(id: str, body: dict = Body(...)):
     """
@@ -34,8 +35,10 @@ def post_transfer_start(id: str, body: dict = Body(...)):
     # check some bar minimum prerequisites
     if not transfer_start_message.dspace_process_id:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="processId rquired!")
-    if not transfer_start_message.dspace_data_address:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="dataAddress required!")
+
+    # not in S3 transfers
+    # if not transfer_start_message.dspace_data_address:
+    #     raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="dataAddress required!")
 
     # find the corresponding transfer
     if not CONSUMER_TRANSFER_STORAGE_FN:
@@ -61,13 +64,15 @@ def post_transfer_start(id: str, body: dict = Body(...)):
     # should be empty, at least in REQUESTED -> STARTED transition
     if transfer.data_address:
         print(f"WARNING: data_address already set to: {transfer.data_address}")
-        print(f"received new dataAddress is: {transfer_start_message.dspace_data_address}")
+        if transfer_start_message.dspace_data_address:
+            print(f"received new dataAddress is: {transfer_start_message.dspace_data_address}")
         print("TODO: Check this behavior in detail!")
     data_address_received = None
-    if isinstance(transfer_start_message.dspace_data_address, str):
+    if transfer_start_message.dspace_data_address and isinstance(transfer_start_message.dspace_data_address, str):
         data_address_received = DataAddress.parse_raw(transfer_start_message.dspace_data_address.encode())
     else:
-        data_address_received = DataAddress.parse_obj(transfer_start_message.dspace_data_address)
+        if transfer_start_message.dspace_data_address:
+            data_address_received = DataAddress.parse_obj(transfer_start_message.dspace_data_address)
     transfer.data_address = data_address_received
     storage_transfer.put(transfer_id, transfer.dict())
 
