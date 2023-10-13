@@ -79,6 +79,41 @@ class EdcProvider(EdcDataManagement):
         contract_id = self.create_contract_definition(policy_id=policy_id, asset_id=asset_id_created)
         return(asset_id_created, policy_id, contract_id)
 
+    def create_asset_s3(self, filename_in_bucket: str, bucket_name: str, asset_id: str = ''):
+        """
+        Creates an S3 asset
+        """
+        if not asset_id:
+            asset_id = str(uuid4())
+        data = {
+            "@context": default_context,
+            "@type": EDC_ASSET_TYPE,
+            "@id": asset_id,
+            "edc:asset": {
+                "@id": asset_id,
+                "properties": {
+                    "asset:prop:id": asset_id,
+                    "asset:prop:contenttype": "application/json",
+                    "asset:prop:policy-id": "use-eu",
+                }
+            },
+            "edc:dataAddress": {
+                #"@type": EDC_DATA_ADDRESS_TYPE,
+                "edc:type": "AmazonS3",
+                "edc:bucketName": bucket_name,
+                "edc:region": "eu-central-1",
+                "edc:keyName": filename_in_bucket,
+            }
+        }
+        result = self.post(path="/assets", data=data, json_content=True)
+        if result == None:
+            return None
+        created_id = result.get("@id")
+        return created_id
+
+
+
+
     def create_asset(self,
             base_url: str,
             asset_id: str = '',
