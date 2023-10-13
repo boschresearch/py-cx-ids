@@ -4,7 +4,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from fastapi import APIRouter, Body, Request, HTTPException, status
+import json
+from fastapi import APIRouter, Body, Header, Request, HTTPException, status
 
 from pycxids.core.http_binding.models import CatalogRequestMessage, DcatCatalog, DcatDataset
 from pycxids.core.http_binding.models_edc import AssetEntryNewDto
@@ -12,6 +13,7 @@ from pycxids.core.http_binding.models_edc import AssetEntryNewDto
 from pycxids.core.http_binding.policies import default_policy, default_offer_policy
 from pycxids.core.http_binding.settings import KEY_MODIFIED, PROVIDER_STORAGE_ASSETS_FN
 from pycxids.utils.storage import FileStorageEngine
+from pycxids.core.jwt_decode import decode
 
 storage_assets = FileStorageEngine(storage_fn=PROVIDER_STORAGE_ASSETS_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
 
@@ -19,7 +21,11 @@ storage_assets = FileStorageEngine(storage_fn=PROVIDER_STORAGE_ASSETS_FN, last_m
 app = APIRouter(tags=['Catalog'])
 
 @app.post('/catalog/request', response_model=DcatCatalog)
-def catalog_post(catalog_request_message: CatalogRequestMessage = Body(...)):
+def catalog_post(request: Request, body:dict = Body(...), authorization: str = Header(...)):
+    auth_token = decode(authorization)
+    del auth_token['signature']
+    print(json.dumps(auth_token, indent=4))
+    catalog_request_message: CatalogRequestMessage = CatalogRequestMessage.parse_obj(body)
     catalog = DcatCatalog()
 
     data = storage_assets.get_all().items()
