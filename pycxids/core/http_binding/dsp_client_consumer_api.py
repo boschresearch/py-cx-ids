@@ -174,6 +174,18 @@ class DspClientConsumerApi(GeneralApi):
         data['dspace:dataAddress'] = {
                 "https://w3id.org/edc/v0.0.1/ns/type":"HttpProxy"
         }
+        """
+        # use this for S3 data
+        data['dspace:dataAddress'] = {
+                "https://w3id.org/edc/v0.0.1/ns/type":"AmazonS3",
+                "https://w3id.org/edc/v0.0.1/ns/bucketName": "",
+                "https://w3id.org/edc/v0.0.1/ns/region": "",
+                "https://w3id.org/edc/v0.0.1/ns/keyName": "",
+                "https://w3id.org/edc/v0.0.1/ns/accessKeyId": "",
+                "https://w3id.org/edc/v0.0.1/ns/secretAccessKey": "",
+        }
+        """
+
         #r = requests.post(f"{provider_base_url}/transfers/request", json=data)
         result = self.post(path="/transfers/request", data=data)
         return result
