@@ -139,3 +139,32 @@ def generate_rsa_keys_to_file(public_key_fn: str, private_key_fn: str):
         f.write(public_key)
     with open(private_key_fn, "wb") as f:
         f.write(private_key)
+
+
+def generate_seed(len: int = 32) -> str:
+    """
+    """
+    bytes_len = math.floor(len/2)
+    return secrets.token_hex(bytes_len)
+
+def generate_ed25519_key(seed: str = ''):
+    """
+    Generate a private key from given seed.
+    Same seed generates same private keys reproducible.
+    seed: 32 characters
+    """
+    if not seed:
+        seed = generate_seed()
+    assert len(seed) == 32, "Seed must be 32 characters"
+    private_key = Ed25519PrivateKey.from_private_bytes(seed.encode())
+    return private_key
+
+def key_to_public_raw(key: Ed25519PrivateKey) -> bytes:
+    """
+    Private key to public key
+    key: ed25519 private key
+    return: RAW bytes
+    """
+    public_key = key.public_key()
+    pk_raw = public_key.public_bytes(encoding=Encoding.Raw, format=PublicFormat.Raw)
+    return pk_raw
