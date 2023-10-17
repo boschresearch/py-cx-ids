@@ -35,6 +35,8 @@ if __name__ == '__main__':
             print(f"Could not read pub key file {sys.argv[2]}")
         decoded = decode_signed(data=sys.argv[1], pub_key=pub_key)
 
-    print(decoded)
+    #print(decoded)
+    header = decoded.get('header')
+    print(json.dumps(header, indent=4))
     payload = decoded.get('payload')
     print(json.dumps(payload, indent=4))
