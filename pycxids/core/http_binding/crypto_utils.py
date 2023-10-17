@@ -4,8 +4,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import json
+from typing import Union
+import base64
+import secrets
+import math
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat
 from cryptography.hazmat.primitives import _serialization
 from jwcrypto.jwk import JWKSet, JWK
@@ -22,6 +26,23 @@ def pem_to_jwk(data_pem: bytes):
     pub_key_jwk = JWK()
     pub_key_jwk.import_from_pem(data=data_pem)
     return pub_key_jwk
+
+def pub_key_to_jwk(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]) -> JWK:
+    """
+    Creates a JWK json form a given public key
+    """
+    pub_key_jwk = JWK()
+    pub_key_jwk.import_from_pyca(key=pub_key)
+    return pub_key_jwk.export(as_dict=True)
+
+def pub_key_to_jwk_thumbprint(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]) -> JWK:
+    """
+    Create a hash of the jwk. Uses sha256.
+    """
+    pub_key_jwk = JWK()
+    pub_key_jwk.import_from_pyca(key=pub_key)
+    thumbprint = pub_key_jwk.thumbprint()
+    return thumbprint
 
 def encrypt(payload: bytes, public_key_pem: bytes):
     """
