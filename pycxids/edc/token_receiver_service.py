@@ -49,7 +49,10 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
         transfer = edc.get(path=f"/transferprocesses/{transfer_process_id}")
         contract_id = transfer.get('edc:dataRequest', {}).get('edc:contractId', None)
     if not contract_id:
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not find contract_id for given transfer_process_id: {transfer_process_id}")
+        print(f"Could not find contract_id for given transfer_process_id: {transfer_process_id}")
+        print(f"Using transfer_process_id for now: {transfer_process_id}")
+        contract_id = transfer_process_id # TODO: fix this later
+        #raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not find contract_id for given transfer_process_id: {transfer_process_id}")
 
     print(f"transfer_process_id: {transfer_process_id}, contract_id: {contract_id}")
 
