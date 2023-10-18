@@ -33,7 +33,7 @@ def pub_key_to_jwk(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]) -> JWK:
     """
     pub_key_jwk = JWK()
     pub_key_jwk.import_from_pyca(key=pub_key)
-    return pub_key_jwk.export(as_dict=True)
+    return pub_key_jwk.export_public(as_dict=True)
 
 def pub_key_to_jwk_thumbprint(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]) -> JWK:
     """
