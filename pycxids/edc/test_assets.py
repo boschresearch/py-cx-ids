@@ -21,6 +21,51 @@ from pycxids.core.settings import settings
 
 TEST_BEFORE_0_5_0_VERSION = os.getenv('TEST_BEFORE_0_5_0_VERSION', '').lower() in ["true"]
 
+"""
+test_odrl_constraint = {
+    "@type": "LogicalConstraint",
+    "odrl:and": [
+        {
+            "@type": "Constraint",
+            "odrl:leftOperand": "cx.contract.individual",
+            "odrl:operator": {
+                "@id": "odrl:eq"
+            },
+            "odrl:rightOperand": "abc"
+        },
+        {
+            "@type": "Constraint",
+            "odrl:leftOperand": "PURPOSE",
+            "odrl:operator": {
+                "@id": "odrl:eq"
+            },
+            "odrl:rightOperand": "ID 3.1 Trace"
+        },
+        {
+            "@type": "Constraint",
+            "odrl:leftOperand": "FrameworkAgreement.pcf",
+            "odrl:operator": {
+                "@id": "odrl:eq"
+            },
+            "odrl:rightOperand": "active"
+        }
+    ]
+}
+"""
+test_odrl_constraint = {
+    "@type": "LogicalConstraint",
+    "odrl:and": [
+        {
+            "@type": "Constraint",
+            "odrl:leftOperand": "FrameworkAgreementXXX.sustainability",
+            "odrl:operator": {
+                "@id": "odrl:eq"
+            },
+            "odrl:rightOperand": "active"
+        }
+    ]
+}
+
 
 # actual test case
 def test_create_and_delete():
@@ -36,7 +81,7 @@ def test_create_and_delete():
     # we create a new asset (and friends)
     # asset_id = provider.create_asset_s3(filename_in_bucket='test', bucket_name='test')
     asset_id = provider.create_asset(base_url=DUMMY_BACKEND)
-    policy_id = provider.create_policy(asset_id=asset_id)
+    policy_id = provider.create_policy(asset_id=asset_id, odrl_constraint=test_odrl_constraint)
     contract_id = provider.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
     #cd = get_contract_definition(id=contract_id)
 
@@ -54,34 +99,33 @@ def test_create_and_delete():
         auth_key=CONSUMER_EDC_API_KEY,
         token_receiver_service_base_url=RECEIVER_SERVICE_BASE_URL,
         )
-    agreement_id, transfer_id = consumer.negotiate_and_transfer(
+    catalog = consumer.get_catalog(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT)
+    contract_offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
+    #print(json.dumps(contract_offer, indent=4))
+    # TODO: check policy content
+
+    edr_init = consumer.edr_start_process(
         provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
+        contract_offer=contract_offer,
         asset_id=asset_id,
         provider_participant_id=settings.PROVIDER_PARTICIPANT_ID,
         consumer_participant_id=settings.CONSUMER_PARTICIPANT_ID,
     )
+    #print(json.dumps(edr_init, indent=4))
+    negotiation_id = edr_init.get('@id')
+    consumer_edr = consumer.edr_for_negotiation(negotiation_id=negotiation_id)
+    #print(json.dumps(consumer_edr, indent=4))
 
-    # starting with 0.5.x there is no 2 EDRs any more, just 1 from the provider
-    consumer_edr = consumer.edr_consumer_wait(transfer_id=transfer_id)
-    consumer_data_plane_endpoint = consumer_edr.get('endpoint')
-    r = requests.get(consumer_data_plane_endpoint, headers={consumer_edr['authKey']: consumer_edr['authCode']})
+    assert consumer_edr, "Could not fetch consumer_edr from receiver service."
+    consumer_data_plane_endpoint = consumer_edr.get('edc:endpoint')
+    r = requests.get(consumer_data_plane_endpoint, headers={consumer_edr['edc:authKey']: consumer_edr['edc:authCode']})
     if not r.ok:
         print(f"{r.status_code} {r.reason} {r.content}")
         assert False, "Could not fetch data via CONSUMER data plane"
     j = r.json()
+    print(json.dumps(j, indent=4))
     assert 'headers' in j
 
-
-    if TEST_BEFORE_0_5_0_VERSION:
-        provider_edr = consumer.edr_provider_wait(transfer_id=transfer_id)
-        provider_data_plane_endpoint = provider_edr.get('baseUrl')
-        r = requests.get(provider_data_plane_endpoint, headers={provider_edr['authKey']: provider_edr['authCode']})
-        if not r.ok:
-            print(f"{r.status_code} {r.reason} {r.content}")
-            assert False, "Could not fetch data via PROVIDER data plane"
-
-        j = r.json()
-        assert 'headers' in j
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
