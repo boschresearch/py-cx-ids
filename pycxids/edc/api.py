@@ -201,7 +201,30 @@ class EdcProvider(EdcDataManagement):
             created_id = result.get("@id")
             return created_id
 
-    def create_policy(self, asset_id: str):
+    def create_policy(self, asset_id: str, odrl_constraint:dict = None):
+        """
+        "odrl:constraint": {
+            "@type": "LogicalConstraint",
+            "odrl:and": [
+                {
+                    "@type": "Constraint",
+                    "odrl:leftOperand": "PURPOSE",
+                    "odrl:operator": {
+                        "@id": "odrl:eq"
+                    },
+                    "odrl:rightOperand": "abc"
+                },
+                {
+                    "@type": "Constraint",
+                    "odrl:leftOperand": "PURPOSE",
+                    "odrl:operator": {
+                        "@id": "odrl:eq"
+                    },
+                    "odrl:rightOperand": "ID 3.1 Trace"
+                }
+            ]
+        }
+        """
         policy_id = str(uuid4())
         data = {
             "@context": {
@@ -218,6 +241,9 @@ class EdcProvider(EdcDataManagement):
                 ],
             },
         }
+        # if a constraint is given, add it to the policy
+        if odrl_constraint:
+            data['policy']['odrl:permission'][0]['odrl:constraint'] = odrl_constraint
         if USE_V1_DATA_MANAGEMENT_API:
             # overwrite with V1 structure
             data = {
@@ -463,19 +489,7 @@ class EdcConsumer(EdcDataManagement):
             "offer": {
                 "offerId": offer_id,
                 "assetId": asset_id,
-                "policy": {
-                    "@type": "odrl:Set",
-                    "odrl:permission": {
-                        "odrl:target": asset_id,
-                        "odrl:action": "USE",
-                        # "odrl:action": {
-                        #     "odrl:type": "USE"
-                        # },
-                    },
-                    "odrl:prohibition": [],
-                    "odrl:obligation": [],
-                    "odrl:target": asset_id
-                }
+                "policy": contract_offer,
             }
         }
         with open('contractnegotiation_request_to_edc.json', 'wt') as f:
