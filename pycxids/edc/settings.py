@@ -22,7 +22,7 @@ IDS_PATH = os.getenv('IDS_PATH', '/api/v1/dsp')
 if USE_V1_DATA_MANAGEMENT_API:
     IDS_PATH = os.getenv('IDS_PATH', '/api/v1/data')
 PROVIDER_IDS_BASE_URL = os.getenv('PROVIDER_IDS_BASE_URL', 'http://provider-control-plane:8282')
-PROVIDER_IDS_ENDPOINT = f"{PROVIDER_IDS_BASE_URL}{IDS_PATH}"
+PROVIDER_IDS_ENDPOINT = os.getenv('PROVIDER_IDS_ENDPOINT', f"{PROVIDER_IDS_BASE_URL}{IDS_PATH}")
 
 # consumer side
 CONSUMER_EDC_BASE_URL = os.getenv('CONSUMER_EDC_BASE_URL', 'http://consumer-control-plane:9193/api/v1/data/v2')
