@@ -227,10 +227,8 @@ class EdcProvider(EdcDataManagement):
         """
         policy_id = str(uuid4())
         data = {
-            "@context": {
-                "odrl": "http://www.w3.org/ns/odrl/2/"
-            },
-            "@type": "PolicyDefinitionRequestDto",
+            "@context": default_context,
+            #"@type": "PolicyDefinitionRequestDto",
             "@id": policy_id,
             "policy": {
                 "@type": "Policy",
@@ -269,17 +267,38 @@ class EdcProvider(EdcDataManagement):
             return None
         return policy_id
 
-    def create_contract_definition(self, policy_id: str, asset_id: str):
+    def create_access_policy(self):
+        policy_id = str(uuid4())
+        data = {
+            "@context": default_context,
+            #"@type": "PolicyDefinitionRequestDto",
+            "@id": policy_id,
+            "policy": {
+                "@type": "Policy",
+                #"odrl:permission": [],
+            },
+        }
+        result = self.post(path="/policydefinitions", data=data, json_content=False)
+        if result == None:
+            return None
+        return policy_id
+
+
+    def create_contract_definition(self, policy_id: str, asset_id: str, access_policy_id = None):
+        if not access_policy_id:
+            access_policy_id = self.create_access_policy()
         cd_id = str(uuid4())
         data = {
-            "@context": {},
+            "@context": default_context,
+            #"@type": "ContractDefinition",
             "@id": cd_id,
-            "accessPolicyId": policy_id,
+            "accessPolicyId": access_policy_id,
             "contractPolicyId": policy_id,
-            "criteria": [
+            "assetsSelector": [ # wrong key here, leads to applying it to all assets?
                 {
-                    "operandLeft": "asset:prop:id",
-                    "operator": "=",
+                    "operandLeft": "https://w3id.org/edc/v0.0.1/ns/id",
+                    #"operandLeft": "edc:id", # TODO: not sure why this doesn't work
+                    "operator": "=", # TODO: 'eq' here, kills the catalog ;-)
                     "operandRight": asset_id
                 }
             ],
@@ -584,7 +603,6 @@ class EdcConsumer(EdcDataManagement):
 
     def edr_tp(self, transfer_id: str):
         base_url_without_v2 = self.base_url.replace('/v2', '')
-        path = f"/adapter/edrs/{transfer_id}"
         r = requests.get(f"{base_url_without_v2}/edrs/{transfer_id}", headers=self.headers)
         result = r.json()
         return result
