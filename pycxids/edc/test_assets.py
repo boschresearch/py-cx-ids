@@ -15,8 +15,8 @@ import pytest
 from uuid import uuid4
 
 from pycxids.edc.api import EdcConsumer, EdcProvider
-from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, API_WRAPPER_BASE_URL, API_WRAPPER_USER, API_WRAPPER_PASSWORD, PROVIDER_IDS_ENDPOINT, RECEIVER_SERVICE_BASE_URL
-from pycxids.edc.settings import PROVIDER_IDS_BASE_URL, DUMMY_BACKEND
+from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, PROVIDER_IDS_ENDPOINT, RECEIVER_SERVICE_BASE_URL
+from pycxids.edc.settings import DUMMY_BACKEND
 from pycxids.core.settings import settings
 
 TEST_BEFORE_0_5_0_VERSION = os.getenv('TEST_BEFORE_0_5_0_VERSION', '').lower() in ["true"]
@@ -57,7 +57,7 @@ test_odrl_constraint = {
     "odrl:and": [
         {
             "@type": "Constraint",
-            "odrl:leftOperand": "FrameworkAgreementXXX.sustainability",
+            "odrl:leftOperand": "FrameworkAgreement.membership",
             "odrl:operator": {
                 "@id": "odrl:eq"
             },
@@ -80,8 +80,10 @@ def test_create_and_delete():
 
     # we create a new asset (and friends)
     # asset_id = provider.create_asset_s3(filename_in_bucket='test', bucket_name='test')
+    #asset_id = provider.create_asset(base_url='https://verkehr.autobahn.de/o/autobahn/')
     asset_id = provider.create_asset(base_url=DUMMY_BACKEND)
     policy_id = provider.create_policy(asset_id=asset_id, odrl_constraint=test_odrl_constraint)
+    #policy_id = provider.create_policy(asset_id=asset_id)
     contract_id = provider.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
     #cd = get_contract_definition(id=contract_id)
 
@@ -101,6 +103,7 @@ def test_create_and_delete():
         )
     catalog = consumer.get_catalog(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT)
     contract_offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
+    assert contract_offer, "Could not find matching offer in catalog"
     #print(json.dumps(contract_offer, indent=4))
     # TODO: check policy content
 
@@ -109,7 +112,6 @@ def test_create_and_delete():
         contract_offer=contract_offer,
         asset_id=asset_id,
         provider_participant_id=settings.PROVIDER_PARTICIPANT_ID,
-        consumer_participant_id=settings.CONSUMER_PARTICIPANT_ID,
     )
     #print(json.dumps(edr_init, indent=4))
     negotiation_id = edr_init.get('@id')
@@ -124,7 +126,7 @@ def test_create_and_delete():
         assert False, "Could not fetch data via CONSUMER data plane"
     j = r.json()
     print(json.dumps(j, indent=4))
-    assert 'headers' in j
+    assert 'headers' in j or 'roads' in j
 
 
 if __name__ == '__main__':
