@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 from typing import Union
 import base64
 import secrets
@@ -12,6 +13,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat
 from cryptography.hazmat.primitives import _serialization
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from jwcrypto.jwk import JWKSet, JWK
 from jwcrypto.jwt import JWT, JWE
 from jwcrypto.jws import JWS
@@ -168,3 +170,32 @@ def key_to_public_raw(key: Ed25519PrivateKey) -> bytes:
     public_key = key.public_key()
     pk_raw = public_key.public_bytes(encoding=Encoding.Raw, format=PublicFormat.Raw)
     return pk_raw
+
+def decrypt(b64_cipher: str, b64_key: str):
+    """
+    This is meant to decrypt AES GCM messages.
+    This is mainly for EDR content sent from an EDC Provider to the Consumer.
+    The content of the 'authCode's 'dad' is encrypted.
+    https://github.com/paullatzelsperger/tractusx-edc/blob/2e0b98c9a24816a56f7c98c02024b87088bd15ff/edc-extensions/data-encryption/src/main/java/org/eclipse/tractusx/edc/data/encryption/aes/AesEncryptor.java
+
+    The cipher looks like:
+    <16_bytes_iv><encyrpted_message><16_bytes_tag>
+
+    The 'tag' is authenticated, but not encrypted.
+    The 'tag' is not really used in EDC EDR content.
+    """
+    key = base64.b64decode(b64_key)
+    decoded = base64.b64decode(b64_cipher)
+    iv = decoded[:16]
+    cipher_text = decoded[16:-16]
+    tag = decoded[-16:]
+    decryptor = Cipher(
+        algorithm=algorithms.AES(key=key),
+        mode=modes.GCM(iv)
+        ).decryptor()
+    # tag needs to be provided either in creating the decryptor,
+    # or with the finalize call
+    # the content of it is not relevant for us.
+    raw = decryptor.update(cipher_text) + decryptor.finalize_with_tag(tag=tag)
+    text = raw.decode()
+    return text
