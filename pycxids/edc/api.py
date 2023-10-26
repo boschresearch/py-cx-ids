@@ -121,6 +121,7 @@ class EdcProvider(EdcDataManagement):
             try_delete_before_create=False,
             asset_additional_props:dict={},
             data_address_additional_props:dict={},
+            data_address_type:str="HttpData",
         ):
         if not asset_id:
             asset_id = str(uuid4())
@@ -150,7 +151,7 @@ class EdcProvider(EdcDataManagement):
             },
             "edc:dataAddress": {
                 #"@type": EDC_DATA_ADDRESS_TYPE,
-                "edc:type": "HttpData",
+                "edc:type": data_address_type,
                 "proxyPath": str(proxyPath).lower(),
                 "proxyQueryParams": str(proxyQueryParams).lower(),
                 "proxyMethod": str(proxyMethod).lower(),
