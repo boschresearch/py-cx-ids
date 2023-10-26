@@ -37,6 +37,15 @@ def pub_key_to_jwk(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]) -> JWK:
     pub_key_jwk.import_from_pyca(key=pub_key)
     return pub_key_jwk.export_public(as_dict=True)
 
+def private_key_to_jwk(key: Union[rsa.RSAPrivateKey, Ed25519PrivateKey]) -> JWK:
+    """
+    Attention, PRIVATE keys here!
+    Used for singing in jwt lib
+    """
+    key_jwk = JWK()
+    key_jwk.import_from_pyca(key=key)
+    return key_jwk
+
 def pub_key_to_jwk_thumbprint(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]) -> JWK:
     """
     Create a hash of the jwk. Uses sha256.
