@@ -16,7 +16,7 @@ assert PROVIDER_EDC_BASE_URL
 PROVIDER_EDC_API_KEY = os.getenv('PROVIDER_EDC_API_KEY', 'dontuseinpublic')
 assert PROVIDER_EDC_API_KEY
 
-PROVIDER_EDC_VALIDATION_ENDPOINT = os.getenv('PROVIDER_EDC_VALIDATION_ENDPOINT', 'http://provider-control-plane:9192/validation/token')
+PROVIDER_EDC_VALIDATION_ENDPOINT = os.getenv('PROVIDER_EDC_VALIDATION_ENDPOINT', 'http://provider-control-plane:9191/api/token')
 
 IDS_PATH = os.getenv('IDS_PATH', '/api/v1/dsp')
 if USE_V1_DATA_MANAGEMENT_API:
