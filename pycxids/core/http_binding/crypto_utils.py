@@ -11,6 +11,7 @@ import secrets
 import math
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat
 from cryptography.hazmat.primitives import _serialization
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -20,6 +21,18 @@ from jwcrypto.jws import JWS
 from jwcrypto.common import json_encode
 # jwt lib does not support encyrption
 from time import time
+
+def padding_add(data: str):
+    """
+    Add '=' padding to the given data string and return
+    """
+    nr_padding = (4 - len(data) % 4)
+    padding_str = '=' * nr_padding
+    return data + padding_str
+
+def padding_remove(data: str):
+    return data.rstrip('=')
+
 
 def pem_to_jwk(data_pem: bytes):
     """
@@ -31,11 +44,26 @@ def pem_to_jwk(data_pem: bytes):
 
 def pub_key_to_jwk(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]) -> JWK:
     """
-    Creates a JWK json form a given public key
+    Creates a JWK json form a given public key using jwcrypto library
     """
     pub_key_jwk = JWK()
     pub_key_jwk.import_from_pyca(key=pub_key)
     return pub_key_jwk.export_public(as_dict=True)
+
+def pub_key_to_jwk_v2(pub_key: Ed25519PublicKey) -> JWK:
+    """
+    Creates a JWK json form a given public key using own implementation
+    """
+    pb = pub_key.public_bytes(encoding=Encoding.Raw, format=PublicFormat.Raw)
+    pb_enc = base64.urlsafe_b64encode(pb).decode()
+    pb_enc_no_padding = padding_remove(pb_enc)
+    publicKeyJwk = {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": pb_enc_no_padding,
+    }
+    return publicKeyJwk
+
 
 def private_key_to_jwk(key: Union[rsa.RSAPrivateKey, Ed25519PrivateKey]) -> JWK:
     """
@@ -54,6 +82,40 @@ def pub_key_to_jwk_thumbprint(pub_key: Union[rsa.RSAPublicKey, Ed25519PublicKey]
     pub_key_jwk.import_from_pyca(key=pub_key)
     thumbprint = pub_key_jwk.thumbprint()
     return thumbprint
+
+def jwk_to_pub_key(pub_jwk: dict) -> Union[rsa.RSAPublicKey, Ed25519PublicKey]:
+    """
+    Transform from a JWK dict into pyca pub key.
+    TODO: Find a better way to do this!
+    """
+    jw = JWK()
+    jw.import_key(**pub_jwk)
+    pub_pem = jw.export_to_pem()
+    pub_key: Ed25519PublicKey = load_pem_public_key(pub_pem)
+    return pub_key
+
+def jwk_to_pub_key_v2(pub_jwk: dict) -> Ed25519PublicKey:
+    x = pub_jwk.get('x')
+    assert x, "x must be present for public key JWK"
+    x_with_padding = padding_add(x)
+    x_pub_key = base64.urlsafe_b64decode(x_with_padding)
+    l = len(x_pub_key)
+    assert l, "key len must be 32"
+    pub_key = Ed25519PublicKey.from_public_bytes(x_pub_key)
+    return pub_key
+
+def jwk_to_private_key_v2(private_key_jwk: dict) -> Ed25519PrivateKey:
+    """
+    Given jwk must contain a 'd' that represents the privat key in b64url encoded
+    Returns a Ed25519PrivateKey
+    """
+    d = private_key_jwk.get('d')
+    assert d, "No private key jwk (Ed25519PrivateKey) given. d missing."
+    d_with_padding = padding_add(d)
+    d_private_bytes = base64.urlsafe_b64decode(d_with_padding)
+    key: Ed25519PrivateKey = Ed25519PrivateKey.from_private_bytes(d_private_bytes)
+    return key
+
 
 def encrypt(payload: bytes, public_key_pem: bytes):
     """
@@ -137,6 +199,15 @@ def key_to_private_pkcs8(key: rsa.RSAPrivateKey) -> bytes:
     )
     return private_key
 
+def key_to_private_raw(key: Union[rsa.RSAPrivateKey, Ed25519PrivateKey]) -> bytes:
+    private_key = key.private_bytes(
+        encoding=Encoding.Raw,
+            format=PrivateFormat.Raw,
+            encryption_algorithm=_serialization.NoEncryption(),
+    )
+    return private_key
+
+
 def generate_rsa_keys_to_file(public_key_fn: str, private_key_fn: str):
     """
     Generate new RSA key pari and write to file.
@@ -177,6 +248,10 @@ def key_to_public_raw(key: Ed25519PrivateKey) -> bytes:
     return: RAW bytes
     """
     public_key = key.public_key()
+    pk_raw = public_key.public_bytes(encoding=Encoding.Raw, format=PublicFormat.Raw)
+    return pk_raw
+
+def key_to_public_raw_pub(public_key: Ed25519PublicKey) -> bytes:
     pk_raw = public_key.public_bytes(encoding=Encoding.Raw, format=PublicFormat.Raw)
     return pk_raw
 
