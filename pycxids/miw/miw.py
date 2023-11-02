@@ -65,7 +65,7 @@ class Miw(GeneralApi):
             'verifiableCredentials': vcs,
         }
         result = self.post(path="/api/presentations", data=data, params=params)
-        return result
+        return result.get('vp')
 
     def get_vp(self, credential_type: str = SUMMARY_CREDENTIAL, aud: str = '', jwt = True):
         """
@@ -92,40 +92,3 @@ class Miw(GeneralApi):
         }
         result = self.post(path="/api/presentations/validation", data=data, params=params)
         return result
-
-
-
-
-if __name__ == '__main__':
-    secret_fn = './edc-dev-env/vault_secrets/provider.miw.secret'
-    secret = None
-    with open(secret_fn, 'rt') as f:
-        secret = f.read()
-    assert secret
-    # TODO: get from settings
-
-    # tx_ssi_miw_url="https://managed-identity-wallets-new.int.demo.catena-x.net"
-    # tx_ssi_oauth_token_url="https://centralidp.int.demo.catena-x.net/auth/realms/CX-Central/protocol/openid-connect/token"
-    # tx_ssi_oauth_client_id="sa209"
-    tx_ssi_miw_url="http://dev:9000/miw"
-    tx_ssi_oauth_token_url="http://dev:9000/miw/token"
-    tx_ssi_oauth_client_id="provider"
-
-    tx_ssi_endpoint_audience="http://consumer-control-plane:8282/api/v1/dsp"
-    miw = Miw(base_url=tx_ssi_miw_url, client_id=tx_ssi_oauth_client_id, client_secret=secret, token_url=tx_ssi_oauth_token_url)
-    bearer_token = miw.get_auth_header()
-    print(bearer_token)
-    credentials = miw.get_credentials()
-    credentials_str = json.dumps(credentials, indent=4)
-    print(credentials_str)
-    with open('miw_token.json', 'wt') as f:
-        f.write(credentials_str)
-    
-    vp_jwt = miw.get_vp(aud='http://dev:8000')
-    print(vp_jwt)
-    verified = miw.verify_vp(vp=vp_jwt)
-    print(json.dumps(verified, indent=4))
-    decoded_vp = decode(verified.get('vp'))
-    del decoded_vp['signature']
-    print(json.dumps(decoded_vp, indent=4))
-
