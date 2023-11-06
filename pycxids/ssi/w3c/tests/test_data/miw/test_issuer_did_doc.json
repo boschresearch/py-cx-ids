@@ -1,0 +1,18 @@
+{
+    "id": "did:web:managed-identity-wallets-new.int.demo.catena-x.net:BPNL00000003CRHK",
+    "verificationMethod": [
+        {
+            "controller": "did:web:managed-identity-wallets-new.int.demo.catena-x.net:BPNL00000003CRHK",
+            "id": "did:web:managed-identity-wallets-new.int.demo.catena-x.net:BPNL00000003CRHK#",
+            "publicKeyJwk": {
+                "crv": "Ed25519",
+                "kty": "OKP",
+                "x": "ExIKmgRdR5RU31awiDL8f--vZisDkCwZTHUEXXRN2xE"
+            },
+            "type": "JsonWebKey2020"
+        }
+    ],
+    "@context": [
+        "https://www.w3.org/ns/did/v1"
+    ]
+}

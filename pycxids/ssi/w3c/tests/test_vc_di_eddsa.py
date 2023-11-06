@@ -9,7 +9,7 @@ import pytest
 from pycxids.utils.jsonld import normalize, hash
 from multiformats.multibase import decode_raw, encode as multibase_encode
 from multiformats import multicodec
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
 def test_vc():
     """
@@ -18,7 +18,7 @@ def test_vc():
     """
     data = ''
 
-    with open('./pycxids/ssi/w3c/test_data/vc-di-eddsa/example-7.json', 'rt') as f:
+    with open('./pycxids/ssi/w3c/tests/test_data/vc-di-eddsa/example-7.json', 'rt') as f:
         data = f.read()
     key_data = json.loads(data)
     key_data_private = key_data.get('privateKeyMultibase')
@@ -35,11 +35,11 @@ def test_vc():
     key: Ed25519PrivateKey = Ed25519PrivateKey.from_private_bytes(private_bytes)
 
 
-    with open('./pycxids/ssi/w3c/test_data/vc-di-eddsa/example-8.json', 'rt') as f:
+    with open('./pycxids/ssi/w3c/tests/test_data/vc-di-eddsa/example-8.json', 'rt') as f:
         data = f.read()
     unsecured_document = json.loads(data)
 
-    with open('./pycxids/ssi/w3c/test_data/vc-di-eddsa/example-11.json', 'rt') as f:
+    with open('./pycxids/ssi/w3c/tests/test_data/vc-di-eddsa/example-11.json', 'rt') as f:
         data = f.read()
     proof_options = json.loads(data)
 
@@ -69,6 +69,14 @@ def test_vc():
     given_sig_b58btc = "z21EVs3eXERqTn4acNHT9viboqgzUaQ3kTmhPT3eA8qrVPE7CrQq78WkzctnMX5W4CrzcKnHw8V6dvy5pgWYCU5e9"
     sig_b58_mb = multibase_encode(data=sig, base='base58btc')
     assert given_sig_b58btc == sig_b58_mb, "Multibase sig differs from given sig."
+
+    # also test the verify step from the pub_key
+    pub_key: Ed25519PublicKey = key.public_key()
+    try:
+        pub_key.verify(signature=sig, data=overall_hash)
+    except Exception as ex:
+        print(ex)
+        assert False, "Could not verify signature"
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])

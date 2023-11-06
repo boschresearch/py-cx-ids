@@ -1,0 +1,34 @@
+{
+    "credentialSubject": [
+        {
+            "contractTemplate": "https://public.catena-x.org/contracts/",
+            "holderIdentifier": "BPNL00000003B5MJ",
+            "id": "did:web:managed-identity-wallets-new.int.demo.catena-x.net:BPNL00000003B5MJ",
+            "items": [
+                "BpnCredential",
+                "MembershipCredential"
+            ],
+            "type": "SummaryCredential"
+        }
+    ],
+    "issuanceDate": "2023-07-10T00:34:00Z",
+    "id": "did:web:managed-identity-wallets-new.int.demo.catena-x.net:BPNL00000003CRHK#24dd1e27-dcbf-4101-a491-6c970204f0e3",
+    "proof": {
+        "created": "2023-07-10T00:34:01Z",
+        "jws": "eyJhbGciOiJFZERTQSJ9..CS7re5mpbUKRLgYHt0RLgT5w-GoqAXy1DXjKF_kNFRAZFHoQEdAFa2OgAFag0Syig4796SmjIBR-Na2zWLADDA",
+        "proofPurpose": "proofPurpose",
+        "type": "JsonWebSignature2020",
+        "verificationMethod": "did:web:managed-identity-wallets-new.int.demo.catena-x.net:BPNL00000003CRHK#"
+    },
+    "type": [
+        "VerifiableCredential",
+        "SummaryCredential"
+    ],
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://catenax-ng.github.io/product-core-schemas/SummaryVC.json",
+        "https://w3id.org/security/suites/jws-2020/v1"
+    ],
+    "issuer": "did:web:managed-identity-wallets-new.int.demo.catena-x.net:BPNL00000003CRHK",
+    "expirationDate": "2023-10-01T00:00:00Z"
+}
