@@ -11,8 +11,14 @@ import json
 import sys
 import os
 
-def decode(data, verify_signature: bool = False):
+def decode(data, verify_signature: bool = False, sig_to_hex = False):
     decoded = jwt.api_jwt.decode_complete(data, options={'verify_signature': verify_signature})
+    if sig_to_hex:
+        signature = decoded.get('signature')
+        if isinstance(signature, bytes):
+            sig_str = signature.hex()
+            decoded['signature'] = sig_str
+
     return decoded
 
 def decode_signed(data, pub_key):
