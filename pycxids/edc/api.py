@@ -268,7 +268,7 @@ class EdcProvider(EdcDataManagement):
             return None
         return policy_id
 
-    def create_access_policy(self):
+    def create_access_policy(self, bpn: str = None):
         policy_id = str(uuid4())
         data = {
             "@context": default_context,
@@ -279,6 +279,21 @@ class EdcProvider(EdcDataManagement):
                 #"odrl:permission": [],
             },
         }
+        if bpn:
+            permission = {
+                "action": "USE",
+                "odrl:constraint": {
+                    #"@type": "LogicalConstraint",
+                    "@type": "Constraint",
+                    "odrl:leftOperand": "BusinessPartnerNumber",
+                    "odrl:operator": {
+                        "@id": "odrl:eq"
+                    },
+                    "odrl:rightOperand": bpn
+                }
+            }
+            data['policy']['odrl:permission'] = permission
+
         result = self.post(path="/policydefinitions", data=data, json_content=False)
         if result == None:
             return None
