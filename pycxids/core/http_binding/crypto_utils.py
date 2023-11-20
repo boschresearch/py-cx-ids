@@ -22,6 +22,19 @@ from jwcrypto.common import json_encode
 # jwt lib does not support encyrption
 from time import time
 
+def private_key_from_seed_file(seed_fn: str) -> Ed25519PrivateKey:
+    """
+    Read seed from a given file
+    Returns Ed25519 Private Key
+    """
+    seed = ''
+    with open(seed_fn, 'rt') as f:
+        seed = f.read()
+    assert len(seed) == 32, f"Seed must be 32 characters! File: {seed_fn}"
+    private_key = Ed25519PrivateKey.from_private_bytes(seed.encode())
+    return private_key
+
+
 def padding_add(data: str):
     """
     Add '=' padding to the given data string and return
@@ -31,7 +44,10 @@ def padding_add(data: str):
     return data + padding_str
 
 def padding_remove(data: str):
-    return data.rstrip('=')
+    if isinstance(data, bytes):
+        return data.rstrip(b'=')
+    else:
+        return data.rstrip('=')
 
 
 def pem_to_jwk(data_pem: bytes):

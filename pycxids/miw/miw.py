@@ -80,7 +80,7 @@ class Miw(GeneralApi):
                 cred_type = [cred_type] # make sure it is a list
             if credential_type in cred_type:
                 vp = self.create_presentation(verifiable_credential=cred, aud=aud)
-                return vp['vp']
+                return vp
         return None
 
     def verify_vp(self, vp, jwt = True):

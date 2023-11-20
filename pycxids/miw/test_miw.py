@@ -30,6 +30,8 @@ def test_():
     credentials_str = json.dumps(credentials, indent=4)
     print(credentials_str)
     vc = credentials['content'][0]
+    with open("miw_vc.json", "wt") as f:
+        f.write(json.dumps(vc, indent=4))
     vp = miw.create_presentation(verifiable_credential=vc, aud='http://localhost')
     assert vp, "Could not create VP"
     print(json.dumps(vp))

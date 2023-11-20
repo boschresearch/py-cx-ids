@@ -4,7 +4,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 from pyld import jsonld
+from hashlib import sha256
+import base64
 
 default_context = {
     'dct': 'https://purl.org/dc/terms/',
@@ -14,6 +17,25 @@ default_context = {
     'odrl': 'http://www.w3.org/ns/odrl/2/',
     'dspace': 'https://w3id.org/dspace/v0.8/',
 }
+
+normalize_default_options = {'algorithm': 'URDNA2015', 'format': 'application/nquads'}
+
+def normalize(jsonld_document, options = normalize_default_options):
+    return jsonld.normalize(jsonld_document, options=options)
+
+def normalize_json(jsonld_document, options = normalize_default_options):
+    normalized = normalize(jsonld_document=jsonld_document, options=options)
+    # no whitespaces with separators and sorted keys
+    serialized_json = json.dumps(normalized, separators=(',', ':'), sort_keys=True)
+    return serialized_json.encode('utf-8')
+
+def hash(normalized_doc: str):
+    hash1 =  sha256(normalized_doc.encode('utf-8')).digest()
+    #hash2 = sha256(normalized_doc.encode('utf-8')).hexdigest()
+    return hash1
+
+def expand(doc, context = None):
+    return jsonld.expand(doc)
 
 def compact(doc, context = None, expand_context = None):
     """
