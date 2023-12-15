@@ -32,7 +32,7 @@ def get_by_id(id: str, storage: FileStorageEngine, timeout: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ran into given timeout: {timeout} for id: {id}")
 
 @app.get('/negotiations/{id}/agreement')
-def get_negotiation_agreement(id: str, timeout: int = Query(default=30, description='Timeout to wait for a message before returning with an error')):
+def get_negotiation_agreement(id: str, timeout: int = Query(default=60, description='Timeout to wait for a message before returning with an error')):
     """
     TODO: Needs to be private / protected in the future!
 
@@ -42,7 +42,7 @@ def get_negotiation_agreement(id: str, timeout: int = Query(default=30, descript
     return get_by_id(id=id, storage=storage_agreements_received, timeout=timeout)
 
 @app.get('/private/transfers/{id}', response_model=TransferStateStore)
-def get_negotiation_agreement(id: str, timeout: int = Query(default=30, description='Timeout to wait for a message before returning with an error')):
+def get_negotiation_agreement(id: str, timeout: int = Query(default=60, description='Timeout to wait for a message before returning with an error')):
     """
     TODO: Needs to be private / protected in the future!
 
