@@ -131,7 +131,7 @@ class DspClientConsumerApi(GeneralApi):
         })
         return catalog
 
-    def negotiation(self, dataset_id: str, offer: OdrlOffer, consumer_callback_base_url: str, provider_base_url: str):
+    def negotiation(self, dataset_id: str, offer: OdrlOffer, consumer_callback_base_url: str):
         contract_request_id = str(uuid4())
         contract_request_message =  ContractRequestMessage(
             field_id=contract_request_id,
@@ -160,7 +160,7 @@ class DspClientConsumerApi(GeneralApi):
         j = r.json()
         return j
 
-    def transfer(self, agreement_id_received: str, consumer_callback_base_url: str, provider_base_url: str):
+    def transfer(self, agreement_id_received: str, consumer_callback_base_url: str):
         transfer_request_id = str(uuid4())
         transfer_request_message: TransferRequestMessage = TransferRequestMessage(
             field_id = transfer_request_id,

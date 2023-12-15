@@ -53,7 +53,7 @@ def test():
     #catalog = consumer.fetch_catalog()
     # we already know which asset_id
     offers = consumer.get_offers_for_asset(asset_id=asset_id)
-    negotiation = consumer.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url, provider_base_url=PROVIDER_IDS_ENDPOINT)
+    negotiation = consumer.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url)
 
     negotiation_process_id = negotiation.get('dspace:processId')
     if not negotiation_process_id:
@@ -63,7 +63,7 @@ def test():
     print(agreement)
     agreement_id = agreement.get('dspace:agreement', {}).get('@id')
     assert agreement_id, "Did not get an agreementId"
-    transfer = consumer.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url, provider_base_url=PROVIDER_IDS_ENDPOINT)
+    transfer = consumer.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url)
     print(transfer)
     transfer_id = transfer.get('@id')
     transfer_process_id = transfer.get('dspace:processId')

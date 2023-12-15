@@ -254,7 +254,7 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
         print(offers)
         consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
         # TODO catalog_base_url should not be used here, but rather the endpoint from the catalog result!
-        negotiation = api.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url, provider_base_url=provider_base_url)
+        negotiation = api.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url)
         print(negotiation)
         negotiation_process_id = negotiation.get('dspace:processId')
         # and now get the message from the receiver api (proprietary api)
@@ -262,7 +262,7 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
         print(agreement)
         agreement_id = agreement.get('dspace:agreement', {}).get('@id')
         assert agreement_id
-        transfer = api.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url, provider_base_url=provider_base_url)
+        transfer = api.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url)
         print(transfer)
         transfer_id = transfer.get('@id')
         transfer_process_id = transfer.get('dspace:processId')
