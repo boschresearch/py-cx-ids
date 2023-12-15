@@ -556,6 +556,21 @@ components:
         odrl:operator:
           type: string
 
+    OdrlLogicalConstraint:
+      description: "TODO: also add andSequence, or, xone as described here: https://www.w3.org/TR/odrl-vocab/#term-operand"
+      type: object
+      properties:
+        "@id":
+          type: string
+        "@type":
+          type: string
+          default: "LogicalConstraint"
+        "odrl:and":
+          type: array
+          items:
+            $ref: "#/components/schemas/OdrlConstraint"
+
+
     Action:
       type: object
       properties:
@@ -590,20 +605,23 @@ components:
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlRule"
+            - $ref: "#/components/schemas/OdrlLogicalConstraint"
         odrl:prohibition:
           oneOf:
             - $ref: "#/components/schemas/OdrlRule"
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlRule"
+            - $ref: "#/components/schemas/OdrlLogicalConstraint"
         odrl:obligation:
           oneOf:
             - $ref: "#/components/schemas/OdrlRule"
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlRule"
+            - $ref: "#/components/schemas/OdrlLogicalConstraint"
     OdrlOffer:
-      description: "Only addition compared to the Policy: the target field"
+      description: "Only addition compared to the Policy: the target field - which should not be there according to DSP model"
       allOf:
         - $ref: "#/components/schemas/OdrlPolicy"
         - type: object
@@ -613,6 +631,8 @@ components:
               default: "odrl:Offer"
             odrl:target:
               type: string
+              description: "This is used in EDC, but according to DSP model, this should be removed"
+              deprecated: true
     OdrlAgreement:
       description: "Agreement"
       allOf:
