@@ -25,8 +25,7 @@ test_odrl_constraint = [
     }
 ]
 
-CONSUMER_BPN = 'BPNLConsumer'
-CONSUMER_BPN = 'BPNL00000003B5MJ'
+CONSUMER_BPN = 'BPNLconsumer'
 
 def test():
     """
