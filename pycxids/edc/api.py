@@ -429,6 +429,38 @@ class EdcConsumer(EdcDataManagement):
                 return offer
         return None
 
+    def get_dataset(self, dataset_id: str, provider_ids_endpoint: str):
+        """
+        dataset_id == asset_id
+        Use a filter to only get results for a given asset  / dataset id
+        """
+        data = {
+            "@context": {
+                "dspace": "https://w3id.org/dspace/v0.8/",
+            },
+            "protocol": DATASPACE_PROTOCOL_HTTP, # TODO: what is this actually used for?
+            'providerUrl': provider_ids_endpoint,
+            'querySpec': {
+                "filterExpression": {
+                    "operandLeft": "https://w3id.org/edc/v0.0.1/ns/id",
+                    #"operandLeft": "https://w3id.org/edc/v0.0.1/ns/asset:porp:id",
+                    "operator": "=",
+                    "operandRight": dataset_id,
+                }
+            }
+        }
+        with open('catalog_request_dataset.json', 'w') as f:
+            f.write(json.dumps(data, indent=4))
+        catalog = self.post(path='/catalog/request', data=data)
+        # sorry, but this is stupid, if only 1 item in the database, it is NOT a list, otherwise it is
+        # this was not the intension of the Dspace protocol!
+        # making this always a list here for now
+        if not isinstance(catalog['dcat:dataset'], list):
+            catalog['dcat:dataset'] = [catalog['dcat:dataset']]
+
+        return catalog
+
+
     def get_catalog(self, provider_ids_endpoint):
         """
         Fetch the catalog from a data provider
