@@ -202,7 +202,7 @@ class EdcProvider(EdcDataManagement):
             created_id = result.get("@id")
             return created_id
 
-    def create_policy(self, asset_id: str, odrl_constraint:dict = None):
+    def create_policy(self, asset_id: str, odrl_constraint:dict = None, policy_id: str = None):
         """
         "odrl:constraint": {
             "@type": "LogicalConstraint",
@@ -226,7 +226,8 @@ class EdcProvider(EdcDataManagement):
             ]
         }
         """
-        policy_id = str(uuid4())
+        if not policy_id:
+            policy_id = str(uuid4())
         data = {
             "@context": default_context,
             #"@type": "PolicyDefinitionRequestDto",
