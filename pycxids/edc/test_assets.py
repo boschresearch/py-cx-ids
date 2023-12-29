@@ -80,8 +80,8 @@ def test_create_and_delete():
 
     # we create a new asset (and friends)
     # asset_id = provider.create_asset_s3(filename_in_bucket='test', bucket_name='test')
-    #asset_id = provider.create_asset(base_url='https://verkehr.autobahn.de/o/autobahn/')
-    asset_id = provider.create_asset(base_url=DUMMY_BACKEND)
+    asset_id = provider.create_asset(base_url='https://verkehr.autobahn.de/o/autobahn/')
+    #asset_id = provider.create_asset(base_url=DUMMY_BACKEND)
     policy_id = provider.create_policy(asset_id=asset_id, odrl_constraint=test_odrl_constraint)
     #policy_id = provider.create_policy(asset_id=asset_id)
     contract_id = provider.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
