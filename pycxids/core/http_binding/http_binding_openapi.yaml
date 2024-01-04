@@ -540,20 +540,21 @@ components:
         dct:endpointUrl:
           type: string
 
-
+    # rather not used any more. Use strings instead
     OdrlOperand:
       type: object
       properties:
         value:
           type: string
+
     OdrlConstraint:
       type: object
       properties:
         odrl:leftOperand:
-          $ref: "#/components/schemas/OdrlOperand"
-        odrl:rightOperand:
-          $ref: "#/components/schemas/OdrlOperand"
+          type: string
         odrl:operator:
+          type: string
+        odrl:rightOperand:
           type: string
 
     OdrlLogicalConstraint:
@@ -585,11 +586,24 @@ components:
             - type: string
             - $ref: "#/components/schemas/Action"
         odrl:constraint:
-          $ref: "#/components/schemas/OdrlConstraint"
-        odrl:duty:
-          type: array
-          items:
-            type: string # TODO: what is this exactly?
+          oneOf:
+            # Constraint
+            - $ref: "#/components/schemas/OdrlConstraint"
+            - type: array
+              items:
+                $ref: "#/components/schemas/OdrlConstraint"
+            # LogicalConstraint
+            - $ref: "#/components/schemas/OdrlLogicalConstraint"
+            - type: array
+              items:
+                $ref: "#/components/schemas/OdrlLogicalConstraint"
+        # duty must be defined with their property names in the subclasses, e.g. Permission, Prohibition or Duty
+        # Since we don't have those yet, all are Rules
+        #odrl:duty:
+        #  type: array
+        #  items:
+        #    type: string # TODO: what is this exactly?
+
     OdrlPolicy:
       description: "In IDS http binding explicitly does NOT have a target, because this is derived from the enclosing context!"
       type: object
@@ -605,21 +619,18 @@ components:
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlRule"
-            - $ref: "#/components/schemas/OdrlLogicalConstraint"
         odrl:prohibition:
           oneOf:
             - $ref: "#/components/schemas/OdrlRule"
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlRule"
-            - $ref: "#/components/schemas/OdrlLogicalConstraint"
         odrl:obligation:
           oneOf:
             - $ref: "#/components/schemas/OdrlRule"
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlRule"
-            - $ref: "#/components/schemas/OdrlLogicalConstraint"
     OdrlOffer:
       description: "Only addition compared to the Policy: the target field - which should not be there according to DSP model"
       allOf:
