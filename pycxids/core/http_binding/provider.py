@@ -9,7 +9,7 @@ import os
 from fastapi import FastAPI, Body, Request, HTTPException, status
 import requests
 
-from pycxids.core.http_binding.catalog import app as catalog
+from pycxids.core.http_binding.catalog_fastapi import app as catalog
 from pycxids.core.http_binding.models_edc import Asset, AssetEntryNewDto, DataAddress as EdcDataAddress
 from pycxids.core.http_binding.negotiation_provider_api import app as negotiation_provider
 from pycxids.core.http_binding.transfer_provider_api import app as transfer_provider
