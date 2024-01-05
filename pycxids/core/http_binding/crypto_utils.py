@@ -40,6 +40,8 @@ def padding_add(data: str):
     Add '=' padding to the given data string and return
     """
     nr_padding = (4 - len(data) % 4)
+    if nr_padding == 4:
+        return data
     padding_str = '=' * nr_padding
     return data + padding_str
 
