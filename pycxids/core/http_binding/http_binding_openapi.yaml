@@ -546,6 +546,11 @@ components:
       properties:
         value:
           type: string
+    OdrlOperator:
+      type: object
+      properties:
+        "@id":
+          type: string
 
     OdrlConstraint:
       type: object
@@ -553,7 +558,9 @@ components:
         odrl:leftOperand:
           type: string
         odrl:operator:
-          type: string
+          oneOf:
+            - type: string
+            - $ref: "#/components/schemas/OdrlOperator"
         odrl:rightOperand:
           type: string
 
@@ -579,12 +586,19 @@ components:
           type: string
 
     OdrlRule:
+      description: "The Rule class is the parent of the Permission, Prohibition, and Duty classes. https://www.w3.org/TR/odrl-model/#rule"
       type: object
+      required:
+        - odrl:action
       properties:
         odrl:action:
           oneOf:
             - type: string
             - $ref: "#/components/schemas/Action"
+        # "A Rule MAY have none or one relation sub-property values of type Asset."
+        # "Explicit sub-properties of the abstract relation, relation and failure
+        # properties must be used, the choice depending on the subclass of Rule in question."
+        # -> needs to go into subclasses, e.g. OdrlPermission
         odrl:constraint:
           oneOf:
             # Constraint
@@ -604,6 +618,20 @@ components:
         #  items:
         #    type: string # TODO: what is this exactly?
 
+    OdrlPermission:
+      description: "https://www.w3.org/TR/odrl-model/#permission"
+      type: object
+      required:
+        - odrl:target
+      allOf:
+        - $ref: "#/components/schemas/OdrlRule"
+        - type: object
+          properties:
+            odrl:target:
+              type: string
+              description: "ODRL requires this. DSP did remove it (MUST NOT) and is thinking about to get it back in again. EDC also requires it."
+      # TODO: may properties: assigner/assignee, duty
+
     OdrlPolicy:
       description: "In IDS http binding explicitly does NOT have a target, because this is derived from the enclosing context!"
       type: object
@@ -615,10 +643,10 @@ components:
           default: "odrl:Policy"
         odrl:permission:
           oneOf:
-            - $ref: "#/components/schemas/OdrlRule"
+            - $ref: "#/components/schemas/OdrlPermission"
             - type: array
               items:
-                $ref: "#/components/schemas/OdrlRule"
+                $ref: "#/components/schemas/OdrlPermission"
         odrl:prohibition:
           oneOf:
             - $ref: "#/components/schemas/OdrlRule"
