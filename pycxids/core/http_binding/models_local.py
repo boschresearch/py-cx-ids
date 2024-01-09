@@ -15,11 +15,12 @@ from pydantic import Field
 # these are the not generated models, e.g. for storage
 
 class NegotiationStateStore(MyBaseModel):
-    id: str
-    state: NegotiationState
-    negotiation_request_id: str
-    dataset: str
-    agreement_id: str
+    id: str # provider_id
+    state: Optional[NegotiationState] = Field('')
+    negotiation_request_id: Optional[str] = Field('')
+    process_id: Optional[str] = Field('')
+    dataset_id: Optional[str] = Field('')
+    agreement_id: Optional[str] = Field('')
 
 class DataAddress(MyBaseModel):
     """
