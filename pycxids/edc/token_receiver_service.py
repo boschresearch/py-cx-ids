@@ -5,17 +5,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-from pathlib import Path
 from time import sleep
-from datetime import datetime
 import json
-from uuid import uuid4
 import requests
-from fastapi import FastAPI, Request, Header, Body, Query, HTTPException
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND
+from fastapi import FastAPI, Request, Body, Query, HTTPException
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND
 
-from pycxids.edc.settings import CONSUMER_EDC_VALIDATION_ENDPOINT, CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY, USE_V1_DATA_MANAGEMENT_API
-from pycxids.edc.api import EdcConsumer
+from pycxids.edc.settings import CONSUMER_EDC_VALIDATION_ENDPOINT
 
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.jwt_decode import decode
@@ -36,46 +32,12 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
     """
     Waits until timeout and checks every second if an EDR token has been received.
     Returns the consumer EDR token
-    Raises an expetion if token is no longer valid. A new transfer needs to be started in such cases.
+    Raises an expetion after timeout
     """
-
-    # Since the mapping is done via contract_id, we need to find this first
-    edc = EdcConsumer(edc_data_managment_base_url=CONSUMER_EDC_BASE_URL, auth_key=CONSUMER_EDC_API_KEY)
-    contract_id = None
-    if USE_V1_DATA_MANAGEMENT_API:
-        transfer = edc.get(path=f"/transferprocess/{transfer_process_id}")
-        contract_id = transfer.get('dataRequest', {}).get('contractId', None)
-    else:
-        transfer = edc.get(path=f"/transferprocesses/{transfer_process_id}")
-        contract_id = transfer.get('edc:dataRequest', {}).get('edc:contractId', None)
-    if not contract_id:
-        print(f"Could not find contract_id for given transfer_process_id: {transfer_process_id}")
-        print(f"Using transfer_process_id for now: {transfer_process_id}")
-        contract_id = transfer_process_id # TODO: fix this later
-        #raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not find contract_id for given transfer_process_id: {transfer_process_id}")
-
-    print(f"transfer_process_id: {transfer_process_id}, contract_id: {contract_id}")
-
     counter = 0
     while True:
-        data = storage.get(key=contract_id)
-        if not data:
-            # seems to be the case in product-edc 0.5.0-RC5 we don't get the cid anymore and thus, we
-            # use the @id which seems to be the transfer_process_id
-            data = storage.get(key=transfer_process_id)
+        data = storage.get(key=transfer_process_id)
         if data:
-            # once there is data, we should check if the token is still valid before we return it
-            decoded_data = decode(data.get('authCode'))
-            #print(decoded_data)
-            exp = decoded_data.get('payload', {}).get('exp', None)
-            if not exp:
-                raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not find exp in token.")
-            now = datetime.now().timestamp()
-            if now > exp:
-                error_msg = f"Token no longer valid. exp: {exp} now: {now}"
-                print(error_msg)
-                raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg)
-
             return data
         
         if counter < timeout:
@@ -84,10 +46,11 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
         else:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Ran into given timeout: {timeout} for id: {transfer_process_id}")
 
-@app.get('/transfer/{transfer_process_id}/token/provider')
+@app.get('/transfer/{transfer_process_id}/token/provider', deprecated=True)
 def get_transfer_token_plain(transfer_process_id: str, timeout: int = Query(default=30, description='Timeout to wait for an EDR token before returning with an error')):
     """
     Return the decrypted version of the consumer EDR token 'authCode' - which is the (still) encrypted provider EDR token
+    Deprecated: Tokens are no longer token-in-token. Always use the .../consumer endpoint
     """
     token = get_transfer_token(transfer_process_id=transfer_process_id, timeout=timeout)
 
@@ -104,7 +67,7 @@ def get_transfer_token_plain(transfer_process_id: str, timeout: int = Query(defa
 
     return decrypted_token['properties']
 
-@app.post('/datareference')
+@app.post('/datareference', deprecated=True)
 def post_datareference_dprecated(request: Request, body = Body(...)):
     """
     Deprecated. Use /transfer/datareference instead to have the same base url.
@@ -114,17 +77,12 @@ def post_datareference_dprecated(request: Request, body = Body(...)):
 @app.post('/transfer/datareference')
 def post_datareference(request: Request, body = Body(...)):
     """
-    If cid (contractId) ist NOT available, store with @id which is the transfer process id (it seems)
+    store with @id which is the transfer process id (it seems)
+    Hint: cid (contract id) is no longer used by EDC as a reference (0.5.3)
     """
     storage_id = None
-    cid = body.get('properties', {}).get('cid', '')
-    if not cid:
-        # DSP protocol / product-edc 0.4.x and higher
-        cid = body.get('properties', {}).get('https://w3id.org/edc/v0.0.1/ns/cid', '')
-    storage_id = cid
     if not storage_id:
         storage_id = body.get('id')
-    print(f"cid: {cid}")
     print(f"stoarage_id: {storage_id}")
     storage.put(key=storage_id, value=body)
     print(json.dumps(body, indent=4))
