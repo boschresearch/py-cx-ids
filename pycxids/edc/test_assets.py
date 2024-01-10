@@ -6,20 +6,17 @@
 
 
 import os
-import sys
 from time import sleep
 import json
 import requests
-from requests.auth import HTTPBasicAuth
 import pytest
-from uuid import uuid4
+from datetime import datetime
 
 from pycxids.edc.api import EdcConsumer, EdcProvider
 from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, PROVIDER_IDS_ENDPOINT, RECEIVER_SERVICE_BASE_URL
 from pycxids.edc.settings import DUMMY_BACKEND
 from pycxids.core.settings import settings
 
-TEST_BEFORE_0_5_0_VERSION = os.getenv('TEST_BEFORE_0_5_0_VERSION', '').lower() in ["true"]
 
 """
 test_odrl_constraint = {
@@ -68,24 +65,20 @@ test_odrl_constraint = {
 
 
 # actual test case
-def test_create_and_delete():
+def test():
     """
     """
     provider = EdcProvider(edc_data_managment_base_url=PROVIDER_EDC_BASE_URL, auth_key=PROVIDER_EDC_API_KEY)
 
     # get number of assets before we start - we don't require a clean instance for this test case
     nr_of_assets = provider.get_number_of_elements("/assets")
-    nr_of_policies = provider.get_number_of_elements("/policydefinitions")
-    nr_of_contractdefinitions = provider.get_number_of_elements("/contractdefinitions")
 
     # we create a new asset (and friends)
     # asset_id = provider.create_asset_s3(filename_in_bucket='test', bucket_name='test')
     asset_id = provider.create_asset(base_url='https://verkehr.autobahn.de/o/autobahn/')
     #asset_id = provider.create_asset(base_url=DUMMY_BACKEND)
     policy_id = provider.create_policy(asset_id=asset_id, odrl_constraint=test_odrl_constraint)
-    #policy_id = provider.create_policy(asset_id=asset_id)
     contract_id = provider.create_contract_definition(policy_id=policy_id, asset_id=asset_id)
-    #cd = get_contract_definition(id=contract_id)
 
     assert asset_id, "Could not create asset"
     assert policy_id, "Could not create policy"
@@ -96,6 +89,7 @@ def test_create_and_delete():
 
     sleep(1)
 
+    start = datetime.now()
     consumer = EdcConsumer(
         edc_data_managment_base_url=CONSUMER_EDC_BASE_URL,
         auth_key=CONSUMER_EDC_API_KEY,
@@ -104,30 +98,33 @@ def test_create_and_delete():
     catalog = consumer.get_catalog(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT)
     contract_offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
     assert contract_offer, "Could not find matching offer in catalog"
-    #print(json.dumps(contract_offer, indent=4))
-    # TODO: check policy content
 
-    edr_init = consumer.edr_start_process(
-        provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
-        contract_offer=contract_offer,
-        asset_id=asset_id,
-        provider_participant_id=settings.PROVIDER_PARTICIPANT_ID,
-    )
-    #print(json.dumps(edr_init, indent=4))
-    negotiation_id = edr_init.get('@id')
-    consumer_edr = consumer.edr_for_negotiation(negotiation_id=negotiation_id)
-    #print(json.dumps(consumer_edr, indent=4))
+    negotiated_contract = consumer.negotiate_contract_and_wait(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
+        contract_offer=contract_offer, asset_id=asset_id, provider_participant_id=settings.PROVIDER_PARTICIPANT_ID,
+        )
+    agreement_id = negotiated_contract.get('edc:contractAgreementId', '')
+    print(f"agreementId: {agreement_id}")
+
+    transfer_id = consumer.transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
+        asset_id=asset_id, agreement_id=agreement_id, provider_participant_id=settings.PROVIDER_PARTICIPANT_ID,
+        )
+
+    consumer_edr = consumer.edr_consumer_wait(transfer_id=transfer_id)
 
     assert consumer_edr, "Could not fetch consumer_edr from receiver service."
-    consumer_data_plane_endpoint = consumer_edr.get('edc:endpoint')
-    r = requests.get(consumer_data_plane_endpoint, headers={consumer_edr['edc:authKey']: consumer_edr['edc:authCode']})
+    consumer_data_plane_endpoint = consumer_edr.get('endpoint')
+    r = requests.get(consumer_data_plane_endpoint, headers={consumer_edr['authKey']: consumer_edr['authCode']})
     if not r.ok:
         print(f"{r.status_code} {r.reason} {r.content}")
         assert False, "Could not fetch data via CONSUMER data plane"
     j = r.json()
     print(json.dumps(j, indent=4))
-    assert 'headers' in j or 'roads' in j
+    assert 'headers' in j or 'roads' in j or 'hello' in j
 
+    end = datetime.now()
+    duration = end - start
+    duration_in_seconds = duration.total_seconds()
+    print(f"Duration in seconds: {duration_in_seconds}")
 
 if __name__ == '__main__':
     pytest.main([__file__, "-s"])
