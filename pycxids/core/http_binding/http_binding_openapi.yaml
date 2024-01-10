@@ -391,6 +391,9 @@ components:
               description: "The dataAddress property must only be provided if the dct:format requires a push transfer."
             dspace:callbackAddress:
               type: string
+            dspace:processId:
+              type: string
+              description: "This is an EDC workaround"
 
     TransferStartMessage:
       allOf:
