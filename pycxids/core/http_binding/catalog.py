@@ -4,15 +4,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import json
-
-from pycxids.core.http_binding.models import CatalogRequestMessage, DcatCatalog, DcatDataset
+from pycxids.core.http_binding.models import DcatCatalog, DcatDataset
 from pycxids.core.http_binding.models_edc import AssetEntryNewDto
+from pycxids.core.http_binding.models_local import EdcCatalog
 
-from pycxids.core.http_binding.policies import default_policy, default_offer_policy
-from pycxids.core.http_binding.settings import KEY_MODIFIED, PROVIDER_STORAGE_ASSETS_FN
-from pycxids.utils.storage import FileStorageEngine
-from pycxids.core.jwt_decode import decode
+from pycxids.core.http_binding.policies import default_offer_policy
 
 
 def catalog_prepare_from_assets(assets) -> DcatCatalog:
@@ -31,10 +27,10 @@ def catalog_prepare_from_assets(assets) -> DcatCatalog:
         catalog.dcat_dataset.append(dcat_dataset)
     return catalog
 
-def catalog_prepare_from_datasets(datasets) -> DcatCatalog:
+def catalog_prepare_from_datasets(datasets, participant_id: str) -> DcatCatalog:
     """
     datasets is a ready to go list of datasets including all offers / policies
     """
-    catalog = DcatCatalog()
+    catalog = EdcCatalog(edc_participant_id = participant_id)
     catalog.dcat_dataset = datasets
     return catalog
