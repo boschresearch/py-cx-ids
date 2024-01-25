@@ -18,6 +18,7 @@ from pydantic import Field
 class NegotiationStateStore(MyBaseModel):
     id: str # provider_id
     tenant_id: Optional[str] = Field('')
+    requester_bpn: Optional[str] = Field('')
     state: Optional[NegotiationState] = Field('')
     negotiation_request_id: Optional[str] = Field('')
     negotiation_callback_address: Optional[str] = Field()
