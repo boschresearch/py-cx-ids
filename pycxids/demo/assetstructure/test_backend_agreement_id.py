@@ -12,6 +12,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import pytest
 from uuid import uuid4
+from pycxids.core.settings import settings
 
 from tests.helper import create_asset, create_policy, create_contract_definition
 from pycxids.edc.api import EdcConsumer
@@ -34,7 +35,12 @@ def test_backend_agreement_id():
     consumer = EdcConsumer(edc_data_managment_base_url=CONSUMER_EDC_BASE_URL, auth_key=CONSUMER_EDC_API_KEY)
     catalog = consumer.get_catalog(PROVIDER_IDS_ENDPOINT)
     contract_offer = EdcConsumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
-    negotiated_contract = consumer.negotiate_contract_and_wait(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, contract_offer=contract_offer)
+    provider_edc_participant_id = catalog.get('edc:participantId')
+    assert provider_edc_participant_id, "Could not find edc:participantId from received catalog result"
+    negotiated_contract = consumer.negotiate_contract_and_wait(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
+                                    contract_offer=contract_offer,
+                                    provider_participant_id=provider_edc_participant_id,
+                                    consumer_participant_id=settings.CONSUMER_PARTICIPANT_ID)
     negotiated_contract_id = negotiated_contract.get('id', '')
     agreement_id = negotiated_contract.get('contractAgreementId', '')
     print(f"agreementId: {agreement_id}")

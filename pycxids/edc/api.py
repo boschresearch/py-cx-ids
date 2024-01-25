@@ -207,6 +207,7 @@ class EdcProvider(EdcDataManagement):
             "@id": policy_id,
             "policy": {
                 "@type": "Policy",
+                "odrl:target": asset_id,
                 "odrl:permission": [ # TODO: permission or permissionS
                     {
                         "odrl:action": "USE",
@@ -217,7 +218,8 @@ class EdcProvider(EdcDataManagement):
         # if a constraint is given, add it to the policy
         if odrl_constraint:
             data['policy']['odrl:permission'][0]['odrl:constraint'] = odrl_constraint
-
+        with open('policy_debug.json', 'wt') as f:
+            f.write(json.dumps(data, indent=True))
         result = self.post(path="/policydefinitions", data=data, json_content=False)
         if result == None:
             return None
@@ -413,58 +415,18 @@ class EdcConsumer(EdcDataManagement):
 
         return catalog
 
-    def negotiate_contract_and_wait_with_asset(self, provider_ids_endpoint: str, asset_id: str, timeout = 30):
+    def negotiate_contract_and_wait(self, provider_ids_endpoint, contract_offer, asset_id: str,
+                                    provider_participant_id: str,
+                                    consumer_participant_id: str,
+                                    timeout = 30):
         """
-        Negotiate a contract / an agreement for the given asset.
-        It uses the first (!) avialable policy - beware, that this is not suitable for production ready systems!
-        Returns the agreement_id
-        """
-        catalog = self.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
-        contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
-        negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint, contract_offer=contract_offer, timeout=timeout)
-        agreement_id = negotiated_contract.get('contractAgreementId', None)
-        return agreement_id
-
-    def negotiate_contract_and_wait(self, provider_ids_endpoint, contract_offer, timeout = 30, asset_id: str = None,
-                                    provider_participant_id: str = 'BPNLprovider',
-                                    consumer_participant_id: str = 'BPNLconsumer'):
-        """
+        Because of some EDC reasons we need the provider_participant_id on the consumer side.
+        It will be mapped later against the provider sent agreement and if not used here on consumer side,
+        it will produce a very mis-leading error: "Invalid client credentials: Invalid counter-party identity"
         Result: The negotiated contract (contains the agreementId)
         """
-        #negotiation_contract_offer = EdcConsumer.catalog_contract_offer_into_negotiation_contract_offer(catalog_contract_offer=contract_offer, connector_address=provider_ids_endpoint)
-        #negotiation_contract_offer = contract_offer # TODO
-        from pycxids.edc.settings import CONSUMER_IDS_ENDPOINT
-        if not asset_id:
-            # try
-            contract_offer.get('asset:prop:id') # EDC?
-        """
-        data = {
-            "@context": {
-                "odrl": "http://www.w3.org/ns/odrl/2/"
-            },
-            "@type": "NegotiationInitiateRequestDto",
-            "connectorAddress": provider_ids_endpoint,
-            "protocol": DATASPACE_PROTOCOL_HTTP,
-            "connectorId": "consumer", # TODO: needs to be fixed
-            "providerId": "provider",
-            "offer": {
-                "offerId": contract_offer['@id'],
-                "assetId": asset_id,
-                "odrl:target": asset_id,
-                "policy": {
-                    "@type": "odrl:Set",
-                    'odrl:permission': contract_offer['permission'],
-                    'odrl:prohibition': contract_offer['prohibition'],
-                    'odrl:obligation': contract_offer['obligation'],
-                }
-            }
-        }
-        data['offer']['policy']['odrl:permission'][0]['odrl:target'] = asset_id
-        data['offer']['policy']['odrl:permission'][0]['odrl:action']= {
-            "odrl:type": "USE"
-        }
-        """
         offer_id = contract_offer.get('@id')
+        assert offer_id, "Could not find @id in contract_offer"
         data = {
             "@context": {
                 "odrl": "http://www.w3.org/ns/odrl/2/"
@@ -486,7 +448,7 @@ class EdcConsumer(EdcDataManagement):
             f.write(mystr)
         result = self.post(path="/contractnegotiations", data=data)
         negotiation_id = result.get('@id')
-        negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='FINALIZED')
+        negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)
         return negotiation_data
 
     def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str,
@@ -654,8 +616,8 @@ class EdcConsumer(EdcDataManagement):
         return j
 
     def negotiate_and_transfer(self, provider_ids_endpoint: str, asset_id: str,
-                               provider_participant_id: str = 'BPNLprovider',
-                               consumer_participant_id: str = 'BPNLconsumer') -> str:
+                               provider_participant_id: str,
+                               consumer_participant_id: str) -> str:
         """
         Returns the transer_id
         """

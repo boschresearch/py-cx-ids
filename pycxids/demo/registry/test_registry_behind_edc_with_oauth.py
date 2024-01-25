@@ -90,7 +90,7 @@ def test():
         auth_key=CONSUMER_EDC_API_KEY,
         token_receiver_service_base_url=RECEIVER_SERVICE_BASE_URL,
     )
-    agreement_id = consumer.negotiate_contract_and_wait_with_asset(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=registry_asset_id)
+    agreement_id = consumer.negotiate_contract_and_wait(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=registry_asset_id)
 
     # the provider_edr can be directly used - without a consumer data plane
     # in case a consumer data plane call is desired, use the `transfer_and_wait_consumer_edr()`
@@ -113,7 +113,7 @@ def test():
     sm_asset_id, _, __ = provider.create_asset_and_friends(base_url=DUMMY_BACKEND, proxyPath=True, proxyQueryParams=True)
 
     # Consumer side
-    agreement_id = consumer.negotiate_contract_and_wait_with_asset(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=sm_asset_id)
+    agreement_id = consumer.negotiate_contract_and_wait(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=sm_asset_id)
     provider_edr = consumer.transfer_and_wait_provider_edr(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, asset_id=sm_asset_id, agreement_id=agreement_id)
     url = provider_edr['baseUrl']
     headers = {

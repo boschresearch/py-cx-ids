@@ -11,6 +11,7 @@ from requests.auth import HTTPBasicAuth
 from fastapi import FastAPI, HTTPException, Query, Security, status, Request, Path, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from pycxids.core.settings import settings
 
 from pycxids.edc.api import EdcConsumer
 from pycxids.edc.settings import CONSUMER_EDC_BASE_URL, CONSUMER_EDC_API_KEY, IDS_PATH, CONSUMER_EDC_VALIDATION_ENDPOINT
@@ -85,7 +86,11 @@ def get_endpoint(
             # we need to negotiate
             catalog = consumer.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
             offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
-            negotiation = consumer.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint, contract_offer=offer)
+            provider_edc_participant_id = catalog.get('edc:participantId')
+            assert provider_edc_participant_id, "Could not find edc:participantId from received catalog result"
+            negotiation = consumer.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint, contract_offer=offer,
+                                                               consumer_participant_id=settings.CONSUMER_PARTICIPANT_ID,
+                                                               provider_participant_id=provider_edc_participant_id)
             agreement_id = negotiation.get('contractAgreementId')
             storage.put(key=asset_id, value=agreement_id)
         # for now let's fetch a new EDR token everytime. We could also check if we're still in the 10 minutes lifetime of it
