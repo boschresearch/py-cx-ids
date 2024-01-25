@@ -558,6 +558,9 @@ components:
     OdrlConstraint:
       type: object
       properties:
+        "@type":
+          type: string
+          #default: "Constraint"
         odrl:leftOperand:
           type: string
         odrl:operator:
@@ -577,9 +580,19 @@ components:
           type: string
           default: "LogicalConstraint"
         "odrl:and":
+          oneOf:
+            # this is the EDC issue of serializing lists with single item into non-lists
+            - $ref: "#/components/schemas/OdrlConstraint"
+            - type: array
+              items:
+                $ref: "#/components/schemas/OdrlConstraint"
+        "odrl:or":
           type: array
           items:
             $ref: "#/components/schemas/OdrlConstraint"
+        # TODO: https://www.w3.org/TR/odrl-vocab/#term-LogicalConstraint
+        # andSequence, xone
+
 
 
     Action:
@@ -604,16 +617,17 @@ components:
         # -> needs to go into subclasses, e.g. OdrlPermission
         odrl:constraint:
           oneOf:
+            # LogicalConstraint
+            - $ref: "#/components/schemas/OdrlLogicalConstraint"
+            # to easier parse the object we don't allow the theoretical possible list of LCs
+            # - type: array
+            #   items:
+            #     $ref: "#/components/schemas/OdrlLogicalConstraint"
             # Constraint
             - $ref: "#/components/schemas/OdrlConstraint"
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlConstraint"
-            # LogicalConstraint
-            - $ref: "#/components/schemas/OdrlLogicalConstraint"
-            - type: array
-              items:
-                $ref: "#/components/schemas/OdrlLogicalConstraint"
         # duty must be defined with their property names in the subclasses, e.g. Permission, Prohibition or Duty
         # Since we don't have those yet, all are Rules
         #odrl:duty:
@@ -624,8 +638,6 @@ components:
     OdrlPermission:
       description: "https://www.w3.org/TR/odrl-model/#permission"
       type: object
-      required:
-        - odrl:target
       allOf:
         - $ref: "#/components/schemas/OdrlRule"
         - type: object
