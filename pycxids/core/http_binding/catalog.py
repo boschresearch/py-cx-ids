@@ -4,32 +4,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import json
-from fastapi import APIRouter, Body, Header, Request, HTTPException, status
-
-from pycxids.core.http_binding.models import CatalogRequestMessage, DcatCatalog, DcatDataset
+from pycxids.core.http_binding.models import DcatCatalog, DcatDataset
 from pycxids.core.http_binding.models_edc import AssetEntryNewDto
+from pycxids.core.http_binding.models_local import EdcCatalog
 
-from pycxids.core.http_binding.policies import default_policy, default_offer_policy
-from pycxids.core.http_binding.settings import KEY_MODIFIED, PROVIDER_STORAGE_ASSETS_FN
-from pycxids.utils.storage import FileStorageEngine
-from pycxids.core.jwt_decode import decode
-
-storage_assets = FileStorageEngine(storage_fn=PROVIDER_STORAGE_ASSETS_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
+from pycxids.core.http_binding.policies import default_offer_policy
 
 
-app = APIRouter(tags=['Catalog'])
-
-@app.post('/catalog/request', response_model=DcatCatalog)
-def catalog_post(request: Request, body:dict = Body(...), authorization: str = Header(...)):
-    auth_token = decode(authorization)
-    del auth_token['signature']
-    print(json.dumps(auth_token, indent=4))
-    catalog_request_message: CatalogRequestMessage = CatalogRequestMessage.parse_obj(body)
+def catalog_prepare_from_assets(assets) -> DcatCatalog:
+    """
+    TODO: Adds default policy to each asset / dataset
+    """
     catalog = DcatCatalog()
-
-    data = storage_assets.get_all().items()
-    for item_id, item in data:
+    for item_id, item in assets:
         asset:AssetEntryNewDto = AssetEntryNewDto.parse_obj(item)
         dcat_dataset = DcatDataset(
             field_id = asset.asset.id,
@@ -40,17 +27,10 @@ def catalog_post(request: Request, body:dict = Body(...), authorization: str = H
         catalog.dcat_dataset.append(dcat_dataset)
     return catalog
 
-@app.get('/catalog/datasets/{id}', response_model=DcatDataset)
-def catalog_get(id: str):
-    data = storage_assets.get(id)
-    if data:
-        asset:AssetEntryNewDto = AssetEntryNewDto.parse_obj(data)
-        dcat_dataset = DcatDataset(
-            field_id = asset.asset.id,
-                odrl_has_policy=[
-                    default_offer_policy
-                ],
-        )
-        return dcat_dataset
-
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Could not find asset with id: {id}")
+def catalog_prepare_from_datasets(datasets, participant_id: str) -> DcatCatalog:
+    """
+    datasets is a ready to go list of datasets including all offers / policies
+    """
+    catalog = EdcCatalog(edc_participant_id = participant_id)
+    catalog.dcat_dataset = datasets
+    return catalog

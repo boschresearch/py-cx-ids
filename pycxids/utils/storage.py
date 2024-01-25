@@ -7,15 +7,33 @@
 import os
 import json
 from datetime import datetime
+from abc import ABC, abstractmethod
 
-class FileStorageEngine():
+class StorageEngine(ABC):
+    def __init__(self, last_modified_field_name_isoformat = None) -> None:
+        self.last_modified_field_name_isoformat = last_modified_field_name_isoformat
+
+    @abstractmethod
+    def put(self, key, value):
+        pass
+
+    @abstractmethod
+    def get(self, key, default=None):
+        pass
+
+    @abstractmethod
+    def get_all(self):
+        pass
+
+class FileStorageEngine(StorageEngine):
     """
     Simple JSON key/value file storage
     TODO: multi thread/process
     """
     def __init__(self, storage_fn, last_modified_field_name_isoformat = None) -> None:
+        super().__init__(last_modified_field_name_isoformat=last_modified_field_name_isoformat)
         self.storage_fn = storage_fn
-        self.last_modified_field_name_isoformat = last_modified_field_name_isoformat
+
 
     def put(self, key, value):
         storage = {}

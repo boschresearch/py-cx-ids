@@ -20,15 +20,17 @@ class AuthFactory(ABC):
         """
         pass
 
-class MiwAuthFactory(AuthFactory):
+class MiwAuthFactory(AuthFactory, Miw):
     def __init__(self, miw_base_url: str, client_id: str = None, client_secret: str = None, token_url: str = None) -> None:
-        self.miw = Miw(base_url=miw_base_url, client_id=client_id, client_secret=client_secret, token_url=token_url)
+        #self.miw = Miw(base_url=miw_base_url, client_id=client_id, client_secret=client_secret, token_url=token_url)
+        # could do explicit or python checks. explicit: super(Miw, self).__init__()
+        super().__init__(base_url=miw_base_url, client_id=client_id, client_secret=client_secret, token_url=token_url)
 
     def get_token(self, aud: str):
         """
         Returns a JWT token
         """
-        return self.miw.get_vp(aud=aud)
+        return self.get_vp(aud=aud)
 
 class DapsAuthFactory(AuthFactory):
     """
