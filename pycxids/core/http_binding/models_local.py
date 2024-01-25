@@ -8,7 +8,7 @@ from typing import Optional
 from pycxids.core.http_binding.settings import HTTP_HEADER_DEFAULT_AUTH_KEY
 from pycxids.edc.api import EDC_NAMESPACE
 from pycxids.models.base_model import MyBaseModel
-from pycxids.core.http_binding.models import NegotiationState, TransferState
+from pycxids.core.http_binding.models import DcatCatalog, NegotiationState, TransferState
 
 from pydantic import Field
 
@@ -48,3 +48,5 @@ class TransferStateStore(MyBaseModel):
     agreement_id: Optional[str]
     data_address: Optional[DataAddress]
 
+class EdcCatalog(DcatCatalog):
+    edc_participant_id: str = Field('', alias='edc:participantId')
