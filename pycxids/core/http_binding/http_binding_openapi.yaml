@@ -656,6 +656,8 @@ components:
         "@type":
           type: string
           default: "odrl:Policy"
+        odrl:profile:
+          type: string
         odrl:permission:
           oneOf:
             - $ref: "#/components/schemas/OdrlPermission"
