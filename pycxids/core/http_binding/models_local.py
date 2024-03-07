@@ -26,6 +26,7 @@ class NegotiationStateStore(MyBaseModel):
     process_id: Optional[str] = Field('')
     dataset_id: Optional[str] = Field('')
     agreement_id: Optional[str] = Field('')
+    error: Optional[dict] = Field({})
 
 class DataAddress(MyBaseModel):
     """
