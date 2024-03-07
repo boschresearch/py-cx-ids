@@ -231,7 +231,7 @@ class EdcProvider(EdcDataManagement):
             "@context": default_context,
             #"@type": "PolicyDefinitionRequestDto",
             "@id": policy_id,
-            "policy": {
+            "edc:policy": {
                 "@type": "Policy",
                 #"odrl:permission": [],
             },
@@ -249,7 +249,7 @@ class EdcProvider(EdcDataManagement):
                     "odrl:rightOperand": bpn
                 }
             }
-            data['policy']['odrl:permission'] = permission
+            data['edc:policy']['odrl:permission'] = permission
 
         result = self.post(path="/policydefinitions", data=data, json_content=False)
         if result == None:
