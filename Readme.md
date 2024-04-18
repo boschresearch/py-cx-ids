@@ -1,4 +1,9 @@
 # Introduction
+This project is for research and development of [Catena-X](https://catena-x.net/) and the [Dataspace Protocol.](https://docs.internationaldataspaces.org/dataspace-protocol/)
+
+This repository contains work that has been funded by Catena-X:
+
+![Catena-X funded project](./docs/funded_project.png)
 
 # Project structure
 ## edc-dev-env
