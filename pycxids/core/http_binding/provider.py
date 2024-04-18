@@ -32,6 +32,7 @@ app.include_router(data_backend)
 @app.on_event("startup")
 def on_startup():
     print("startup")
+    print(f"Using PROVIDER_PARTICIPANT_ID: {settings.PROVIDER_PARTICIPANT_ID}")
     if not os.path.exists(settings.PROVIDER_PRIVATE_KEY_PKCS8_FN):
         generate_rsa_keys_to_file(public_key_fn=settings.PROVIDER_PUBLIC_KEY_PEM_FN, private_key_fn=settings.PROVIDER_PRIVATE_KEY_PKCS8_FN)
     if not os.path.exists(settings.BACKEND_PRIVATE_KEY_PKCS8_FN):

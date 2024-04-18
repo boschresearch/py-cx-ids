@@ -11,11 +11,13 @@ from pycxids.core.http_binding.models_local import EdcCatalog
 from pycxids.core.http_binding.policies import default_offer_policy
 
 
-def catalog_prepare_from_assets(assets) -> DcatCatalog:
+def catalog_prepare_from_assets(assets, participant_id: str) -> DcatCatalog:
     """
     TODO: Adds default policy to each asset / dataset
     """
-    catalog = DcatCatalog()
+    # catalog = DcatCatalog()
+    # right now the participant_id is EDC specific until DSP property is implemented
+    catalog = EdcCatalog(edc_participant_id = participant_id)
     for item_id, item in assets:
         asset:AssetEntryNewDto = AssetEntryNewDto.parse_obj(item)
         dcat_dataset = DcatDataset(

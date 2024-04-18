@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # provider signing keys
     PROVIDER_PUBLIC_KEY_PEM_FN = 'provider_public_key.pem'
     PROVIDER_PRIVATE_KEY_PKCS8_FN = 'provider_private_key.pkcs8'
+    PROVIDER_PARTICIPANT_ID = 'BPNLprovider'
     # debug all api messages to dir? Set to empty to disable
     DEBUG_DIR = './debug_messages'
 

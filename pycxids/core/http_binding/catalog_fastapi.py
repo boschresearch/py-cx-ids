@@ -12,7 +12,7 @@ from pycxids.core.http_binding.models import CatalogRequestMessage, DcatCatalog,
 from pycxids.core.http_binding.models_edc import AssetEntryNewDto
 
 from pycxids.core.http_binding.policies import default_policy, default_offer_policy
-from pycxids.core.http_binding.settings import KEY_MODIFIED, PROVIDER_STORAGE_ASSETS_FN
+from pycxids.core.http_binding.settings import KEY_MODIFIED, PROVIDER_STORAGE_ASSETS_FN, settings
 from pycxids.utils.storage import FileStorageEngine
 from pycxids.core.jwt_decode import decode
 
@@ -21,7 +21,7 @@ storage_assets = FileStorageEngine(storage_fn=PROVIDER_STORAGE_ASSETS_FN, last_m
 
 app = APIRouter(tags=['Catalog'])
 
-@app.post('/catalog/request', response_model=DcatCatalog)
+@app.post('/catalog/request')
 def catalog_post(request: Request, body:dict = Body(...), authorization: str = Header(...)):
     auth_token = decode(authorization)
     del auth_token['signature']
@@ -30,7 +30,8 @@ def catalog_post(request: Request, body:dict = Body(...), authorization: str = H
     
     data = storage_assets.get_all().items()
 
-    catalog = catalog_prepare_from_assets(assets=data)
+    participant_id = settings.PROVIDER_PARTICIPANT_ID
+    catalog = catalog_prepare_from_assets(assets=data, participant_id=participant_id)
     
     return catalog
 
