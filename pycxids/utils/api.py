@@ -35,7 +35,11 @@ class GeneralApi():
         """
         Generic API POST request
         """
-        r = requests.post(f"{self.base_url}{path}",  auth=self.basic_auth, json=data, headers=self.headers, params=params)
+        try:
+            r = requests.post(f"{self.base_url}{path}",  auth=self.basic_auth, json=data, headers=self.headers, params=params)
+        except Exception as ex:
+            print(ex)
+            return None
 
         if not r.ok:
             print(f"{r.status_code} - {r.reason} - {r.content}")
