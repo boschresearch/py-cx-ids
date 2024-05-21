@@ -7,7 +7,7 @@
 import os
 
 
-PROVIDER_EDC_BASE_URL = os.getenv('PROVIDER_EDC_BASE_URL', 'http://provider-control-plane:9193/api/v1/data/v2')
+PROVIDER_EDC_BASE_URL = os.getenv('PROVIDER_EDC_BASE_URL', 'http://provider-control-plane:9193/api/v1/data')
 assert PROVIDER_EDC_BASE_URL
 
 PROVIDER_EDC_API_KEY = os.getenv('PROVIDER_EDC_API_KEY', 'dontuseinpublic')
@@ -20,7 +20,7 @@ PROVIDER_IDS_BASE_URL = os.getenv('PROVIDER_IDS_BASE_URL', 'http://provider-cont
 PROVIDER_IDS_ENDPOINT = os.getenv('PROVIDER_IDS_ENDPOINT', f"{PROVIDER_IDS_BASE_URL}{IDS_PATH}")
 
 # consumer side
-CONSUMER_EDC_BASE_URL = os.getenv('CONSUMER_EDC_BASE_URL', 'http://consumer-control-plane:9193/api/v1/data/v2')
+CONSUMER_EDC_BASE_URL = os.getenv('CONSUMER_EDC_BASE_URL', 'http://consumer-control-plane:9193/api/v1/data')
 assert CONSUMER_EDC_BASE_URL
 
 CONSUMER_EDC_API_KEY = os.getenv('CONSUMER_EDC_API_KEY', 'dontuseinpublic')

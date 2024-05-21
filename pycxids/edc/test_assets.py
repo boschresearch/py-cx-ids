@@ -18,48 +18,44 @@ from pycxids.edc.settings import DUMMY_BACKEND
 from pycxids.core.settings import settings
 
 
-"""
 test_odrl_constraint = {
     "@type": "LogicalConstraint",
     "odrl:and": [
         {
             "@type": "Constraint",
-            "odrl:leftOperand": "cx.contract.individual",
+            "odrl:leftOperand": "UsagePurpose",
             "odrl:operator": {
                 "@id": "odrl:eq"
             },
-            "odrl:rightOperand": "abc"
+            "odrl:rightOperand": "cx.core.industrycore:1"
         },
         {
             "@type": "Constraint",
-            "odrl:leftOperand": "PURPOSE",
+            "odrl:leftOperand": "https://w3id.org/catenax/policy/UsagePurpose",
             "odrl:operator": {
                 "@id": "odrl:eq"
             },
-            "odrl:rightOperand": "ID 3.1 Trace"
+            "odrl:rightOperand": "cx.core.industrycore:1"
         },
         {
             "@type": "Constraint",
-            "odrl:leftOperand": "FrameworkAgreement.pcf",
+            "odrl:leftOperand": "cx-policy:UsagePurpose",
             "odrl:operator": {
                 "@id": "odrl:eq"
             },
-            "odrl:rightOperand": "active"
-        }
-    ]
-}
-"""
-test_odrl_constraint = {
-    "@type": "LogicalConstraint",
-    "odrl:and": [
+            "odrl:rightOperand": "cx.core.industrycore:1"
+        },
         {
             "@type": "Constraint",
-            "odrl:leftOperand": "FrameworkAgreement.membership",
+            "odrl:leftOperand": {
+                "@id": "https://w3id.org/catenax/policy/UsagePurpose"
+            },
             "odrl:operator": {
                 "@id": "odrl:eq"
             },
-            "odrl:rightOperand": "active"
-        }
+            "odrl:rightOperand": "cx.core.industrycore:1"
+        },
+
     ]
 }
 
@@ -71,7 +67,7 @@ def test():
     provider = EdcProvider(edc_data_managment_base_url=PROVIDER_EDC_BASE_URL, auth_key=PROVIDER_EDC_API_KEY)
 
     # get number of assets before we start - we don't require a clean instance for this test case
-    nr_of_assets = provider.get_number_of_elements("/assets")
+    nr_of_assets = provider.get_number_of_elements("/v3/assets")
 
     # we create a new asset (and friends)
     # asset_id = provider.create_asset_s3(filename_in_bucket='test', bucket_name='test')
@@ -84,7 +80,7 @@ def test():
     assert policy_id, "Could not create policy"
     assert contract_id, "Could not crate contract definition"
 
-    nr_of_assets_after = provider.get_number_of_elements("/assets")
+    nr_of_assets_after = provider.get_number_of_elements("/v3/assets")
     assert nr_of_assets_after == nr_of_assets + 1, "Not exactly 1 more asset after creating 1"
 
     sleep(1)
@@ -95,7 +91,10 @@ def test():
         auth_key=CONSUMER_EDC_API_KEY,
         token_receiver_service_base_url=RECEIVER_SERVICE_BASE_URL,
         )
-    catalog = consumer.get_catalog(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT)
+
+    # PROVIDER_PARTICIPANT_ID can no longer be exctracted from the catalog, since it is already
+    # required for authentication with the IATP
+    catalog = consumer.get_catalog(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, provider_participant_id=settings.PROVIDER_PARTICIPANT_ID)
     catalog_context = catalog.get('@context')
     with open('catalog_context.json', 'wt') as f:
         f.write(json.dumps(catalog_context, indent=True))
@@ -104,7 +103,7 @@ def test():
     with open('catalog_offer.json', 'wt') as f:
         f.write(json.dumps(contract_offer, indent=True))
 
-    provider_edc_participant_id = catalog.get('edc:participantId')
+    provider_edc_participant_id = settings.PROVIDER_PARTICIPANT_ID
     assert provider_edc_participant_id, "Could not find edc:participantId from received catalog result"
 
     negotiated_contract = consumer.negotiate_contract_and_wait(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
@@ -114,7 +113,7 @@ def test():
         timeout=60
         )
     assert negotiated_contract, "Could not negotiate contract"
-    agreement_id = negotiated_contract.get('edc:contractAgreementId', '')
+    agreement_id = negotiated_contract.get('contractAgreementId', '') or negotiated_contract.get('edc:contractAgreementId', '')
     print(f"agreementId: {agreement_id}")
 
     transfer_id = consumer.transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
@@ -124,8 +123,12 @@ def test():
     consumer_edr = consumer.edr_consumer_wait(transfer_id=transfer_id)
 
     assert consumer_edr, "Could not fetch consumer_edr from receiver service."
-    consumer_data_plane_endpoint = consumer_edr.get('endpoint')
-    r = requests.get(consumer_data_plane_endpoint, headers={consumer_edr['authKey']: consumer_edr['authCode']})
+    consumer_data_plane_endpoint = consumer_edr.get('https://w3id.org/edc/v0.0.1/ns/endpoint')
+    authorization = consumer_edr.get('https://w3id.org/edc/v0.0.1/ns/authorization')
+    headers = {
+        "Authorization": authorization # shouldn't this use 'Bearer' ?
+    }
+    r = requests.get(consumer_data_plane_endpoint, headers=headers)
     if not r.ok:
         print(f"{r.status_code} {r.reason} {r.content}")
         assert False, "Could not fetch data via CONSUMER data plane"

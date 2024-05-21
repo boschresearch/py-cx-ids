@@ -46,46 +46,25 @@ def get_transfer_token(transfer_process_id: str, timeout: int = Query(default=30
         else:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Ran into given timeout: {timeout} for id: {transfer_process_id}")
 
-@app.get('/transfer/{transfer_process_id}/token/provider', deprecated=True)
-def get_transfer_token_plain(transfer_process_id: str, timeout: int = Query(default=30, description='Timeout to wait for an EDR token before returning with an error')):
-    """
-    Return the decrypted version of the consumer EDR token 'authCode' - which is the (still) encrypted provider EDR token
-    Deprecated: Tokens are no longer token-in-token. Always use the .../consumer endpoint
-    """
-    token = get_transfer_token(transfer_process_id=transfer_process_id, timeout=timeout)
-
-    # extract from consumer EDR
-    consumer_edr_auth_code = token.get('authCode', None)
-    #validation_endpoint = CONSUMER_EDC_BASE_URL.replace('/v2', '') + '/token'
-    #if USE_V1_DATA_MANAGEMENT_API:
-    validation_endpoint = CONSUMER_EDC_VALIDATION_ENDPOINT
-    r = requests.get(validation_endpoint, headers={'Authorization': consumer_edr_auth_code})
-    if not r.ok:
-        raise HTTPException(status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Could not decode token transfer_process_id:{transfer_process_id}")
-
-    decrypted_token = r.json()
-
-    return decrypted_token['properties']
-
-@app.post('/datareference', deprecated=True)
-def post_datareference_dprecated(request: Request, body = Body(...)):
-    """
-    Deprecated. Use /transfer/datareference instead to have the same base url.
-    """
-    return post_datareference(request, body)
 
 @app.post('/transfer/datareference')
 def post_datareference(request: Request, body = Body(...)):
     """
-    store with @id which is the transfer process id (it seems)
-    Hint: cid (contract id) is no longer used by EDC as a reference (0.5.3)
+    Only works with tx-edc 0.7.x
     """
-    storage_id = None
-    if not storage_id:
-        storage_id = body.get('id')
-    print(f"stoarage_id: {storage_id}")
-    storage.put(key=storage_id, value=body)
     print(json.dumps(body, indent=4))
+    payload = body.get("payload", {})
+    transfer_process_id = payload.get("transferProcessId")
+    if not transfer_process_id:
+        print(f"Ignoring. No transfer_process_id. Not storing anything.")
+        return {}
+
+    data_address_properties = payload.get("dataAddress", {}).get("properties")
+    if not data_address_properties:
+        print(f"Ignoring. No data_address_properties given")
+        return {}
+
+    storage.put(key=transfer_process_id, value=data_address_properties)
     return {}
 
 if __name__ == '__main__':

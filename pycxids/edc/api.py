@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from copy import deepcopy
 import json
 from uuid import uuid4
 from time import sleep
@@ -105,7 +106,7 @@ class EdcProvider(EdcDataManagement):
                 "edc:keyName": filename_in_bucket,
             }
         }
-        result = self.post(path="/assets", data=data, json_content=True)
+        result = self.post(path="/v3/assets", data=data, json_content=True)
         if result == None:
             return None
         created_id = result.get("@id")
@@ -135,28 +136,25 @@ class EdcProvider(EdcDataManagement):
                 #r = self.delete(path=f"/assets/{asset_id}")
                 # just try and do nothing else here
 
-        # default is data management V2 now
+        # default is data management V3 now
         # or overwrite below
         data = {
             "@context": default_context,
             "@type": EDC_ASSET_TYPE,
             "@id": asset_id,
-            "edc:asset": {
-                "@id": asset_id,
-                "properties": {
-                    "asset:prop:id": asset_id,
-                    "asset:prop:contenttype": "application/json",
-                    "asset:prop:policy-id": "use-eu",
-                }
+            "edc:properties": {
+                "asset:prop:id": asset_id,
+                "asset:prop:contenttype": "application/json",
+                "asset:prop:policy-id": "use-eu",
             },
             "edc:dataAddress": {
                 #"@type": EDC_DATA_ADDRESS_TYPE,
                 "edc:type": data_address_type,
-                "proxyPath": str(proxyPath).lower(),
-                "proxyQueryParams": str(proxyQueryParams).lower(),
-                "proxyMethod": str(proxyMethod).lower(),
-                "proxyBody": str(proxyBody).lower(),
-                "baseUrl": base_url,
+                "edc:proxyPath": str(proxyPath).lower(),
+                "edc:proxyQueryParams": str(proxyQueryParams).lower(),
+                "edc:proxyMethod": str(proxyMethod).lower(),
+                "edc:proxyBody": str(proxyBody).lower(),
+                "edc:baseUrl": base_url,
 
             }
         }
@@ -169,7 +167,7 @@ class EdcProvider(EdcDataManagement):
         for k,v in data_address_additional_props.items():
             data['dataAddress']['properties'][k] = v
         # in V2, the response is json-ld. TODO: is the @id the message, or the asset:prop:id???
-        result = self.post(path="/assets", data=data, json_content=True)
+        result = self.post(path="/v3/assets", data=data, json_content=True)
         if result == None:
             return None
         created_id = result.get("@id")
@@ -205,22 +203,22 @@ class EdcProvider(EdcDataManagement):
             "@context": default_context,
             #"@type": "PolicyDefinitionRequestDto",
             "@id": policy_id,
-            "policy": {
-                "@type": "Policy",
+            "edc:policy": {
+                "@type": "odrl:Set", # TODO: 0.7.0 doesn't allow 'Policy' but MUST be 'Set'
                 "odrl:target": asset_id,
                 "odrl:permission": [ # TODO: permission or permissionS
                     {
-                        "odrl:action": "USE",
+                        "odrl:action": "use",
                     }
                 ],
             },
         }
         # if a constraint is given, add it to the policy
         if odrl_constraint:
-            data['policy']['odrl:permission'][0]['odrl:constraint'] = odrl_constraint
+            data['edc:policy']['odrl:permission'][0]['odrl:constraint'] = odrl_constraint
         with open('policy_debug.json', 'wt') as f:
             f.write(json.dumps(data, indent=True))
-        result = self.post(path="/policydefinitions", data=data, json_content=False)
+        result = self.post(path="/v2/policydefinitions", data=data, json_content=False)
         if result == None:
             return None
         return policy_id
@@ -232,13 +230,13 @@ class EdcProvider(EdcDataManagement):
             #"@type": "PolicyDefinitionRequestDto",
             "@id": policy_id,
             "edc:policy": {
-                "@type": "Policy",
+                "@type": "odrl:Set", # TODO: EDC 0.7.0 it MUST be 'Set' and 'Policy' is not allowed.
                 #"odrl:permission": [],
             },
         }
         if bpn:
             permission = {
-                "action": "USE",
+                "odrl:action": "use",
                 "odrl:constraint": {
                     #"@type": "LogicalConstraint",
                     "@type": "Constraint",
@@ -251,7 +249,7 @@ class EdcProvider(EdcDataManagement):
             }
             data['edc:policy']['odrl:permission'] = permission
 
-        result = self.post(path="/policydefinitions", data=data, json_content=False)
+        result = self.post(path="/v2/policydefinitions", data=data, json_content=False)
         if result == None:
             return None
         return policy_id
@@ -265,19 +263,19 @@ class EdcProvider(EdcDataManagement):
             "@context": default_context,
             #"@type": "ContractDefinition",
             "@id": cd_id,
-            "accessPolicyId": access_policy_id,
-            "contractPolicyId": policy_id,
-            "assetsSelector": [ # wrong key here, leads to applying it to all assets?
+            "edc:accessPolicyId": access_policy_id,
+            "edc:contractPolicyId": policy_id,
+            "edc:assetsSelector": [ # wrong key here, leads to applying it to all assets?
                 {
-                    "operandLeft": "https://w3id.org/edc/v0.0.1/ns/id",
+                    "edc:operandLeft": "https://w3id.org/edc/v0.0.1/ns/id",
                     #"operandLeft": "edc:id", # TODO: not sure why this doesn't work
-                    "operator": "=", # TODO: 'eq' here, kills the catalog ;-)
-                    "operandRight": asset_id
+                    "edc:operator": "=", # TODO: 'eq' here, kills the catalog ;-)
+                    "edc:operandRight": asset_id
                 }
             ],
         }
 
-        result = self.post(path="/contractdefinitions", data=data, json_content=False)
+        result = self.post(path="/v2/contractdefinitions", data=data, json_content=False)
         if result == None:
             return None
         return cd_id
@@ -383,7 +381,7 @@ class EdcConsumer(EdcDataManagement):
         }
         with open('catalog_request_dataset.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
-        catalog = self.post(path='/catalog/request', data=data)
+        catalog = self.post(path='/v2/catalog/request', data=data)
         # sorry, but this is stupid, if only 1 item in the database, it is NOT a list, otherwise it is
         # this was not the intension of the Dspace protocol!
         # making this always a list here for now
@@ -393,20 +391,22 @@ class EdcConsumer(EdcDataManagement):
         return catalog
 
 
-    def get_catalog(self, provider_ids_endpoint):
+    def get_catalog(self, provider_ids_endpoint, provider_participant_id: str):
         """
         Fetch the catalog from a data provider
+
+        provider_participant_id: BPN of the Provider
         """
         data = {
-            "@context": {
-                "dspace": "https://w3id.org/dspace/v0.8/",
-            },
-            "protocol": DATASPACE_PROTOCOL_HTTP, # TODO: what is this actually used for?
-            'providerUrl': provider_ids_endpoint,
+            "@context": default_context,
+            "edc:protocol": DATASPACE_PROTOCOL_HTTP, # TODO: what is this actually used for?
+            #'providerUrl': provider_ids_endpoint,
+            'edc:counterPartyAddress': provider_ids_endpoint,
+            'edc:counterPartyId': provider_participant_id,
         }
         with open('catalog_request_new.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
-        catalog = self.post(path='/catalog/request', data=data)
+        catalog = self.post(path='/v2/catalog/request', data=data)
         # sorry, but this is stupid, if only 1 item in the database, it is NOT a list, otherwise it is
         # this was not the intension of the Dspace protocol!
         # making this always a list here for now
@@ -427,28 +427,23 @@ class EdcConsumer(EdcDataManagement):
         """
         offer_id = contract_offer.get('@id')
         assert offer_id, "Could not find @id in contract_offer"
+
+        offer = deepcopy(contract_offer)
+        offer["odrl:assigner"] = { "@id": provider_participant_id }
+
         data = {
-            "@context": {
-                "odrl": "http://www.w3.org/ns/odrl/2/"
-            },
+            "@context": default_context,
             "@type": "NegotiationInitiateRequestDto",
-            "connectorAddress": provider_ids_endpoint,
-            "protocol": "dataspace-protocol-http",
-            "connectorId": provider_participant_id, # TODO
-            "providerId": provider_participant_id, # TODO
-            "consumerId": consumer_participant_id, # TODO
-            "offer": {
-                "offerId": offer_id,
-                "assetId": asset_id,
-                "policy": contract_offer,
-            }
+            "edc:counterPartyAddress": provider_ids_endpoint,
+            "edc:protocol": "dataspace-protocol-http",
+            "edc:policy": offer,
         }
         with open('contractnegotiation_request_to_edc.json', 'wt') as f:
             mystr = json.dumps(data, indent=4)
             f.write(mystr)
-        result = self.post(path="/contractnegotiations", data=data)
+        result = self.post(path="/v2/contractnegotiations", data=data)
         negotiation_id = result.get('@id')
-        negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)
+        negotiation_data = self.wait_for_state(path=f"/v2/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)
         return negotiation_data
 
     def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str,
@@ -464,24 +459,27 @@ class EdcConsumer(EdcDataManagement):
             print("token_receiver_service_base_url not given, using default from settings: {receiver_service_base_url}")
         transfer_request = {
             "@context": default_context,
-            "assetId": asset_id,
-            "connectorId": provider_participant_id,
-            "connectorAddress": provider_ids_endpoint,
-            "contractId": agreement_id,
+            "@type": "edc:TransferRequest",
+            "edc:assetId": asset_id,
+            "edc:counterPartyAddress": provider_ids_endpoint,
+            "edc:contractId": agreement_id,
+
             "edc:dataDestination": {
                 "edc:type": "HttpProxy"
             },
-            "managedResources": False,
-            "privateProperties": {
-                "receiverHttpEndpoint": f"{receiver_service_base_url}/datareference"
-            },
-            "protocol": "dataspace-protocol-http",
-            "transferType": {
-                "contentType": "application/octet-stream",
-                "isFinite": True,
-            }
+            "edc:protocol": "dataspace-protocol-http",
+            "edc:transferType": "HttpData-PULL",
+            "edc:callbackAddresses": [
+                {
+                    "edc:transactional": False,
+                    "edc:uri": f"{receiver_service_base_url}/datareference",
+                    "edc:events": [
+                        "transfer.process"
+                    ]
+                }
+            ]
         }
-        data = self.post("/transferprocesses", data=transfer_request)
+        data = self.post("/v2/transferprocesses", data=transfer_request)
         return data['@id']
 
     def edr_start_process(self, provider_ids_endpoint, contract_offer, timeout = 30, asset_id: str = None,
