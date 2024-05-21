@@ -23,12 +23,14 @@ class Portal(GeneralApi):
     def discover_edc_endpoint(self, bpn: str):
         """
         Possible to request exactly for 1 BPN
-        Result is a list. Potetnailly there could be more than 1 EDC per BPN
         """
         data = [
             bpn
         ]
         result = self.post('/api/administration/connectors/discovery', data=data)
-        if not len(result) == 1:
-            return None
-        return result[0]['connectorEndpoint']
+        endpoints = []
+        for x in result:
+            if x.get('bpn') == bpn:
+                return x.get('connectorEndpoint')
+
+        return [] # nothing found for the given BPN

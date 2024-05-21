@@ -19,14 +19,22 @@ from pycxids.core.http_binding.models import ContractRequestMessage, OdrlOffer, 
 from pycxids.utils.api import GeneralApi
 
 class DspClientConsumerApi(GeneralApi):
-    def __init__(self, provider_base_url: str, auth: AuthFactory) -> None:
+    def __init__(self, provider_base_url: str, auth: AuthFactory, bearer_scopes: list = None, provider_did: str = None) -> None:
         super().__init__(base_url=provider_base_url)
         self.auth = auth
+        self.bearer_scopes = bearer_scopes
+        self.provider_did = provider_did
+
         self.headers = {}
         self._update_auth_token()
 
     def _update_auth_token(self):
-        token = self.auth.get_token(aud=self.base_url) # audience is always only the base_url
+        opts = {}
+        if self.bearer_scopes:
+            opts['bearer_scopes'] = self.bearer_scopes
+        if self.provider_did:
+            opts['provider_did'] = self.provider_did
+        token = self.auth.get_token(aud=self.base_url, opts=opts) # audience is always only the base_url
         self.headers['Authorization'] = token
 
     def fetch_catalog(self, out_fn: str = '', filter: dict = None):
@@ -43,6 +51,8 @@ class DspClientConsumerApi(GeneralApi):
             data['dspace:filter'] = filter
         self._update_auth_token()
         j = self.post("/catalog/request", data=data)
+        if not j:
+            return None
         dataset = j.get('dcat:dataset')
         if not isinstance(dataset, list):
             # EDC bug workaround: https://github.com/eclipse-edc/Connector/issues/3232

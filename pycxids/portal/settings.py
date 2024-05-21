@@ -10,6 +10,6 @@ PORTAL_OAUTH_TOKEN_ENDPOINT = os.getenv('PORTAL_OAUTH_TOKEN_ENDPOINT', 'https://
 PORTAL_BASE_URL = os.getenv('PORTAL_BASE_URL', 'https://portal-backend.int.demo.catena-x.net')
 
 PORTAL_CLIENT_ID = os.getenv('PORTAL_CLIENT_ID', '')
-assert PORTAL_CLIENT_ID
+#assert PORTAL_CLIENT_ID
 PORTAL_CLIENT_SECRET = os.getenv('PORTAL_CLIENT_SECRET', '')
-assert PORTAL_CLIENT_SECRET
+#assert PORTAL_CLIENT_SECRET

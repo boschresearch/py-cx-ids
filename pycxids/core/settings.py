@@ -57,3 +57,11 @@ def endpoint_check(endpoint: str):
     if not '/api/v1/ids/data' in endpoint:
         endpoint = endpoint + '/api/v1/ids/data'
     return endpoint
+
+def fix_dsp_endpoint_path(endpoint: str):
+    """
+    TODO: improve this
+    """
+    if not '/api/v1/dsp' in endpoint:
+        endpoint = endpoint + '/api/v1/dsp'
+    return endpoint

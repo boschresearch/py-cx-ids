@@ -14,9 +14,12 @@ from pycxids.utils.storage import FileStorageEngine
 PROTOCOL_DSP = 'DSP'
 PROTOCOL_MULTIPART = 'multipart'
 AUTH_SSI = 'SSI'
+AUTH_IATP = 'IATP'
 
 AGREEMENT_CACHE_DIR = os.getenv('AGREEMENT_CACHE_DIR', 'agreementcache')
 os.makedirs(AGREEMENT_CACHE_DIR, exist_ok=True)
 
 SETTINGS_STORAGE = os.getenv('SETTINGS_STORAGE', 'cli_settings.json')
 config_storage = FileStorageEngine(storage_fn=SETTINGS_STORAGE)
+
+PARTICIPANTS_SETTINGS_CACHE = os.getenv('PARTICIPANTS_SETTINGS_CACHE', 'cli_participants_settings.json')
