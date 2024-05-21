@@ -9,15 +9,27 @@ from pyld import jsonld
 from hashlib import sha256
 import base64
 
-default_context = {
-    'dct': 'https://purl.org/dc/terms/',
-    'tx': 'https://w3id.org/tractusx/v0.0.1/ns/',
-    'edc': 'https://w3id.org/edc/v0.0.1/ns/',
-    'dcat': 'https://www.w3.org/ns/dcat/',
-    'odrl': 'http://www.w3.org/ns/odrl/2/',
-    'dspace': 'https://w3id.org/dspace/v0.8/',
-    'cx-policy': 'https://w3id.org/catenax/policy/',
-}
+default_context = [
+    "http://www.w3.org/ns/odrl.jsonld",
+    {
+        'dct': 'https://purl.org/dc/terms/'
+    },
+    {
+        'tx': 'https://w3id.org/tractusx/v0.0.1/ns/'
+    },
+    {
+        'edc': 'https://w3id.org/edc/v0.0.1/ns/'
+    },
+    {
+        'dcat': 'https://www.w3.org/ns/dcat/'
+    },
+    {
+        'dspace': 'https://w3id.org/dspace/v0.8/'
+    },
+    {
+        'cx-policy': 'https://w3id.org/catenax/policy/'
+    }
+]
 
 normalize_default_options = {'algorithm': 'URDNA2015', 'format': 'application/nquads'}
 
