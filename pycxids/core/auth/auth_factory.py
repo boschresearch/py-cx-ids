@@ -63,7 +63,12 @@ class IatpAuthFactory(AuthFactory):
         self.our_did = our_did
 
     def get_token(self, aud: str, opts = {}):
+        """
+        opts:
+            bearer_scopes: []
+        """
+        bearer_scopes = opts.get('bearer_scopes', [Sts.MEMBERSHIP_CREDENTIAL]) # default is Membership only
         provider_did = opts.get('provider_did', self.our_did)
-        bearer_scopes = opts.get('bearer_scopes', [Sts.MEMBERSHIP_CREDENTIAL])
+        bearer_scopes = opts.get('bearer_scopes', bearer_scopes)
         token = self.sts.get_sts_token(audience=aud, bearer_scopes=bearer_scopes, provider_did=provider_did)
         return token

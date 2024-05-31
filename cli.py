@@ -25,7 +25,7 @@ from pycxids.core.http_binding.models_local import DataAddress, TransferStateSto
 from pycxids.core.settings import endpoint_check, fix_dsp_endpoint_path, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
 
 from pycxids.cx.services import BdrsDirectory
-from pycxids.iatp.iatp import CredentialService
+from pycxids.iatp.iatp import CredentialService, Sts
 from pycxids.portal.api import Portal
 from pycxids.portal.settings import PORTAL_BASE_URL, PORTAL_OAUTH_TOKEN_ENDPOINT
 from pycxids.utils.storage import FileStorageEngine
