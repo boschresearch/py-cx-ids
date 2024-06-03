@@ -493,7 +493,7 @@ components:
         odrl:hasPolicy:
           type: array
           items:
-            $ref: "#/components/schemas/OdrlPolicy"
+            $ref: "#/components/schemas/CatalogOffer"
         dcat:distribution:
           $ref: "#/components/schemas/DcatDistribution"
 
@@ -676,6 +676,15 @@ components:
             - type: array
               items:
                 $ref: "#/components/schemas/OdrlRule"
+    CatalogOffer:
+      description: "In DSP, the Offer in the catalog does explicitly NOT have a target, since it is given from the enclosing context."
+      allOf:
+        - $ref: "#/components/schemas/OdrlPolicy"
+        - type: object
+          properties:
+            "@type":
+              type: string
+              default: "odrl:Offer"
     OdrlOffer:
       description: "Only addition compared to the Policy: the target field - which should not be there according to DSP model"
       allOf:
