@@ -33,7 +33,7 @@ Currently, the infrastructure (vault and postgres) need to be started separately
 ```
 
 ## Further configuration
-Use a local `.env` file for e.g. the consumer HTTP endpoint if it is not the default (api-wrapper). Example:
+Use a local `.env` file for e.g. the consumer HTTP endpoint if it is not the default. Example:
 ```
 EDC_RECEIVER_HTTP_ENDPOINT=http://dev:8000/datareference
 
