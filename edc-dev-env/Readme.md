@@ -5,16 +5,14 @@ This is for pure development purposes and it's NOT secure in any way to run in p
 
 # Introduction
 
-This is a development environment for Catena-X `product-edc` which is the Catena-X version of the upstream EDC repository.
+This is a development environment for Tractusx `tx-edc` which is the Catena-X version of the upstream EDC repository.
 
-It is customized for the Catena-X needs. The official `product-edc` images do need special environment, e.g. postrgres and either Azure Vault or Hashicopr Vault. Filesystem Vault for example, is not supported.
+It is customized for the Catena-X needs. The official `tx-edc` images do need special environment, e.g. postrgres and either Azure Vault or Hashicopr Vault. Filesystem Vault for example, is not supported.
 
-Also the images require a running DAPS instance.
+Also the images require a some running CX central servies.
 
-For local testing, this is a challenge. Therefore, this repository to provide a way to use official images (no need to rebuild from sources), but open up to setup your own EDC instances with development keys and no need to use the official, central DAPS instance.
+For local testing, this is a challenge. Therefore, this repository to provide a way to use official images (no need to rebuild from sources), but open up to setup your own EDC instances with development keys and no need to use the official, central service instances.
 
-# Keys
-The keys are generated with `./bin/generate_keys.sh` but default development keys are provided as part of the repository. If you change the keys, beware, that some configs (`control-plane.properties`) need to be updated.
 
 # Getting started
 Currently, the infrastructure (vault and postgres) need to be started separately with:
@@ -26,7 +24,7 @@ Currently, the infrastructure (vault and postgres) need to be started separately
 # or specify a dedicated service, e.g.
 ./build.sh --no-cache pycxids
 
-# now start the infrastructure, e.g. a daps (mocked version of it) and the vault with the secrets
+# now start the infrastructure, e.g. database and vault
 ./start_infrastructure.sh
 # wait a few seconds and run
 ./start_edc.sh

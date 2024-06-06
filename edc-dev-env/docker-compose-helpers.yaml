@@ -51,17 +51,6 @@ services:
     ports:
       - "127.0.0.1:8002:8000"
 
-  daps-token-service:
-    build: ./docker/daps-token-service
-    ports:
-      - "127.0.0.1:8004:8000"
-    environment:
-      - BASIC_AUTH_PASSWORD=${DAPS_TOKEN_SERVICE_BASIC_AUTH_PASSWORD:-dontuseinpublic}
-      - PRIVATE_KEY_FN=/private.key
-      - CLIENT_ID=${DAPS_TOKEN_SERVICE_CLIENT_ID:-consumer} # used also in EDC settings
-    volumes:
-      - ${DAPS_TOKEN_SERVICE_PRIVATE_KEY_FN:-./vault_secrets/consumer.key}:/private.key
-
   pycxids:
     # dummy container with installed pycxids
     build: ./docker/pycxids

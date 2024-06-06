@@ -1,12 +1,6 @@
 version: "3.9"
 
-services:
-  daps-mock:
-    build: ./daps-mock/
-    volumes:
-      - ./daps-mock/daps.crt:/app/daps.crt
-      - ./daps-mock/daps.key:/app/daps.key
-  
+services:  
   miw-server:
     build: ./docker/miw-server/
     ports:
