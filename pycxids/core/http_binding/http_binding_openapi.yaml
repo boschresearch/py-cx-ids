@@ -97,7 +97,7 @@ paths:
     post:
       tags:
         - "Negotiation"
-      description: "The consumer must include the processId. The consumer must include either the offer or offerId property."
+      description: "The consumer must include the consumerPid/providerPid. The consumer must include either the offer or offerId property."
       parameters:
         - name: id
           in: path
@@ -117,7 +117,7 @@ paths:
     post:
       tags:
         - "Negotiation"
-      description: "The consumer must include the processId. The consumer must include either the offer or offerId property."
+      description: "The consumer must include the consumerPid/providerPid. The consumer must include either the offer or offerId property."
       parameters:
         - name: id
           in: path
@@ -267,9 +267,12 @@ components:
             dspace:dataSet:
               type: string
               description: "Only there for compatibility reasons. Seems to be a type in the spec"
-            dspace:processId:
+            dspace:providerPid:
               type: string
-              description: "TODO: Deprecated? To be removed?"
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             dspace:offer:
               $ref: "#/components/schemas/OdrlOffer"
             dspace:callbackAddress:
@@ -284,8 +287,12 @@ components:
             "@type":
               type: string
               default: "dspace:ContractNegotiationEventMessage"
-            "dspace:processId":
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             "dspace:eventType":
               type: string
               enum:
@@ -302,8 +309,12 @@ components:
             "@type":
               type: string
               default: "dspace:ContractAgreementVerificationMessage"
-            "dspace:processId":
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
   
     ContractNegotiationTerminationMessage:
       allOf:
@@ -314,8 +325,12 @@ components:
             "@type":
               type: string
               default: "dspace:ContractNegotiationTerminationMessage"
-            "dspace:processId":
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             "dspace:code":
               type: string
               description: "TODO: not documented?"
@@ -334,8 +349,12 @@ components:
             "@type":
               type: string
               default: "dspace:ContractOfferMessage"
-            dspace:processId:
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             dspace:offer:
               $ref: "#/components/schemas/OdrlOffer"
             dspace:callbackAddress:
@@ -350,8 +369,12 @@ components:
             "@type":
               type: string
               default: "dspace:ContractAgreementMessage"
-            dspace:processId:
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             dspace:agreement:
               $ref: "#/components/schemas/OdrlAgreement"
             dspace:callbackAddress:
@@ -366,10 +389,14 @@ components:
             "@type":
               type: string
               default: "dspace:ContractNegotiation"
-            "dspace:processId":
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             "dspace:state":
-              $ref: "#/components/schemas/TransferState"
+              $ref: "#/components/schemas/NegotiationState"
 
     TransferRequestMessage:
       allOf:
@@ -386,14 +413,14 @@ components:
             dct:format:
               type: string
               description: "The dct:format property is a format specified by a Distribution for the Asset associated with the agreement. This is generally obtained from the provider Catalog."
-            dspace:dataAddress:
-              type: string
-              description: "The dataAddress property must only be provided if the dct:format requires a push transfer."
             dspace:callbackAddress:
               type: string
-            dspace:processId:
+            dspace:providerPid:
               type: string
-              description: "This is an EDC workaround"
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
 
     TransferStartMessage:
       allOf:
@@ -404,14 +431,37 @@ components:
             "@type":
               type: string
               default: "dspace:TransferStartMessage"
-            dspace:processId:
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             dspace:dataAddress:
-              oneOf:
-                - type: object
-                  additionalProperties:
-                    type: string
-                - type: string
+              $ref: "#/components/schemas/DataAddress"
+
+    DataAddress:
+      properties:
+        "@type":
+          type: string
+          default: "dspace:DataAddress"
+        dspace:endpointType:
+          type: string
+          default: "https://w3id.org/idsa/v4.1/HTTP"
+        dspace:endpointProperties:
+          type: array
+          items:
+            $ref: "#/components/schemas/EndpointProperties"
+
+    EndpointProperties:
+      properties:
+        "@type":
+          type: string
+          default: "dspace:DataAddress"
+        dspace:name:
+          type: string
+        dspace:value:
+          type: string
 
     TransferProcess:
       allOf:
@@ -421,31 +471,41 @@ components:
             "@type":
               type: string
               default: "dspace:TransferProcess"
-            dspace:processId:
+            dspace:providerPid:
               type: string
+              description: "To identify with Provider process ID"
+            dspace:consumerPid:
+              type: string
+              description: "To identify with Provider process ID"
             dspace:state:
               $ref: "#/components/schemas/TransferState"
 
     NegotiationState:
       type: string
       enum:
-        - REQUESTED
-        - OFFERED
-        - ACCEPTED
-        - AGREED
-        - VERIFIED
-        - FINALIZED
-        - TERMINATED
+        - dspace:REQUESTED
+        - dspace:OFFERED
+        - dspace:ACCEPTED
+        - dspace:AGREED
+        - dspace:VERIFIED
+        - dspace:FINALIZED
+        - dspace:TERMINATED
 
     TransferState:
       type: string
       enum:
-        - REQUESTED
-        - STARTED
-        - TERMINATED
-        - COMPLETED
-        - SUSPENDED
-      
+        - INITIAL # tx-edc 0.7.1
+        - dspace:REQUESTED
+        - dspace:STARTED
+        - dspace:TERMINATED
+        - dspace:COMPLETED
+        - dspace:SUSPENDED
+
+    EndpointPropertyNames:
+      type: string
+      enum:
+        - "https://w3id.org/edc/v0.0.1/ns/authorization"
+        - "https://w3id.org/edc/v0.0.1/ns/endpoint"
 
     LanguageValue:
       type: object
@@ -459,17 +519,8 @@ components:
       type: object
       properties:
         "@context":
-          type: object
-          items:
-            type: string
-          default: {
-              "dct": "https://purl.org/dc/terms/",
-              "tx": "https://w3id.org/tractusx/v0.0.1/ns/",
-              "edc": "https://w3id.org/edc/v0.0.1/ns/",
-              "dcat": "https://www.w3.org/ns/dcat/",
-              "odrl": "http://www.w3.org/ns/odrl/2/",
-              "dspace": "https://w3id.org/dspace/v0.8/"
-          }
+          type: string
+          default: "https://w3id.org/dspace/v0.8/context.json"
         "@id":
           type: string
       
