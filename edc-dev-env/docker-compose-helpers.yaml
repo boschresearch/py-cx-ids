@@ -1,6 +1,11 @@
 version: "3.9"
 
 services:
+  cx-services-mocks:
+    build: ./docker/cx-services-mocks
+    ports:
+      - "127.0.0.1:8006:8080"
+
   dsp-consumer:
     build: ./docker/dsp-consumer
     ports:
