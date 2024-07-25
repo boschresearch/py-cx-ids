@@ -1,0 +1,18 @@
+{
+    "@id": "5485d7c3-413e-4758-8640-960dd41ffc35",
+    "@type": "dspace:TransferProcess",
+    "dspace:state": "INITIAL",
+    "dspace:providerPid": "5485d7c3-413e-4758-8640-960dd41ffc35",
+    "dspace:consumerPid": "658ca1ce-36d4-4cc8-a938-bff0438b43cd",
+    "@context": {
+        "@vocab": "https://w3id.org/edc/v0.0.1/ns/",
+        "edc": "https://w3id.org/edc/v0.0.1/ns/",
+        "tx": "https://w3id.org/tractusx/v0.0.1/ns/",
+        "tx-auth": "https://w3id.org/tractusx/auth/",
+        "cx-policy": "https://w3id.org/catenax/policy/",
+        "dcat": "http://www.w3.org/ns/dcat#",
+        "dct": "http://purl.org/dc/terms/",
+        "odrl": "http://www.w3.org/ns/odrl/2/",
+        "dspace": "https://w3id.org/dspace/v0.8/"
+    }
+}

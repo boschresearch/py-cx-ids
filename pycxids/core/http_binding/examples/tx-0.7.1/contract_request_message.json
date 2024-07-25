@@ -1,0 +1,65 @@
+{
+    "@id": "b28da807-3758-4620-bae7-350c4a33c7bf",
+    "@type": "dspace:ContractRequestMessage",
+    "dspace:consumerPid": "7761b889-1832-49da-a374-197e02659d7c",
+    "dspace:processId": "7761b889-1832-49da-a374-197e02659d7c",
+    "dspace:callbackAddress": "http://consumer-control-plane:8282/api/v1/dsp",
+    "dspace:offer": {
+        "@id": "ZmNjZmM4M2EtMzA3OS00MTUxLWJmOGMtYmJjOWM4YjU4ODU0:NjkwNDVkODgtZjk0Ni00ZjFiLWI0ZTgtNTU1OGY2YWQxODFh:ZjJhNmE3ZDYtZmE2OS00ZTZhLThlZTAtZTNiMzcyYTJmMmY5",
+        "@type": "odrl:Offer",
+        "odrl:permission": {
+            "odrl:action": {
+                "odrl:type": "use"
+            },
+            "odrl:constraint": {
+                "odrl:and": [
+                    {
+                        "odrl:leftOperand": "UsagePurpose",
+                        "odrl:operator": {
+                            "@id": "odrl:eq"
+                        },
+                        "odrl:rightOperand": "cx.core.industrycore:1"
+                    },
+                    {
+                        "odrl:leftOperand": "https://w3id.org/catenax/policy/UsagePurpose",
+                        "odrl:operator": {
+                            "@id": "odrl:eq"
+                        },
+                        "odrl:rightOperand": "cx.core.industrycore:1"
+                    },
+                    {
+                        "odrl:leftOperand": "https://w3id.org/catenax/policy/UsagePurpose",
+                        "odrl:operator": {
+                            "@id": "odrl:eq"
+                        },
+                        "odrl:rightOperand": "cx.core.industrycore:1"
+                    },
+                    {
+                        "odrl:leftOperand": "https://w3id.org/catenax/policy/UsagePurpose",
+                        "odrl:operator": {
+                            "@id": "odrl:eq"
+                        },
+                        "odrl:rightOperand": "cx.core.industrycore:1"
+                    }
+                ]
+            }
+        },
+        "odrl:prohibition": [],
+        "odrl:obligation": [],
+        "odrl:assigner": "BPNL00000007ZS7X",
+        "odrl:target": {
+            "@id": "69045d88-f946-4f1b-b4e8-5558f6ad181a"
+        }
+    },
+    "@context": {
+        "@vocab": "https://w3id.org/edc/v0.0.1/ns/",
+        "edc": "https://w3id.org/edc/v0.0.1/ns/",
+        "tx": "https://w3id.org/tractusx/v0.0.1/ns/",
+        "tx-auth": "https://w3id.org/tractusx/auth/",
+        "cx-policy": "https://w3id.org/catenax/policy/",
+        "dcat": "http://www.w3.org/ns/dcat#",
+        "dct": "http://purl.org/dc/terms/",
+        "odrl": "http://www.w3.org/ns/odrl/2/",
+        "dspace": "https://w3id.org/dspace/v0.8/"
+    }
+}

@@ -1,0 +1,80 @@
+{
+    "@type": "DataFlowResponseMessage",
+    "dataAddress": {
+        "@type": "dspace:DataAddress",
+        "dspace:endpointType": "https://w3id.org/idsa/v4.1/HTTP",
+        "dspace:endpointProperties": [
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "process_id",
+                "dspace:value": "5485d7c3-413e-4758-8640-960dd41ffc35"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "participant_id",
+                "dspace:value": "BPNL00000007ZS71"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "asset_id",
+                "dspace:value": "69045d88-f946-4f1b-b4e8-5558f6ad181a"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/edc/v0.0.1/ns/endpointType",
+                "dspace:value": "https://w3id.org/idsa/v4.1/HTTP"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/tractusx/auth/refreshEndpoint",
+                "dspace:value": "http://localhost:9192/public"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/tractusx/auth/audience",
+                "dspace:value": "did:web:portal-backend.int.demo.catena-x.net:api:administration:staticdata:did:BPNL00000007ZS71"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "agreement_id",
+                "dspace:value": "70e1ad52-ef4b-4204-85b6-abaf803b963c"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "flow_type",
+                "dspace:value": "PULL"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/edc/v0.0.1/ns/endpoint",
+                "dspace:value": "http://provider-data-plane:9192/public"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/tractusx/auth/refreshToken",
+                "dspace:value": "eyJraWQiOiJwcm92aWRlci5jcnQiLCJhbGciOiJSUzI1NiJ9.eyJleHAiOjE3MTc0ODI3MjMsImlhdCI6MTcxNzQ4MjQyMywianRpIjoiZDJiZTQ2Y2MtZWM2NC00OTEwLWEwNDktOWIxNWM0NzYxNDdkIn0.AD36cSGTfVfrYX3WG8KYoWotSPr2Em0mZMGSDYC8HpFVMg6SGufZUA0gfOru1ofHll8QRDC7LMzK14Ah6EVEYSrPvAybWM9g8T-NjNlTiRsZlr89rQo5jj3Y5GopKbfsbaBReV6CMBX-PNbpUf8GRg_kLQyHOSRAakoVUzoNrjCvd8NEt5Kmh9Xu112BqOsu-94kaDAdQaIdh9xeS-SNCDMl7C4SMXjm81TrrZ-KKR9pCPk6IXvPASLK_OBRY2NbYe5YgUI4Al11C7-zQyzklk0VORpLzfrEMxP1lOQeDQgSW7_MfGKZn0vweKuVMgr7Rh5x_MELQxqVkbT7negLJw"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/tractusx/auth/expiresIn",
+                "dspace:value": "300"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/edc/v0.0.1/ns/authorization",
+                "dspace:value": "eyJraWQiOiJwcm92aWRlci5jcnQiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJhbm9ueW1vdXMiLCJhdWQiOiJCUE5MMDAwMDAwMDdaUzcxIiwic3ViIjoiYW5vbnltb3VzIiwiZXhwIjoxNzE3NDgyNzIzLCJpYXQiOjE3MTc0ODI0MjMsImp0aSI6IjhiODJiNzlkLTZhYmUtNGFkNi05MGJiLWU1NTY4OGZiOGY0NSJ9.L_sZqlPIhatnkCR-ebgEKiMZF7Sw-mG3b73HaylsSRJUYUgNIPB9C_w8iRa43u_-JZNZykvg_N4dNetDWZOmB_SA6_gHSH3_t0OaAlCyeYangeyA4jD0PLRKss7-_VJfVfGEQ4YG1DrvtaNGZjZP3jtu6KzIdQK7mDVb-t81taOTVrykjf6ZMIgd1yp0twAv4gbIg3VwqtlUuJJdDNLV9zdbxCGizMpZLwnUsoAtS8bj3SVIAFtdvcLdKEChDoLPodCQ1qNgzTlJntcfE5DitaGmYeDmHirIhHN58hMnLvLrwqLqgWIJJxwnqle2Zhj0SWqSENIvMdLzybQt6yyvBw"
+            },
+            {
+                "@type": "dspace:EndpointProperty",
+                "dspace:name": "https://w3id.org/tractusx/auth/refreshAudience",
+                "dspace:value": "did:web:portal-backend.int.demo.catena-x.net:api:administration:staticdata:did:BPNL00000007ZS71"
+            }
+        ]
+    },
+    "@context": {
+        "@vocab": "https://w3id.org/edc/v0.0.1/ns/",
+        "edc": "https://w3id.org/edc/v0.0.1/ns/",
+        "odrl": "http://www.w3.org/ns/odrl/2/",
+        "dspace": "https://w3id.org/dspace/v0.8/"
+    }
+}

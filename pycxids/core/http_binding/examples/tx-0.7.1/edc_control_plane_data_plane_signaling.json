@@ -1,0 +1,65 @@
+{
+    "@type": "DataFlowStartMessage",
+    "flowType": "PULL",
+    "agreementId": "70e1ad52-ef4b-4204-85b6-abaf803b963c",
+    "processId": "5485d7c3-413e-4758-8640-960dd41ffc35",
+    "datasetId": "69045d88-f946-4f1b-b4e8-5558f6ad181a",
+    "properties": {
+        "tx-auth:audience": "did:web:portal-backend.int.demo.catena-x.net:api:administration:staticdata:did:BPNL00000007ZS71"
+    },
+    "callbackAddress": "http://localhost:9191/api/v1/control",
+    "destinationDataAddress": {
+        "@type": "https://w3id.org/dspace/v0.8/DataAddress",
+        "https://w3id.org/dspace/v0.8/endpointType": "HttpProxy",
+        "https://w3id.org/dspace/v0.8/endpointProperties": []
+    },
+    "sourceDataAddress": {
+        "@type": "https://w3id.org/dspace/v0.8/DataAddress",
+        "https://w3id.org/dspace/v0.8/endpointType": "HttpData",
+        "https://w3id.org/dspace/v0.8/endpointProperties": [
+            {
+                "@type": "https://w3id.org/dspace/v0.8/EndpointProperty",
+                "https://w3id.org/dspace/v0.8/name": "https://w3id.org/edc/v0.0.1/ns/proxyPath",
+                "https://w3id.org/dspace/v0.8/value": "false"
+            },
+            {
+                "@type": "https://w3id.org/dspace/v0.8/EndpointProperty",
+                "https://w3id.org/dspace/v0.8/name": "header:Edc-Contract-Agreement-Id",
+                "https://w3id.org/dspace/v0.8/value": "70e1ad52-ef4b-4204-85b6-abaf803b963c"
+            },
+            {
+                "@type": "https://w3id.org/dspace/v0.8/EndpointProperty",
+                "https://w3id.org/dspace/v0.8/name": "https://w3id.org/edc/v0.0.1/ns/proxyMethod",
+                "https://w3id.org/dspace/v0.8/value": "false"
+            },
+            {
+                "@type": "https://w3id.org/dspace/v0.8/EndpointProperty",
+                "https://w3id.org/dspace/v0.8/name": "header:Edc-Bpn",
+                "https://w3id.org/dspace/v0.8/value": "BPNL00000007ZS71"
+            },
+            {
+                "@type": "https://w3id.org/dspace/v0.8/EndpointProperty",
+                "https://w3id.org/dspace/v0.8/name": "https://w3id.org/edc/v0.0.1/ns/proxyQueryParams",
+                "https://w3id.org/dspace/v0.8/value": "false"
+            },
+            {
+                "@type": "https://w3id.org/dspace/v0.8/EndpointProperty",
+                "https://w3id.org/dspace/v0.8/name": "https://w3id.org/edc/v0.0.1/ns/proxyBody",
+                "https://w3id.org/dspace/v0.8/value": "false"
+            },
+            {
+                "@type": "https://w3id.org/dspace/v0.8/EndpointProperty",
+                "https://w3id.org/dspace/v0.8/name": "https://w3id.org/edc/v0.0.1/ns/baseUrl",
+                "https://w3id.org/dspace/v0.8/value": "https://verkehr.autobahn.de/o/autobahn/"
+            }
+        ]
+    },
+    "participantId": "BPNL00000007ZS71",
+    "@context": {
+        "@vocab": "https://w3id.org/edc/v0.0.1/ns/",
+        "edc": "https://w3id.org/edc/v0.0.1/ns/",
+        "tx": "https://w3id.org/tractusx/v0.0.1/ns/",
+        "tx-auth": "https://w3id.org/tractusx/auth/",
+        "cx-policy": "https://w3id.org/catenax/policy/"
+    }
+}
