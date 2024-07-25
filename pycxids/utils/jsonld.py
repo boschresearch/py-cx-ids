@@ -42,7 +42,11 @@ def hash(normalized_doc: str):
     return hash1
 
 def expand(doc, context = None):
-    return jsonld.expand(doc)
+    options = {}
+    if context:
+        options['expandContext'] = context
+    expanded = jsonld.expand(doc, options=options)
+    return expanded
 
 def compact(doc, context = None, expand_context = None):
     """
