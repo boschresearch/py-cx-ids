@@ -11,26 +11,21 @@ import os
 import sys
 import json
 from datetime import datetime
-import base64
-from uuid import uuid4
 import requests
-from requests.auth import HTTPBasicAuth
 
 from pycxids.cli.cli_settings import *
 from pycxids.cli import cli_multipart_utils
 from pycxids.core.auth.auth_factory import DapsAuthFactory, IatpAuthFactory, MiwAuthFactory
 from pycxids.core.http_binding import dsp_client_consumer_api
-from pycxids.core.http_binding.models_local import DataAddress, TransferStateStore
+from pycxids.core.http_binding.models import ContractAgreementMessage, ContractNegotiation, DataAddress, EndpointProperties, EndpointPropertyNames, TransferProcess, TransferStartMessage
 
-from pycxids.core.settings import endpoint_check, fix_dsp_endpoint_path, settings, BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD
+from pycxids.core.settings import fix_dsp_endpoint_path
 
 from pycxids.cx.services import BdrsDirectory
-from pycxids.iatp.iatp import CredentialService, Sts
+from pycxids.iatp.iatp import CredentialService
 from pycxids.portal.api import Portal
 from pycxids.portal.settings import PORTAL_BASE_URL, PORTAL_OAUTH_TOKEN_ENDPOINT
 from pycxids.utils.storage import FileStorageEngine
-
-from pycxids.edc.settings import PROVIDER_IDS_BASE_URL
 
 
 
@@ -267,11 +262,15 @@ def list_assets_from_catalog(catalog_filename: str):
 
 @cli.command('fetch', help="Fetch a given asset id")
 @click.option('-r', '--raw-data', default=False, is_flag=True)
-@click.option('--out-dir', default='', help='Directory in which the results should be stored under the asset_id filename.')
-@click.option('--provider-ids-endpoint', default='')
+@click.option('-o', '--out-fn', default='')
+@click.option('--overwrite-edc-endpoint', default='')
 @click.option('--agreement-id', default=None, help='Reuse existing agreement ID and save some negotiation time.')
-@click.argument('asset_id', default='')
-def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir:str, agreement_id: str, help="IDS endpoint or DSP catalog BASE URL"):
+@click.argument('bpn', default=None)
+@click.argument('dataset_id', default='')
+def fetch_asset_cli(bpn: str, out_fn, overwrite_edc_endpoint: str, dataset_id: str, raw_data:bool, agreement_id: str):
+    """
+    For simplicity, only tractusx-edc 0.7.x and higher supported.
+    """
     before = datetime.now().timestamp()
 
     config_to_use = config_storage.get('use')
@@ -280,59 +279,59 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
     config = configs.get(config_to_use)
     assert config, "Please add config first"
 
-    if config.get('PROTOCOL', '') == PROTOCOL_DSP:
-        provider_base_url = ''
-        if not provider_ids_endpoint:
-            provider_base_url = config.get('DEFAULT_PROVIDER_CATALOG_BASE_URL')
-        api = get_DspClient(provider_base_url=provider_base_url)
-        offers = api.get_offers_for_asset(asset_id=asset_id)
-        print(offers)
-        consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
-        # TODO catalog_base_url should not be used here, but rather the endpoint from the catalog result!
-        negotiation = api.negotiation(dataset_id=asset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url)
-        print(negotiation)
-        negotiation_process_id = negotiation.get('dspace:processId')
-        # and now get the message from the receiver api (proprietary api)
-        agreement = api.negotiation_callback_result(id=negotiation_process_id, consumer_callback_base_url=consumer_callback_base_url)
-        print(agreement)
-        agreement_id = agreement.get('dspace:agreement', {}).get('@id')
-        assert agreement_id
-        transfer = api.transfer(agreement_id_received=agreement_id, consumer_callback_base_url=consumer_callback_base_url)
-        print(transfer)
-        transfer_id = transfer.get('@id')
-        transfer_process_id = transfer.get('dspace:processId')
-        # EDC workaround
-        correlation_id = transfer.get('dspace:correlationId')
-        if correlation_id:
-            transfer_process_id = correlation_id
-        transfer_message = api.transfer_callback_result(id=transfer_process_id, consumer_callback_base_url=consumer_callback_base_url)
-        assert transfer_message
-        print(transfer_message)
-        transfer_state_received = TransferStateStore.parse_obj(transfer_message)
-        data_address_received: DataAddress = transfer_state_received.data_address
-        # actual request of the data
-        headers = {
-            data_address_received.edc_auth_key: data_address_received.edc_auth_code
-        }
-        r = requests.get(data_address_received.edc_endpoint, headers=headers)
-        if raw_data:
-            data_result = r.content
-        else:
-            data_result = r.json()
-        #print(data_result)
+    protocol = config.get('PROTOCOL')
+    if not protocol == PROTOCOL_DSP:
+        print(f"Only {PROTOCOL_DSP} protocol supported")
+        return
 
+    storage = FileStorageEngine(PARTICIPANTS_SETTINGS_CACHE)
+    participant_settings = storage.get(bpn)
+    edc_endpoints = participant_settings.get('edc_endpoints')
+    provider_did = participant_settings.get('did')
+    provider_ids_endpoint = ''
+    if len(edc_endpoints) > 0:
+        # TODO: what if more than 1?
+        provider_ids_endpoint = edc_endpoints[0]
+        if overwrite_edc_endpoint:
+            provider_ids_endpoint = overwrite_edc_endpoint
+    provider_ids_endpoint = fix_dsp_endpoint_path(provider_ids_endpoint)
+    api = get_DspClient(provider_base_url=provider_ids_endpoint, provider_did=provider_did)
+
+    offers = api.get_offers_for_dataset(dataset_id=dataset_id)
+    print(offers)
+    consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
+    consumer_callback_base_url = "http://dev:12000"
+    # TODO catalog_base_url should not be used here, but rather the endpoint from the catalog result!
+    negotiation:ContractNegotiation = api.negotiation(dataset_id=dataset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url)
+    print(negotiation)
+    # and now get the message from the receiver api (proprietary api)
+    agreement_message:ContractAgreementMessage = api.negotiation_callback_result(id=negotiation.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url)
+    print(agreement_message)
+    assert agreement_message.dspace_agreement.field_id, "No agreement ID."
+    assert agreement_message.dspace_consumer_pid == negotiation.dspace_consumer_pid, "Agreement and Negoation consumePid not equal!"
+    transfer:TransferProcess = api.transfer(agreement_id_received=agreement_message.dspace_agreement.field_id, consumer_pid=agreement_message.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url)
+    print(transfer)
+    transfer_start_message:TransferStartMessage = api.transfer_callback_result(id=transfer.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url)
+    assert transfer_start_message
+    print(transfer_start_message)
+
+    data_address_received: DataAddress = transfer_start_message.dspace_data_address
+
+    authorization = dsp_client_consumer_api.DspClientConsumerApi.get_data_address_authorization(data_address_received)
+    endpoint = dsp_client_consumer_api.DspClientConsumerApi.get_data_address_endpoint(data_address_received)
+
+    assert authorization, "Could not find authorization token in DataAddress properties."
+    assert endpoint, "Could not find endpoint in DataAddress properties."
+    # actual request of the data
+    headers = {
+        "Authorization": authorization
+    }
+    r = requests.get(endpoint, headers=headers)
+    if raw_data:
+        data_result = r.content
     else:
-        if not provider_ids_endpoint:
-            # TODO: change this
-            provider_ids_endpoint = config.get('DEFAULT_PROVIDER_IDS_ENDPOINT')
-            print(f"No provider-ids-endpoint given. Using default from cli configuration: {provider_ids_endpoint}",
-                file=sys.stderr)
+        data_result = r.json()
 
-        try:
-            data_result = cli_multipart_utils.fetch_asset(asset_id=asset_id, raw_data=raw_data, provider_ids_endpoint=provider_ids_endpoint)
-        except Exception as ex:
-            print(ex)
-            os._exit(1) # this is a first class cli function, here we can immediately exit
     after = datetime.now().timestamp()
     duration = after - before
     data_str = None
@@ -343,13 +342,8 @@ def fetch_asset_cli(provider_ids_endpoint, asset_id: str, raw_data:bool, out_dir
             data_str = json.dumps(data_result, indent=4)
         except Exception as ex:
             data_str = data_result
-    if out_dir:
-        if not os.path.exists(out_dir):
-            os.mkdir(out_dir)
-        fn = os.path.join(out_dir, asset_id) # raw data, no ending
-        if not raw_data:
-            fn = fn + '.json'
-        with(open(fn, 'w')) as f:
+    if out_fn:
+        with(open(out_fn, 'w')) as f:
             f.write(data_str)
     else:
         print(data_str)
