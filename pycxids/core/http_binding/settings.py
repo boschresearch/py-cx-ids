@@ -47,7 +47,7 @@ CONSUMER_CALLBACK_BASE_URL = os.getenv('CONSUMER_CALLBACK_BASE_URL', 'http://dsp
 CONSUMER_DISABLE_RECEIVER_API = os.getenv('CONSUMER_DISABLE_RECEIVER_API', 'False').lower() in ['true']
 
 DATASPACE_PROTOCOL_HTTP = 'dataspace-protocol-http'
-DCT_FORMAT_HTTP = 'dspace:HttpProxy' # TODO: what does EDC use here?
+DCT_FORMAT_HTTP = 'HttpData-PULL' # TODO: value from tx-0.7.1
 
 AUTH_CODE_REFERENCES_FN = os.getenv('AUTH_CODE_REFERENCES_FN', 'auth_code_references.json')
 

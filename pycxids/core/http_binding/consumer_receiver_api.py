@@ -41,7 +41,7 @@ def get_negotiation_agreement(id: str, timeout: int = Query(default=60, descript
     """
     return get_by_id(id=id, storage=storage_agreements_received, timeout=timeout)
 
-@app.get('/private/transfers/{id}', response_model=TransferStateStore)
+@app.get('/private/transfers/{id}', response_model=TransferStartMessage)
 def get_negotiation_agreement(id: str, timeout: int = Query(default=60, description='Timeout to wait for a message before returning with an error')):
     """
     TODO: Needs to be private / protected in the future!
@@ -50,5 +50,6 @@ def get_negotiation_agreement(id: str, timeout: int = Query(default=60, descript
     to receive messages.
     """
     data = get_by_id(id=id, storage=storage_transfers_received, timeout=timeout)
-    transfer_state: TransferStateStore = TransferStateStore.parse_obj(data)
-    return transfer_state
+    #transfer_state: TransferStateStore = TransferStateStore.parse_obj(data)
+    transfer_start_message = TransferStartMessage.parse_obj(data)
+    return transfer_start_message

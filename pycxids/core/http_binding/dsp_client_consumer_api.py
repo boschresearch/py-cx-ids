@@ -6,7 +6,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import sys
+from typing import List
 from pycxids.cli.cli_settings import *
 import requests
 from uuid import uuid4
@@ -15,8 +17,9 @@ from pycxids.utils.helper import print_red
 from pycxids.core.daps import Daps
 from pycxids.core.http_binding.settings import DCT_FORMAT_HTTP
 
-from pycxids.core.http_binding.models import ContractRequestMessage, OdrlOffer, TransferRequestMessage
+from pycxids.core.http_binding.models import CatalogOffer, ContractAgreementMessage, ContractNegotiation, ContractRequestMessage, DataAddress, EndpointProperties, EndpointPropertyNames, OdrlOffer, TransferProcess, TransferRequestMessage, TransferStartMessage
 from pycxids.utils.api import GeneralApi
+from pycxids.utils.jsonld import DEFAULT_DSP_REMOTE_CONTEXT, compact
 
 class DspClientConsumerApi(GeneralApi):
     def __init__(self, provider_base_url: str, auth: AuthFactory, bearer_scopes: list = None, provider_did: str = None) -> None:
@@ -125,6 +128,17 @@ class DspClientConsumerApi(GeneralApi):
         if not isinstance(offers, list):
             offers = [offers]
         return offers
+    
+    def get_offers_for_dataset(self, dataset_id: str) -> List[CatalogOffer]:
+        """
+        Uses typed offers instead of dicts, but uses existing method to fetch the dict.
+        """
+        offers_dict = self.get_offers_for_asset(asset_id=dataset_id)
+        offers = []
+        for o in offers_dict:
+            offer = CatalogOffer.parse_obj(o)
+            offers.append(offer)
+        return offers
 
     def get_catalog_edc_workaround(self, asset_id: str):
         """
@@ -141,70 +155,92 @@ class DspClientConsumerApi(GeneralApi):
         })
         return catalog
 
-    def negotiation(self, dataset_id: str, offer: OdrlOffer, consumer_callback_base_url: str):
+    def negotiation(self, dataset_id: str, offer: CatalogOffer, consumer_callback_base_url: str) -> ContractNegotiation:
         contract_request_id = str(uuid4())
+        consumer_pid = str(uuid4())
+        # in the catalog offer there is no odrl:target included, in the request, it is required
+        offer_with_target = OdrlOffer.parse_obj(offer)
+        offer_with_target.odrl_target = dataset_id
         contract_request_message =  ContractRequestMessage(
             field_id=contract_request_id,
-            dspace_process_id=contract_request_id, # TODO: this should not be required, but EDC needs it
+            dspace_consumer_pid=consumer_pid,
             dspace_dataset=dataset_id,
-            dspace_offer=offer,
-            dspace_callback_address=consumer_callback_base_url,
+            dspace_offer=offer_with_target,
+            dspace_callback_address=consumer_callback_base_url
         )
         data = contract_request_message.dict(exclude_unset=False)
-        data['datasetId'] = dataset_id
-        data['edc:assetId'] = dataset_id
-        data['dspace:offer']['https://w3id.org/edc/v0.0.1/ns/assetId'] = dataset_id
-        data['dspace:offer']['odrl:target'] = dataset_id # TODO: this is required by EDC, check with spec!
-        offer_id = data.get('dspace:offer').get('@id')
-        data['dspace:offer']['https://w3id.org/edc/v0.0.1/ns/offerId'] = offer_id # workaround for EDC
 
-        # the next step uses an internal 'requests' call that is mocked with the @patch test case annotation
+        # debugging
+        # with open('tmp_consumer_request_msg.json', 'wt') as f:
+        #     f.write(json.dumps(data, indent=True))
+
+        self._update_auth_token()
         result = self.post("/negotiations/request", data=data)
-        return result
+        result_c = compact(doc=result, context=DEFAULT_DSP_REMOTE_CONTEXT)
+        cn = ContractNegotiation.parse_obj(result_c)
+        return cn
 
-    def negotiation_callback_result(self, id: str, consumer_callback_base_url: str):
+    def negotiation_callback_result(self, id: str, consumer_callback_base_url: str) -> ContractAgreementMessage:
         r = requests.get(f"{consumer_callback_base_url}/negotiations/{id}/agreement")
         if not r.status_code == 200:
             print(f"status_code: {r.status_code} - reason: {r.reason} - details: {r.content}")
             return None
         j = r.json()
-        return j
+        j_c = compact(doc=j, context=DEFAULT_DSP_REMOTE_CONTEXT)
+        agreement_message = ContractAgreementMessage.parse_obj(j)
+        return agreement_message
 
-    def transfer(self, agreement_id_received: str, consumer_callback_base_url: str):
+    def transfer(self, agreement_id_received: str, consumer_pid: str, consumer_callback_base_url: str) -> TransferProcess:
         transfer_request_id = str(uuid4())
+        consumer_pid = str(uuid4())
         transfer_request_message: TransferRequestMessage = TransferRequestMessage(
             field_id = transfer_request_id,
+            dspace_consumer_pid = consumer_pid,
             dspace_agreement_id = agreement_id_received,
             dct_format = DCT_FORMAT_HTTP,
-            dspace_callback_address = consumer_callback_base_url,
-            dspace_data_address = 'HttpData'
+            dspace_callback_address = consumer_callback_base_url
         )
         data = transfer_request_message.dict(exclude_unset=False)
-        data['dspace:processId'] = transfer_request_id # EDC requires this https://github.com/eclipse-edc/Connector/issues/3253
-        data['dspace:dataAddress'] = {
-                "https://w3id.org/edc/v0.0.1/ns/type":"HttpProxy"
-        }
-        """
-        # use this for S3 data
-        data['dspace:dataAddress'] = {
-                "https://w3id.org/edc/v0.0.1/ns/type":"AmazonS3",
-                "https://w3id.org/edc/v0.0.1/ns/bucketName": "",
-                "https://w3id.org/edc/v0.0.1/ns/region": "",
-                "https://w3id.org/edc/v0.0.1/ns/keyName": "",
-                "https://w3id.org/edc/v0.0.1/ns/accessKeyId": "",
-                "https://w3id.org/edc/v0.0.1/ns/secretAccessKey": "",
-        }
-        """
 
-        #r = requests.post(f"{provider_base_url}/transfers/request", json=data)
+
+        # with open('transfer_request_message_dsp.json', 'wt') as f:
+        #     f.write(json.dumps(data, indent=True))
+        self._update_auth_token()
         result = self.post(path="/transfers/request", data=data)
-        return result
+        result_c = compact(doc=result, context=DEFAULT_DSP_REMOTE_CONTEXT)
+        tp = TransferProcess.parse_obj(result_c)
+        return tp
 
-    def transfer_callback_result(self, id: str, consumer_callback_base_url: str):
+    def transfer_callback_result(self, id: str, consumer_callback_base_url: str) -> TransferStartMessage:
         r = requests.get(f"{consumer_callback_base_url}/private/transfers/{id}")
         if not r.status_code == 200:
             print(f"status_code: {r.status_code} - reason: {r.reason} - details: {r.content}")
             return None
         j = r.json()
-        return j
+        j_c = compact(doc=j, context=DEFAULT_DSP_REMOTE_CONTEXT)
+        transfer_start_message = TransferStartMessage.parse_obj(j_c)
+        return transfer_start_message
 
+    @classmethod
+    def get_data_address_property(cls, data_address:DataAddress, name: str):
+        value = None
+        prop:EndpointProperties = None
+        for prop in data_address.dspace_endpoint_properties:
+            if prop.dspace_name == name:
+                value = prop.dspace_value
+                break
+        return value
+
+    @classmethod
+    def get_data_address_authorization(cls, data_address:DataAddress):
+        """
+        Simple helper for get_data_address_property()
+        """
+        return cls.get_data_address_property(data_address=data_address, name=EndpointPropertyNames.https___w3id_org_edc_v0_0_1_ns_authorization)
+
+    @classmethod
+    def get_data_address_endpoint(cls, data_address:DataAddress):
+        """
+        Simple helper for get_data_address_property()
+        """
+        return cls.get_data_address_property(data_address=data_address, name=EndpointPropertyNames.https___w3id_org_edc_v0_0_1_ns_endpoint)

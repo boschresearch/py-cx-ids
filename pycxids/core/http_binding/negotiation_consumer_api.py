@@ -10,6 +10,7 @@ from fastapi import APIRouter, Body, Request, HTTPException, status
 
 from pycxids.core.http_binding.models import ContractOfferMessage, ContractAgreementMessage, NegotiationState
 from pycxids.core.http_binding.settings import KEY_DATASET, KEY_MODIFIED, PROVIDER_STORAGE_FN, CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN, KEY_NEGOTIATION_REQUEST_ID, KEY_ID, KEY_STATE
+from pycxids.utils.jsonld import DEFAULT_DSP_REMOTE_CONTEXT, compact, default_context
 from pycxids.utils.storage import FileStorageEngine
 
 storage_agreements_received = FileStorageEngine(storage_fn=CONSUMER_STORAGE_AGREEMENTS_RECEIVED_FN, last_modified_field_name_isoformat=KEY_MODIFIED)
@@ -27,11 +28,12 @@ def negotiation_agreement(id: str, body: dict = Body(...)):
     We store it and send a 200 OK, which means state is transitioned to 'AGREED'
     """
     print(json.dumps(body, indent=4))
-    contract_agreement = ContractAgreementMessage.parse_obj(body)
-    process_id = contract_agreement.dspace_process_id
+    body_c = compact(doc=body, context=DEFAULT_DSP_REMOTE_CONTEXT)
+    contract_agreement = ContractAgreementMessage.parse_obj(body_c)
+    assert id is not contract_agreement.dspace_consumer_pid, "The given ID in the path is not equal to the consumerPid! This violates the DSP spec."
     data = contract_agreement.dict()
     storage_agreements_received.put(
-        process_id, #id, as a consumer we might not know the id, but the process id
+        id, #id, as a consumer we might not know the id, but the process id
         data,
     )
     return {}
