@@ -9,22 +9,16 @@ from pyld import jsonld
 from hashlib import sha256
 import base64
 
+DEFAULT_DSP_REMOTE_CONTEXT_V_0_8 = "https://w3id.org/dspace/v0.8/context.json"
+DEFAULT_DSP_REMOTE_CONTEXT = DEFAULT_DSP_REMOTE_CONTEXT_V_0_8
+
 default_context = [
-    "http://www.w3.org/ns/odrl.jsonld",
-    {
-        'dct': 'https://purl.org/dc/terms/'
-    },
+    DEFAULT_DSP_REMOTE_CONTEXT,
     {
         'tx': 'https://w3id.org/tractusx/v0.0.1/ns/'
     },
     {
         'edc': 'https://w3id.org/edc/v0.0.1/ns/'
-    },
-    {
-        'dcat': 'https://www.w3.org/ns/dcat/'
-    },
-    {
-        'dspace': 'https://w3id.org/dspace/v0.8/'
     },
     {
         'cx-policy': 'https://w3id.org/catenax/policy/'
