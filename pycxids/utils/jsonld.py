@@ -60,9 +60,8 @@ def compact(doc, context = None, expand_context = None):
         context = default_context
     if not expand_context:
         expand_context = default_context
-    co = jsonld.compact(doc, ctx=context, options={'expandContext': expand_context, 'compactArrays' : False, 'graph': False})
-    result = co.get('@graph')[0]
-    result['@context'] = co.get('@context')
+    co = jsonld.compact(doc, ctx=context, options={'expandContext': expand_context, 'compactArrays' : True, 'graph': False})
+    result = co
     return result
 
 # pyld https://github.com/digitalbazaar/pyld/issues/61
