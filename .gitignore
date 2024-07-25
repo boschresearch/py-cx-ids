@@ -2,7 +2,9 @@
 !.gitignore
 !.dockerignore
 __pycache__
-*.json
+/*.json
+/*.jsonc
+*.dump
 *.txt
 *.bak
 archive/
@@ -21,3 +23,11 @@ out_file.jpg
 out_file_origin.jpg
 *.pkcs8
 edc-dev-env/vault_secrets/*
+/debug_messages/
+/examples/
+/ld-signatures-python/
+/analyzer/
+/node_modules/
+/my-out-dir/
+/policies/
+/wsproto/
