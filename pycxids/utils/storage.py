@@ -25,6 +25,58 @@ class StorageEngine(ABC):
     def get_all(self):
         pass
 
+class DirectoryStorageEngine(StorageEngine):
+    """
+    Simple JSON key/value file storage. Key is filename inside the directory
+    """
+    def __init__(self, storage_dirname) -> None:
+        self.storage_dirname = storage_dirname
+        if not os.path.exists(self.storage_dirname):
+            os.makedirs(self.storage_dirname)
+        if not os.path.isdir(self.storage_dirname):
+            raise Exception(f"Is not a directory: {self.storage_dirname}")
+
+
+    def _build_fn(self, key):
+        fn = os.path.join(self.storage_dirname, f"{key}.json")
+        return fn
+
+    def put(self, key, value):
+        """
+        value can be a serializable type, e.g. dict str
+        and also a dataclass (which will use "asdict()" to serialize it)
+        """
+        fn = self._build_fn(key=key)
+        if dataclasses.is_dataclass(value): # datacalsses need to be converted first
+            value = dataclasses.asdict(value)
+        with open(fn, 'w') as f:
+            f.write(json.dumps(value, indent=4))
+
+    def get(self, key, default=None):
+        """
+        If the given default is a dataclass object,
+        the result is converted into that dataclass type.
+        """
+        fn = self._build_fn(key=key)
+        storage = {}
+        try:
+            with open(fn, 'r') as f:
+
+                content = f.read()
+                storage = json.loads(content)
+                if dataclasses.is_dataclass(default): # special case for dataclass objects
+                    cls = default.__class__
+                    x = cls(**storage)
+                    storage = x
+        except Exception as ex:
+            print(ex)
+            return default
+        return storage
+
+    def get_all(self):
+        raise Exception("Not implemented yet. get_all()")
+
+
 class FileStorageEngine(StorageEngine):
     """
     Simple JSON key/value file storage
