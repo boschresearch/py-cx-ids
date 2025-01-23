@@ -25,8 +25,8 @@ def decode(data, verify_signature: bool = False, sig_to_hex = False, remove_sign
 
     return decoded
 
-def decode_signed(data, pub_key):
-    return jwt.api_jwt.decode_complete(data, key=pub_key, algorithms=['RS256'])
+def decode_signed(data, pub_key, algorithms=['RS256', 'EdDSA']):
+    return jwt.api_jwt.decode_complete(data, key=pub_key, algorithms=algorithms)
 
 if __name__ == '__main__':
     args_len = len(sys.argv)
