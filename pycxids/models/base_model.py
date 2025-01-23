@@ -22,4 +22,5 @@ class MyBaseModel(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+        populate_by_name = True # new in version v2.0 shoould allow field names in constructors
         use_enum_values = True
