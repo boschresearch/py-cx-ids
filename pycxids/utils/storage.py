@@ -25,6 +25,15 @@ class StorageEngine(ABC):
     def get_all(self):
         pass
 
+# check if dataclasses exists and we need to check incoming values for it
+dataclasses_exists = False
+try:
+    import dataclasses
+    dataclasses_exists = True
+except:
+    dataclasses_exists = False
+
+
 class DirectoryStorageEngine(StorageEngine):
     """
     Simple JSON key/value file storage. Key is filename inside the directory
@@ -47,7 +56,7 @@ class DirectoryStorageEngine(StorageEngine):
         and also a dataclass (which will use "asdict()" to serialize it)
         """
         fn = self._build_fn(key=key)
-        if dataclasses.is_dataclass(value): # datacalsses need to be converted first
+        if dataclasses_exists and dataclasses.is_dataclass(value): # datacalsses need to be converted first
             value = dataclasses.asdict(value)
         with open(fn, 'w') as f:
             f.write(json.dumps(value, indent=4))
@@ -64,7 +73,7 @@ class DirectoryStorageEngine(StorageEngine):
 
                 content = f.read()
                 storage = json.loads(content)
-                if dataclasses.is_dataclass(default): # special case for dataclass objects
+                if dataclasses_exists and dataclasses.is_dataclass(default): # special case for dataclass objects
                     cls = default.__class__
                     x = cls(**storage)
                     storage = x
