@@ -96,12 +96,8 @@ def test():
     # required for authentication with the IATP
     catalog = consumer.get_catalog(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT, provider_participant_id=settings.PROVIDER_PARTICIPANT_ID)
     catalog_context = catalog.get('@context')
-    with open('catalog_context.json', 'wt') as f:
-        f.write(json.dumps(catalog_context, indent=True))
     contract_offer = consumer.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
     assert contract_offer, "Could not find matching offer in catalog"
-    with open('catalog_offer.json', 'wt') as f:
-        f.write(json.dumps(contract_offer, indent=True))
 
     provider_edc_participant_id = settings.PROVIDER_PARTICIPANT_ID
     assert provider_edc_participant_id, "Could not find edc:participantId from received catalog result"

@@ -15,7 +15,7 @@ import requests
 
 from pycxids.cli.cli_settings import *
 from pycxids.cli import cli_multipart_utils
-from pycxids.core.auth.auth_factory import DapsAuthFactory, IatpAuthFactory, MiwAuthFactory
+from pycxids.core.auth.auth_factory import IatpAuthFactory, MiwAuthFactory
 from pycxids.core.http_binding import dsp_client_consumer_api
 from pycxids.core.http_binding.models import ContractAgreementMessage, ContractNegotiation, DataAddress, EndpointProperties, EndpointPropertyNames, TransferProcess, TransferStartMessage
 
@@ -156,11 +156,7 @@ def get_DspClient(provider_base_url:str, bearer_scopes: list = None, provider_di
             our_did=myconfig.get('OUR_DID'),
         )
     else:
-        auth_factory = DapsAuthFactory(
-            daps_endpoint=myconfig.get('DAPS_ENDPOINT'),
-            private_key_fn=myconfig.get('PRIVATE_KEY_FN'),
-            client_id=myconfig.get('CLIENT_ID'),
-        )
+        assert "Auth config not supported."
     return dsp_client_consumer_api.DspClientConsumerApi(provider_base_url=provider_base_url, auth=auth_factory, bearer_scopes=bearer_scopes, provider_did=provider_did)
 
 @cli.command('catalog')

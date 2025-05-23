@@ -158,9 +158,6 @@ class EdcProvider(EdcDataManagement):
 
             }
         }
-        with open('asset_v2.json', 'w') as f:
-            tmp = json.dumps(data, indent=4)
-            f.write(tmp)
 
         for k,v in asset_additional_props.items():
             data['asset']['properties'][k] = v
@@ -216,8 +213,6 @@ class EdcProvider(EdcDataManagement):
         # if a constraint is given, add it to the policy
         if odrl_constraint:
             data['edc:policy']['odrl:permission'][0]['odrl:constraint'] = odrl_constraint
-        with open('policy_debug.json', 'wt') as f:
-            f.write(json.dumps(data, indent=True))
         result = self.post(path="/v3/policydefinitions", data=data, json_content=False)
         if result == None:
             return None
@@ -379,8 +374,6 @@ class EdcConsumer(EdcDataManagement):
                 }
             }
         }
-        with open('catalog_request_dataset.json', 'w') as f:
-            f.write(json.dumps(data, indent=4))
         catalog = self.post(path='/v3/catalog/request', data=data)
         # sorry, but this is stupid, if only 1 item in the database, it is NOT a list, otherwise it is
         # this was not the intension of the Dspace protocol!
@@ -404,8 +397,6 @@ class EdcConsumer(EdcDataManagement):
             'edc:counterPartyAddress': provider_ids_endpoint,
             'edc:counterPartyId': provider_participant_id,
         }
-        with open('catalog_request_new.json', 'w') as f:
-            f.write(json.dumps(data, indent=4))
         catalog = self.post(path='/v3/catalog/request', data=data)
         # sorry, but this is stupid, if only 1 item in the database, it is NOT a list, otherwise it is
         # this was not the intension of the Dspace protocol!
@@ -438,9 +429,6 @@ class EdcConsumer(EdcDataManagement):
             "edc:protocol": "dataspace-protocol-http",
             "edc:policy": offer,
         }
-        with open('contractnegotiation_request_to_edc.json', 'wt') as f:
-            mystr = json.dumps(data, indent=4)
-            f.write(mystr)
         result = self.post(path="/v3/contractnegotiations", data=data)
         negotiation_id = result.get('@id')
         negotiation_data = self.wait_for_state(path=f"/v3/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)

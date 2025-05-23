@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from abc import ABC, abstractmethod
-from pycxids.core.daps import Daps
 from pycxids.iatp.iatp import Sts
 from pycxids.miw.miw import Miw
 
@@ -32,21 +31,6 @@ class MiwAuthFactory(AuthFactory, Miw):
         Returns a JWT token
         """
         return self.get_vp(aud=aud)
-
-class DapsAuthFactory(AuthFactory):
-    """
-    One implementation of an AuthFactory that fetches a auth token from a DAPS server
-    """
-    def __init__(self, daps_endpoint: str, private_key_fn: str, client_id: str, debug_messages = False, debug_out_dir: str = '') -> None:
-        self.daps = Daps(daps_endpoint=daps_endpoint, private_key_fn=private_key_fn, client_id=client_id, debug_messages=debug_messages, debug_out_dir=debug_out_dir)
-
-    def get_token(self, aud: str, opts = {}):
-        """
-        Returns a JWT token
-        aud: the audience for which the token is intended
-        """
-        result = self.daps.get_daps_token(audience=aud)
-        return result.get('access_token')
 
 class IatpAuthFactory(AuthFactory):
     """
