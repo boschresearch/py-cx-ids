@@ -31,6 +31,8 @@ services:
     extends:
       file: docker-compose-edc.yaml
       service: control-plane
+    ports:
+      - "9194:9193" # data management api - should be private later on
     volumes:
       - ${CONSUMER_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/consumer/control-plane.properties}:/app/configuration.properties
     environment:
