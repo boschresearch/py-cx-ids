@@ -218,7 +218,7 @@ class EdcProvider(EdcDataManagement):
             data['edc:policy']['odrl:permission'][0]['odrl:constraint'] = odrl_constraint
         with open('policy_debug.json', 'wt') as f:
             f.write(json.dumps(data, indent=True))
-        result = self.post(path="/v2/policydefinitions", data=data, json_content=False)
+        result = self.post(path="/v3/policydefinitions", data=data, json_content=False)
         if result == None:
             return None
         return policy_id
@@ -249,7 +249,7 @@ class EdcProvider(EdcDataManagement):
             }
             data['edc:policy']['odrl:permission'] = permission
 
-        result = self.post(path="/v2/policydefinitions", data=data, json_content=False)
+        result = self.post(path="/v3/policydefinitions", data=data, json_content=False)
         if result == None:
             return None
         return policy_id
@@ -275,7 +275,7 @@ class EdcProvider(EdcDataManagement):
             ],
         }
 
-        result = self.post(path="/v2/contractdefinitions", data=data, json_content=False)
+        result = self.post(path="/v3/contractdefinitions", data=data, json_content=False)
         if result == None:
             return None
         return cd_id
@@ -381,7 +381,7 @@ class EdcConsumer(EdcDataManagement):
         }
         with open('catalog_request_dataset.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
-        catalog = self.post(path='/v2/catalog/request', data=data)
+        catalog = self.post(path='/v3/catalog/request', data=data)
         # sorry, but this is stupid, if only 1 item in the database, it is NOT a list, otherwise it is
         # this was not the intension of the Dspace protocol!
         # making this always a list here for now
@@ -406,7 +406,7 @@ class EdcConsumer(EdcDataManagement):
         }
         with open('catalog_request_new.json', 'w') as f:
             f.write(json.dumps(data, indent=4))
-        catalog = self.post(path='/v2/catalog/request', data=data)
+        catalog = self.post(path='/v3/catalog/request', data=data)
         # sorry, but this is stupid, if only 1 item in the database, it is NOT a list, otherwise it is
         # this was not the intension of the Dspace protocol!
         # making this always a list here for now
@@ -441,9 +441,9 @@ class EdcConsumer(EdcDataManagement):
         with open('contractnegotiation_request_to_edc.json', 'wt') as f:
             mystr = json.dumps(data, indent=4)
             f.write(mystr)
-        result = self.post(path="/v2/contractnegotiations", data=data)
+        result = self.post(path="/v3/contractnegotiations", data=data)
         negotiation_id = result.get('@id')
-        negotiation_data = self.wait_for_state(path=f"/v2/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)
+        negotiation_data = self.wait_for_state(path=f"/v3/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)
         return negotiation_data
 
     def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str,
@@ -479,7 +479,7 @@ class EdcConsumer(EdcDataManagement):
                 }
             ]
         }
-        data = self.post("/v2/transferprocesses", data=transfer_request)
+        data = self.post("/v3/transferprocesses", data=transfer_request)
         return data['@id']
 
     def edr_start_process(self, provider_ids_endpoint, contract_offer, timeout = 30, asset_id: str = None,
