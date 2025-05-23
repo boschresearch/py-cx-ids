@@ -1,0 +1,24 @@
+meta {
+  name: catalog_request
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:9194/api/v1/data/v3/catalog/request
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "@context": {
+      "@vocab": "https://w3id.org/edc/v0.0.1/ns/",
+      "odrl": "http://www.w3.org/ns/odrl/2/"
+    },
+    "@type": "CatalogRequest",
+    "counterPartyId": "BPNLprovider",
+    "counterPartyAddress": "http://provider-control-plane:8282",
+    "protocol": "dataspace-protocol-http"
+  }
+}
