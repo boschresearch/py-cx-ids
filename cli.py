@@ -6,6 +6,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from time import sleep
+from uuid import uuid4
 import click
 import os
 import sys
@@ -14,10 +16,9 @@ from datetime import datetime
 import requests
 
 from pycxids.cli.cli_settings import *
-from pycxids.cli import cli_multipart_utils
-from pycxids.core.auth.auth_factory import IatpAuthFactory, MiwAuthFactory
+from pycxids.core.auth.auth_factory import IatpAuthFactory
 from pycxids.core.http_binding import dsp_client_consumer_api
-from pycxids.core.http_binding.models import ContractAgreementMessage, ContractNegotiation, DataAddress, EndpointProperties, EndpointPropertyNames, TransferProcess, TransferStartMessage
+from pycxids.core.http_binding.models import ContractAgreementMessage, ContractNegotiation, DataAddress, TransferProcess, TransferStartMessage
 
 from pycxids.core.settings import fix_dsp_endpoint_path
 
@@ -63,59 +64,33 @@ def cli_config_add(config_name: str):
     configs = config_storage.get('configs', {})
     config = configs.get(config_name, {})
 
-    use_dsp_iatp = click.confirm("Use (Dataspace protocol) with IATP (Identity and Trust Protocol) (product-edc 0.7.0 and higher) Y/n", default=True)
-    if use_dsp_iatp:
-        config['PROTOCOL'] = PROTOCOL_DSP
-        config['AUTH'] = AUTH_IATP
-        config['STS_CLIENT_ID'] = click.prompt("STS_CLIENT_ID:",
-            default=config.get('STS_CLIENT_ID', ""))
-        config['STS_CLIENT_SECRET_FN'] = click.prompt("STS_CLIENT_SECRET_FN:",
-            default=config.get('STS_CLIENT_SECRET_FN', ""))
-        config['STS_TOKEN_ENDPOINT'] = click.prompt("STS_TOKEN_ENDPOINT:",
-            default=config.get('STS_TOKEN_ENDPOINT', ""))
-        config['STS_BASE_URL'] = click.prompt("STS_BASE_URL:",
-            default=config.get('STS_BASE_URL', ""))
-        config['OUR_BPN'] = click.prompt("OUR_BPN:",
-            default=config.get('OUR_BPN', ""))
-        config['OUR_DID'] = click.prompt("OUR_DID:",
-            default=config.get('OUR_DID', ""))
-
-    use_dsp_ssi = False
-    if not use_dsp_iatp:
-        use_dsp_ssi = click.confirm("Use (Dataspace protocol) with SSI (Self Sovereign Identity) (product-edc 0.5.0 and higher) Y/n", default=True)
-    if use_dsp_ssi:
-        click.echo("Using new DSP protocol configuration (product-edc 0.4.0 and later)")
-        config['PROTOCOL'] = PROTOCOL_DSP
-        config['AUTH'] = AUTH_SSI
-        config['MIW_CLIENT_ID'] = click.prompt("MIW_CLIENT_ID:",
-            default=config.get('MIW_CLIENT_ID', ""))
-        config['MIW_CLIENT_SECRET'] = click.prompt("MIW_CLIENT_SECRET (beware: stored in plain text!):",
-            default=config.get('MIW_CLIENT_SECRET', ""))
-        config['MIW_TOKEN_ENDPOINT'] = click.prompt("MIW_TOKEN_ENDPOINT:",
-            default=config.get('MIW_TOKEN_ENDPOINT', "https://centralidp.int.demo.catena-x.net/auth/realms/CX-Central/protocol/openid-connect/token"))
-        config['MIW_BASE_URL'] = click.prompt("MIW_BASE_URL",
-            default=config.get('MIW_BASE_URL', "https://managed-identity-wallets-new.int.demo.catena-x.net"))
-        config['CONSUMER_CONNECTOR_BASE_URL'] = click.prompt("CONSUMER_CONNECTOR_BASE_URL",
-            default=config.get('CONSUMER_CONNECTOR_BASE_URL', "http://dev:6060"))
-        config['DEFAULT_PROVIDER_CATALOG_BASE_URL'] = click.prompt("DEFAULT_PROVIDER_CATALOG_BASE_URL",
-            default=config.get("DEFAULT_PROVIDER_CATALOG_BASE_URL", 'http://provider-control-plane:8282/api/v1/dsp'))
-
-    use_dsp = False
-    if not use_dsp_ssi or use_dsp_iatp:
-        use_dsp = click.confirm("Use new DSP (Dataspace protocol) version? (product-edc 0.4.0 and higher) Y/n", default=True)
-    if use_dsp:
-        click.echo("Using new DSP protocol configuration (product-edc 0.4.0 and later)")
-        config['PROTOCOL'] = PROTOCOL_DSP
-        config['PRIVATE_KEY_FN'] = click.prompt("Private key filename:",
-            default=config.get('PRIVATE_KEY_FN', "private.key"))
-        config['CLIENT_ID'] = click.prompt("CLIENT_ID:",
-            default=config.get('CLIENT_ID', ""))
-        config['DAPS_ENDPOINT'] = click.prompt("DAPS_ENDPOINT:",
-            default=config.get('DAPS_ENDPOINT', "https://daps1.int.demo.catena-x.net/token"))
-        config['CONSUMER_CONNECTOR_BASE_URL'] = click.prompt("CONSUMER_CONNECTOR_BASE_URL",
-            default=config.get('CONSUMER_CONNECTOR_BASE_URL', "http://localhost:6060"))
-        config['DEFAULT_PROVIDER_CATALOG_BASE_URL'] = click.prompt("DEFAULT_PROVIDER_CATALOG_BASE_URL",
-            default=config.get("DEFAULT_PROVIDER_CATALOG_BASE_URL", "http://localhost:8080"))
+    config['PROTOCOL'] = PROTOCOL_DSP
+    config['AUTH'] = AUTH_IATP
+    config['STS_CLIENT_ID'] = click.prompt("STS_CLIENT_ID:",
+        default=config.get('STS_CLIENT_ID', "BPNLconsumer"))
+    config['STS_CLIENT_SECRET_FN'] = click.prompt("STS_CLIENT_SECRET_FN:",
+        default=config.get('STS_CLIENT_SECRET_FN', "xxx"))
+    config['STS_TOKEN_ENDPOINT'] = click.prompt("STS_TOKEN_ENDPOINT:",
+        default=config.get('STS_TOKEN_ENDPOINT', "http://dev:13000/dummy/token"))
+    config['STS_BASE_URL'] = click.prompt("STS_BASE_URL:",
+        default=config.get('STS_BASE_URL', "http://dev:13000/sts"))
+    config['CS_BASE_URL'] = click.prompt("CS_BASE_URL:",
+        default=config.get('CS_BASE_URL', "http://dev:13000/cs"))
+    config['OUR_BPN'] = click.prompt("OUR_BPN:",
+        default=config.get('OUR_BPN', "BPNLconsumer"))
+    config['OUR_DID'] = click.prompt("OUR_DID:",
+        default=config.get('OUR_DID', "did:web:dev%3A13000:BPNLconsumer"))
+    config['BDRS_BASE_URL'] = click.prompt("BDRS_BASE_URL:",
+        default=config.get('BDRS_BASE_URL', "http://dev:13000/bdrs"))
+    # Portal
+    config['PORTAL_BASE_URL'] = click.prompt("PORTAL_BASE_URL:",
+        default=config.get('PORTAL_BASE_URL', "http://dev:13000/portal"))
+    config['PORTAL_TOKEN_ENDPOINT'] = click.prompt("PORTAL_TOKEN_ENDPOINT:",
+        default=config.get('PORTAL_TOKEN_ENDPOINT', "http://dev:13000/dummy/token"))
+    config['PORTAL_CLIENT_ID'] = click.prompt("PORTAL_CLIENT_ID:",
+        default=config.get('PORTAL_CLIENT_ID', "BPNLconsumer"))
+    config['PORTAL_CLIENT_SECRET_FN'] = click.prompt("PORTAL_CLIENT_SECRET_FN:",
+        default=config.get('PORTAL_CLIENT_SECRET_FN', ""))
     
     configs[config_name] = config
     config_storage.put('configs', configs)
@@ -125,28 +100,27 @@ def cli_config_add(config_name: str):
     click.echo("")
 
 
+def get_my_config():
+    use_config = config_storage.get('use')
+    myconfig = config_storage.get('configs', {}).get(use_config)
+    return myconfig
 
 def get_DspClient(provider_base_url:str, bearer_scopes: list = None, provider_did: str = None):
     """
-    Depending on the setting, we return a client api with DAPS or MIW (SSI)
+    Depending on the setting, we return a client api with IATP authentication
     """
-    use_config = config_storage.get('use')
-    myconfig = config_storage.get('configs', {}).get(use_config)
+    myconfig = get_my_config()
 
     auth_settings = myconfig.get('AUTH', '')
     auth_factory = None
-    if auth_settings == AUTH_SSI:
-        auth_factory = MiwAuthFactory(
-            miw_base_url=myconfig.get('MIW_BASE_URL'),
-            client_id=myconfig.get('MIW_CLIENT_ID'),
-            client_secret=myconfig.get('MIW_CLIENT_SECRET'),
-            token_url=myconfig.get('MIW_TOKEN_ENDPOINT')
-        )
-    elif auth_settings == AUTH_IATP:
+    if auth_settings == AUTH_IATP:
         secret_fn = myconfig.get('STS_CLIENT_SECRET_FN')
         secret = ''
-        with open(secret_fn, 'rt') as f:
-            secret = f.read()
+        if os.path.exists(secret_fn):
+            with open(secret_fn, 'rt') as f:
+                secret = f.read()
+        # else: TODO: use logging to not print to stdout because cli uses pipes, e.g. with ./cli.py assets
+        #     print(f"secret_fn does not exist: {secret_fn} Using dummy value.")
 
         auth_factory = IatpAuthFactory(
             base_url=myconfig.get('STS_BASE_URL'),
@@ -167,14 +141,6 @@ def fetch_catalog_cli(bpn: str, out_fn, overwrite_edc_endpoint: str):
     """
     For simplicity, only tractusx-edc 0.7.x and higher supported.
     """
-    use_config = config_storage.get('use')
-    myconfig = config_storage.get('configs', {}).get(use_config)
-
-    protocol = myconfig.get('PROTOCOL')
-    if not protocol == PROTOCOL_DSP:
-        print(f"Only {PROTOCOL_DSP} protocol supported")
-        return
-
     storage = FileStorageEngine(PARTICIPANTS_SETTINGS_CACHE)
     participant_settings = storage.get(bpn)
     edc_endpoints = participant_settings.get('edc_endpoints')
@@ -185,7 +151,6 @@ def fetch_catalog_cli(bpn: str, out_fn, overwrite_edc_endpoint: str):
         provider_ids_endpoint = edc_endpoints[0]
         if overwrite_edc_endpoint:
             provider_ids_endpoint = overwrite_edc_endpoint
-    provider_ids_endpoint = fix_dsp_endpoint_path(provider_ids_endpoint)
     api = get_DspClient(provider_base_url=provider_ids_endpoint, provider_did=provider_did)
 
     catalog = api.fetch_catalog(out_fn=out_fn)
@@ -219,8 +184,7 @@ def fetch_catalogs_cli(out_dir: str):
         for idx, endpoint in enumerate(edc_endpoints):
             # every BPN can have multiple EDC endpoints and thus, catalogs
             provider_did = bpn_settings.get('did')
-            provider_ids_endpoint = fix_dsp_endpoint_path(endpoint)
-            api = get_DspClient(provider_base_url=provider_ids_endpoint, provider_did=provider_did)
+            api = get_DspClient(provider_base_url=endpoint, provider_did=provider_did)
 
             out_fn = os.path.join(out_dir, f"{bpn}_{idx}.json")
             catalog = api.fetch_catalog()
@@ -253,7 +217,7 @@ def list_assets_from_catalog(catalog_filename: str):
         # DSP case
         asset_ids = dsp_client_consumer_api.DspClientConsumerApi.get_asset_ids_from_catalog(catalog=catalog)
     else:
-        asset_ids = cli_multipart_utils.get_asset_ids_from_catalog(catalog=catalog)
+        assert "No datasets found. Old multipart catalog? Or just empty?"
     print('\n'.join(asset_ids))
 
 @cli.command('fetch', help="Fetch a given asset id")
@@ -269,16 +233,8 @@ def fetch_asset_cli(bpn: str, out_fn, overwrite_edc_endpoint: str, dataset_id: s
     """
     before = datetime.now().timestamp()
 
-    config_to_use = config_storage.get('use')
-    assert config_to_use, "Please add a config first."
-    configs = config_storage.get('configs', {})
-    config = configs.get(config_to_use)
+    config = get_my_config()
     assert config, "Please add config first"
-
-    protocol = config.get('PROTOCOL')
-    if not protocol == PROTOCOL_DSP:
-        print(f"Only {PROTOCOL_DSP} protocol supported")
-        return
 
     storage = FileStorageEngine(PARTICIPANTS_SETTINGS_CACHE)
     participant_settings = storage.get(bpn)
@@ -290,24 +246,28 @@ def fetch_asset_cli(bpn: str, out_fn, overwrite_edc_endpoint: str, dataset_id: s
         provider_ids_endpoint = edc_endpoints[0]
         if overwrite_edc_endpoint:
             provider_ids_endpoint = overwrite_edc_endpoint
-    provider_ids_endpoint = fix_dsp_endpoint_path(provider_ids_endpoint)
+
     api = get_DspClient(provider_base_url=provider_ids_endpoint, provider_did=provider_did)
 
     offers = api.get_offers_for_dataset(dataset_id=dataset_id)
-    print(offers)
-    consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
-    consumer_callback_base_url = "http://dev:12000"
+    print(json.dumps(offers))
+    #consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
+    callback_uuid_negotiaion = str(uuid4())
+    consumer_callback_base_url_negotiation = f"http://dev:12000/{callback_uuid_negotiaion}"
     # TODO catalog_base_url should not be used here, but rather the endpoint from the catalog result!
-    negotiation:ContractNegotiation = api.negotiation(dataset_id=dataset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url)
+    negotiation:ContractNegotiation = api.negotiation(dataset_id=dataset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url_negotiation)
     print(negotiation)
     # and now get the message from the receiver api (proprietary api)
-    agreement_message:ContractAgreementMessage = api.negotiation_callback_result(id=negotiation.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url)
+    agreement_message:ContractAgreementMessage = api.negotiation_callback_result(id=negotiation.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url_negotiation)
     print(agreement_message)
     assert agreement_message.dspace_agreement.field_id, "No agreement ID."
     assert agreement_message.dspace_consumer_pid == negotiation.dspace_consumer_pid, "Agreement and Negoation consumePid not equal!"
-    transfer:TransferProcess = api.transfer(agreement_id_received=agreement_message.dspace_agreement.field_id, consumer_pid=agreement_message.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url)
+    
+    callback_uuid_transfer = str(uuid4())
+    consumer_callback_base_url_transfer = f"http://dev:12000/{callback_uuid_transfer}"
+    transfer:TransferProcess = api.transfer(agreement_id_received=agreement_message.dspace_agreement.field_id, consumer_pid=agreement_message.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url_transfer)
     print(transfer)
-    transfer_start_message:TransferStartMessage = api.transfer_callback_result(id=transfer.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url)
+    transfer_start_message:TransferStartMessage = api.transfer_callback_result(id=transfer.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url_transfer)
     assert transfer_start_message
     print(transfer_start_message)
 
@@ -354,22 +314,32 @@ def fetch_asset_cli(bpn: str, out_fn, overwrite_edc_endpoint: str, dataset_id: s
 @click.option('--token_endpoint', default=PORTAL_OAUTH_TOKEN_ENDPOINT, help='Filename with corresponding client_secret')
 @click.option('--portal_base_url', default=PORTAL_BASE_URL, help='Portal base URL')
 def update_participant_settings_cli(out, client_id, client_secret_fn, token_endpoint, portal_base_url):
+    config = get_my_config()
     c = get_DspClient("")
     token = c.auth.get_token(aud="")
     # use our own token to read our own CS content
-    cs = CredentialService(credential_service_base_url=CredentialService.INT_TESTING_DIM, access_token=token)
+    cs_base_url = config.get('CS_BASE_URL')
+    assert cs_base_url, "CS_BASE_URL needs to be set in config."
+    cs = CredentialService(credential_service_base_url=cs_base_url, access_token=token)
     vps = cs.get_vps()
 
     # BDRS (BPN - DID Mapping)
-    bdrs = BdrsDirectory(bdrs_base_url=BdrsDirectory.BDRS_INT, membership_vp_jwt=vps[0])
+    bdrs_base_url = config.get('BDRS_BASE_URL')
+    bdrs = BdrsDirectory(bdrs_base_url=bdrs_base_url, membership_vp_jwt=vps[0])
     bpn_mappings = bdrs.get_directory()
     #print(json.dumps(bpn_mappings, indent=True))
 
     # Find all EDC endpoints
     portal_secret = ''
-    with open(client_secret_fn, 'rt') as f:
-        portal_secret=f.read()
-    portal = Portal(portal_base_url=PORTAL_BASE_URL, token_url=PORTAL_OAUTH_TOKEN_ENDPOINT, client_id="sa194", client_secret=portal_secret)
+    portal_secret_fn = config.get('PORTAL_CLIENT_SECRET_FN')
+    if os.path.exists(portal_secret_fn):
+        with open(client_secret_fn, 'rt') as f:
+            portal_secret=f.read()
+    portal_base_url = config.get('PORTAL_BASE_URL')
+    portal_token_endpoint = config.get('PORTAL_TOKEN_ENDPOINT')
+    portal_client_id = config.get('PORTAL_CLIENT_ID')
+    portal = Portal(portal_base_url=portal_base_url, token_url=portal_token_endpoint,
+                    client_id=portal_client_id, client_secret=portal_secret)
 
     storage = FileStorageEngine(PARTICIPANTS_SETTINGS_CACHE)
     for bpn, did in bpn_mappings.items():

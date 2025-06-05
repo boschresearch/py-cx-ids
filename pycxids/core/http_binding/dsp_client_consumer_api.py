@@ -6,20 +6,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from copy import deepcopy
 import json
 import sys
+from time import sleep
 from typing import List
 from pycxids.cli.cli_settings import *
 import requests
 from uuid import uuid4
 from pycxids.core.auth.auth_factory import AuthFactory
-from pycxids.utils.helper import print_red
-from pycxids.core.daps import Daps
 from pycxids.core.http_binding.settings import DCT_FORMAT_HTTP
 
 from pycxids.core.http_binding.models import CatalogOffer, ContractAgreementMessage, ContractNegotiation, ContractRequestMessage, DataAddress, EndpointProperties, EndpointPropertyNames, OdrlOffer, TransferProcess, TransferRequestMessage, TransferStartMessage
 from pycxids.utils.api import GeneralApi
-from pycxids.utils.jsonld import DEFAULT_DSP_REMOTE_CONTEXT, compact
+from pycxids.utils.jsonld import DEFAULT_DSP_REMOTE_CONTEXT, compact, default_context
 
 class DspClientConsumerApi(GeneralApi):
     def __init__(self, provider_base_url: str, auth: AuthFactory, bearer_scopes: list = None, provider_did: str = None) -> None:
@@ -136,8 +136,8 @@ class DspClientConsumerApi(GeneralApi):
         offers_dict = self.get_offers_for_asset(asset_id=dataset_id)
         offers = []
         for o in offers_dict:
-            offer = CatalogOffer.parse_obj(o)
-            offers.append(offer)
+            #offer = CatalogOffer.parse_obj(o)
+            offers.append(o)
         return offers
 
     def get_catalog_edc_workaround(self, asset_id: str):
@@ -155,39 +155,64 @@ class DspClientConsumerApi(GeneralApi):
         })
         return catalog
 
-    def negotiation(self, dataset_id: str, offer: CatalogOffer, consumer_callback_base_url: str) -> ContractNegotiation:
+    def negotiation(self, dataset_id: str, offer:dict, consumer_callback_base_url: str) -> ContractNegotiation:
         contract_request_id = str(uuid4())
         consumer_pid = str(uuid4())
         # in the catalog offer there is no odrl:target included, in the request, it is required
-        offer_with_target = OdrlOffer.parse_obj(offer)
-        offer_with_target.odrl_target = dataset_id
-        contract_request_message =  ContractRequestMessage(
-            field_id=contract_request_id,
-            dspace_consumer_pid=consumer_pid,
-            dspace_dataset=dataset_id,
-            dspace_offer=offer_with_target,
-            dspace_callback_address=consumer_callback_base_url
-        )
-        data = contract_request_message.dict(exclude_unset=False)
+        offer_with_target = deepcopy(offer)
+        #offer_with_target['target'] = dataset_id
+        offer_with_target['odrl:assigner'] = 'BPNLprovider' # TODO: where to get it from?
+
+        contract_request_message = {
+            "@context" : default_context, # TODO: fix this! use one without EDC inside!
+            "@id": contract_request_id,
+            "@type" : "dspace:ContractRequestMessage",
+            #"@id": contract_request_id,
+            #"dspace:dataset" : dataset_id,
+            #"dspace:providerPid": "",
+            "dspace:consumerPid": consumer_pid,
+            #"dspace:offer": offer_with_target,
+            "dspace:offer": offer_with_target,
+            "dspace:callbackAddress": consumer_callback_base_url
+        }
+        # contract_request_message =  ContractRequestMessage(
+        #     field_id=contract_request_id,
+        #     dspace_consumer_pid=consumer_pid,
+        #     dspace_dataset=dataset_id,
+        #     dspace_offer=offer_with_target,
+        #     dspace_callback_address=consumer_callback_base_url
+        # )
+        # data = contract_request_message.dict(exclude_unset=False)
 
         # debugging
         # with open('tmp_consumer_request_msg.json', 'wt') as f:
         #     f.write(json.dumps(data, indent=True))
 
         self._update_auth_token()
-        result = self.post("/negotiations/request", data=data)
+        print(json.dumps(contract_request_message, indent=True))
+        result = self.post("/negotiations/request", data=contract_request_message)
         result_c = compact(doc=result, context=DEFAULT_DSP_REMOTE_CONTEXT)
         cn = ContractNegotiation.parse_obj(result_c)
         return cn
 
+    def callback_result(self, consumer_callback_base_url: str, timeout:int = 20) -> dict:
+        counter = 0
+        while True:
+            r = requests.get(f"{consumer_callback_base_url}/get")
+            if r.status_code == 200:
+                j = r.json()
+                j_c = compact(doc=j, context=DEFAULT_DSP_REMOTE_CONTEXT)
+                return j_c
+            else:
+                sleep(1)
+                counter = counter + 1
+                if counter > timeout:
+                    print(f"Callback service timeout reached.")
+                    return None
+
     def negotiation_callback_result(self, id: str, consumer_callback_base_url: str) -> ContractAgreementMessage:
-        r = requests.get(f"{consumer_callback_base_url}/negotiations/{id}/agreement")
-        if not r.status_code == 200:
-            print(f"status_code: {r.status_code} - reason: {r.reason} - details: {r.content}")
-            return None
-        j = r.json()
-        j_c = compact(doc=j, context=DEFAULT_DSP_REMOTE_CONTEXT)
-        agreement_message = ContractAgreementMessage.parse_obj(j)
+        j_c = self.callback_result(consumer_callback_base_url=consumer_callback_base_url)
+        agreement_message = ContractAgreementMessage.parse_obj(j_c)
         return agreement_message
 
     def transfer(self, agreement_id_received: str, consumer_pid: str, consumer_callback_base_url: str) -> TransferProcess:
@@ -212,12 +237,7 @@ class DspClientConsumerApi(GeneralApi):
         return tp
 
     def transfer_callback_result(self, id: str, consumer_callback_base_url: str) -> TransferStartMessage:
-        r = requests.get(f"{consumer_callback_base_url}/private/transfers/{id}")
-        if not r.status_code == 200:
-            print(f"status_code: {r.status_code} - reason: {r.reason} - details: {r.content}")
-            return None
-        j = r.json()
-        j_c = compact(doc=j, context=DEFAULT_DSP_REMOTE_CONTEXT)
+        j_c = self.callback_result(consumer_callback_base_url=consumer_callback_base_url)
         transfer_start_message = TransferStartMessage.parse_obj(j_c)
         return transfer_start_message
 
