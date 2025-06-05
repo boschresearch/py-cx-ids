@@ -51,27 +51,24 @@ def portal_edc_discovery(body = Body(...)):
         if bpn == 'BPNLprovider':
             bpn_endpoints.append(
                 {
-                    bpn: {
-                        'connectorEndpoint': ['http://provider-control-plane:8282/api/v1/dsp']
-                    }
+                    'bpn': bpn,
+                    'connectorEndpoint': ['http://provider-control-plane:8282']
                 }
             )
 
         elif bpn == 'BPNLconsumer':
             bpn_endpoints.append(
                 {
-                    bpn: {
-                        'connectorEndpoint': ['http://consumer-control-plane:8282/api/v1/dsp']
-                    }
+                    'bpn': bpn,
+                    'connectorEndpoint': ['http://provider-control-plane:8282']
                 }
             )
 
         else:
             bpn_endpoints.append(
                 {
-                    bpn: {
-                        'connectorEndpoint': ['http://localhost']
-                    }
+                    'bpn': bpn,
+                    'connectorEndpoint': ['http://localhost']
                 }
             )
 
