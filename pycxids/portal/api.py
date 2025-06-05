@@ -13,7 +13,7 @@ class Portal(GeneralApi):
     def __init__(self, portal_base_url: str, client_id: str, client_secret: str, token_url: str) -> None:
         client = BackendApplicationClient(client_id=client_id)
         oauth_session = OAuth2Session(client=client)
-        token = oauth_session.fetch_token(token_url=token_url, client_id=client_id, client_secret=client_secret)
+        token = oauth_session.fetch_token(token_url=token_url, include_client_id=True, client_id=client_id, client_secret=client_secret)
         access_token = token.get('access_token', None)
         if not access_token:
             print("Could not fetch access_token for the portal access.")
