@@ -6,7 +6,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from time import sleep
 from uuid import uuid4
 import click
 import os
@@ -20,9 +19,8 @@ from pycxids.core.auth.auth_factory import IatpAuthFactory
 from pycxids.core.http_binding import dsp_client_consumer_api
 from pycxids.core.http_binding.models import ContractAgreementMessage, ContractNegotiation, DataAddress, TransferProcess, TransferStartMessage
 
-from pycxids.core.settings import fix_dsp_endpoint_path
-
 from pycxids.cx.services import BdrsDirectory
+from pycxids.edc.settings import CALLBACK_SERVICE_BASE_URL
 from pycxids.iatp.iatp import CredentialService
 from pycxids.portal.api import Portal
 from pycxids.portal.settings import PORTAL_BASE_URL, PORTAL_OAUTH_TOKEN_ENDPOINT
@@ -64,8 +62,6 @@ def cli_config_add(config_name: str):
     configs = config_storage.get('configs', {})
     config = configs.get(config_name, {})
 
-    config['PROTOCOL'] = PROTOCOL_DSP
-    config['AUTH'] = AUTH_IATP
     config['STS_CLIENT_ID'] = click.prompt("STS_CLIENT_ID:",
         default=config.get('STS_CLIENT_ID', "BPNLconsumer"))
     config['STS_CLIENT_SECRET_FN'] = click.prompt("STS_CLIENT_SECRET_FN:",
@@ -111,26 +107,22 @@ def get_DspClient(provider_base_url:str, bearer_scopes: list = None, provider_di
     """
     myconfig = get_my_config()
 
-    auth_settings = myconfig.get('AUTH', '')
     auth_factory = None
-    if auth_settings == AUTH_IATP:
-        secret_fn = myconfig.get('STS_CLIENT_SECRET_FN')
-        secret = ''
-        if os.path.exists(secret_fn):
-            with open(secret_fn, 'rt') as f:
-                secret = f.read()
-        # else: TODO: use logging to not print to stdout because cli uses pipes, e.g. with ./cli.py assets
-        #     print(f"secret_fn does not exist: {secret_fn} Using dummy value.")
+    secret_fn = myconfig.get('STS_CLIENT_SECRET_FN')
+    secret = ''
+    if os.path.exists(secret_fn):
+        with open(secret_fn, 'rt') as f:
+            secret = f.read()
+    # else: TODO: use logging to not print to stdout because cli uses pipes, e.g. with ./cli.py assets
+    #     print(f"secret_fn does not exist: {secret_fn} Using dummy value.")
 
-        auth_factory = IatpAuthFactory(
-            base_url=myconfig.get('STS_BASE_URL'),
-            client_id=myconfig.get('STS_CLIENT_ID'),
-            client_secret=secret,
-            token_url=myconfig.get('STS_TOKEN_ENDPOINT'),
-            our_did=myconfig.get('OUR_DID'),
-        )
-    else:
-        assert "Auth config not supported."
+    auth_factory = IatpAuthFactory(
+        base_url=myconfig.get('STS_BASE_URL'),
+        client_id=myconfig.get('STS_CLIENT_ID'),
+        client_secret=secret,
+        token_url=myconfig.get('STS_TOKEN_ENDPOINT'),
+        our_did=myconfig.get('OUR_DID'),
+    )
     return dsp_client_consumer_api.DspClientConsumerApi(provider_base_url=provider_base_url, auth=auth_factory, bearer_scopes=bearer_scopes, provider_did=provider_did)
 
 @cli.command('catalog')
@@ -167,14 +159,6 @@ def fetch_catalogs_cli(out_dir: str):
     """
     Fetch all BPN's all endponits into the given directory
     """
-    use_config = config_storage.get('use')
-    myconfig = config_storage.get('configs', {}).get(use_config)
-
-    protocol = myconfig.get('PROTOCOL')
-    if not protocol == PROTOCOL_DSP:
-        print(f"Only {PROTOCOL_DSP} protocol supported")
-        return
-
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
     storage = FileStorageEngine(PARTICIPANTS_SETTINGS_CACHE)
@@ -253,7 +237,7 @@ def fetch_asset_cli(bpn: str, out_fn, overwrite_edc_endpoint: str, dataset_id: s
     print(json.dumps(offers))
     #consumer_callback_base_url = config.get('CONSUMER_CONNECTOR_BASE_URL')
     callback_uuid_negotiaion = str(uuid4())
-    consumer_callback_base_url_negotiation = f"http://dev:12000/{callback_uuid_negotiaion}"
+    consumer_callback_base_url_negotiation = f"{CALLBACK_SERVICE_BASE_URL}/{callback_uuid_negotiaion}"
     # TODO catalog_base_url should not be used here, but rather the endpoint from the catalog result!
     negotiation:ContractNegotiation = api.negotiation(dataset_id=dataset_id, offer=offers[0], consumer_callback_base_url=consumer_callback_base_url_negotiation)
     print(negotiation)
@@ -264,7 +248,7 @@ def fetch_asset_cli(bpn: str, out_fn, overwrite_edc_endpoint: str, dataset_id: s
     assert agreement_message.dspace_consumer_pid == negotiation.dspace_consumer_pid, "Agreement and Negoation consumePid not equal!"
     
     callback_uuid_transfer = str(uuid4())
-    consumer_callback_base_url_transfer = f"http://dev:12000/{callback_uuid_transfer}"
+    consumer_callback_base_url_transfer = f"{CALLBACK_SERVICE_BASE_URL}/{callback_uuid_transfer}"
     transfer:TransferProcess = api.transfer(agreement_id_received=agreement_message.dspace_agreement.field_id, consumer_pid=agreement_message.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url_transfer)
     print(transfer)
     transfer_start_message:TransferStartMessage = api.transfer_callback_result(id=transfer.dspace_consumer_pid, consumer_callback_base_url=consumer_callback_base_url_transfer)
