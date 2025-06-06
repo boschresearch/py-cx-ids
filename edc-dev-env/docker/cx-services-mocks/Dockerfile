@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM python:3
+FROM python:3.11
 
 # install from git, because source is up in the hierarchy
 # that can't be reached from within edc-dev-env
