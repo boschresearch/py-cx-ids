@@ -6,6 +6,7 @@
 
 
 from time import sleep
+import requests
 from fastapi import Body, FastAPI, HTTPException
 from starlette.status import HTTP_404_NOT_FOUND
 from pycxids.utils.storage import FileStorageEngine
@@ -30,3 +31,30 @@ async def get_data_wait(id:str):
     # TODO: SECURITY: delete after fetched once, because data contains sensitive information
     # TODO: delete not implemented in storage interface ;-)
     return data
+
+###
+# client side API
+###
+
+def wait_callback_result(id_url: str, timeout: int = 20, check_field_name: str = '', field_value: str = ''):
+    """
+    This can be used from clients to wait for a certain time with the above service API.
+    check_field_name='type',
+    field_value='TransferProcessStarted'
+    """
+    counter = 0
+    while True:
+        r = requests.get(f"{id_url}/get")
+        if r.status_code == 200:
+            j = r.json()
+            if not check_field_name:
+                return j
+            else:
+                if j.get(check_field_name) == field_value:
+                    return j
+
+        sleep(1)
+        counter = counter + 1
+        if counter > timeout:
+            print(f"Callback service timeout reached.")
+            return None

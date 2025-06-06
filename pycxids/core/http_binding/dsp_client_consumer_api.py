@@ -15,6 +15,7 @@ from pycxids.cli.cli_settings import *
 import requests
 from uuid import uuid4
 from pycxids.core.auth.auth_factory import AuthFactory
+from pycxids.core.callback_service import wait_callback_result
 from pycxids.core.http_binding.settings import DCT_FORMAT_HTTP
 
 from pycxids.core.http_binding.models import CatalogOffer, ContractAgreementMessage, ContractNegotiation, ContractRequestMessage, DataAddress, EndpointProperties, EndpointPropertyNames, OdrlOffer, TransferProcess, TransferRequestMessage, TransferStartMessage
@@ -196,19 +197,11 @@ class DspClientConsumerApi(GeneralApi):
         return cn
 
     def callback_result(self, consumer_callback_base_url: str, timeout:int = 20) -> dict:
-        counter = 0
-        while True:
-            r = requests.get(f"{consumer_callback_base_url}/get")
-            if r.status_code == 200:
-                j = r.json()
-                j_c = compact(doc=j, context=DEFAULT_DSP_REMOTE_CONTEXT)
-                return j_c
-            else:
-                sleep(1)
-                counter = counter + 1
-                if counter > timeout:
-                    print(f"Callback service timeout reached.")
-                    return None
+        j = wait_callback_result(id_url=consumer_callback_base_url, timeout=timeout)
+        if j:
+            j_c = compact(doc=j, context=DEFAULT_DSP_REMOTE_CONTEXT)
+            return j_c
+        return None
 
     def negotiation_callback_result(self, id: str, consumer_callback_base_url: str) -> ContractAgreementMessage:
         j_c = self.callback_result(consumer_callback_base_url=consumer_callback_base_url)

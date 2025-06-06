@@ -8,13 +8,14 @@
 import os
 from time import sleep
 import json
+from uuid import uuid4
 import requests
 import pytest
 from datetime import datetime
 
+from pycxids.core.callback_service import wait_callback_result
 from pycxids.edc.api import EdcConsumer, EdcProvider
-from pycxids.edc.settings import CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, PROVIDER_IDS_ENDPOINT, RECEIVER_SERVICE_BASE_URL
-from pycxids.edc.settings import DUMMY_BACKEND
+from pycxids.edc.settings import CALLBACK_SERVICE_BASE_URL, CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, PROVIDER_IDS_ENDPOINT
 from pycxids.core.settings import settings
 
 
@@ -88,8 +89,7 @@ def test():
     start = datetime.now()
     consumer = EdcConsumer(
         edc_data_managment_base_url=CONSUMER_EDC_BASE_URL,
-        auth_key=CONSUMER_EDC_API_KEY,
-        token_receiver_service_base_url=RECEIVER_SERVICE_BASE_URL,
+        auth_key=CONSUMER_EDC_API_KEY
         )
 
     # PROVIDER_PARTICIPANT_ID can no longer be exctracted from the catalog, since it is already
@@ -112,11 +112,13 @@ def test():
     agreement_id = negotiated_contract.get('contractAgreementId', '') or negotiated_contract.get('edc:contractAgreementId', '')
     print(f"agreementId: {agreement_id}")
 
+    callback_service_id = str(uuid4())
+    callback_service_url = f"{CALLBACK_SERVICE_BASE_URL}/{callback_service_id}"
     transfer_id = consumer.transfer(provider_ids_endpoint=PROVIDER_IDS_ENDPOINT,
-        asset_id=asset_id, agreement_id=agreement_id, provider_participant_id=settings.PROVIDER_PARTICIPANT_ID,
+        asset_id=asset_id, agreement_id=agreement_id, callback_service_url=callback_service_url
         )
 
-    consumer_edr = consumer.edr_consumer_wait(transfer_id=transfer_id)
+    consumer_edr = consumer.edr(callback_service_url=callback_service_url)
 
     assert consumer_edr, "Could not fetch consumer_edr from receiver service."
     consumer_data_plane_endpoint = consumer_edr.get('https://w3id.org/edc/v0.0.1/ns/endpoint')

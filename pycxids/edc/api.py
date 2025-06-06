@@ -9,9 +9,8 @@ import json
 from uuid import uuid4
 from time import sleep
 import requests
+from pycxids.core.callback_service import wait_callback_result
 from pycxids.utils.api import GeneralApi
-
-from pycxids.edc.settings import RECEIVER_SERVICE_BASE_URL
 from pycxids.utils.jsonld import default_context
 
 EDC_NAMESPACE = 'https://w3id.org/edc/v0.0.1/ns/'
@@ -300,14 +299,10 @@ class EdcConsumer(EdcDataManagement):
     """
     Process description:
     https://github.com/catenax-ng/product-edc/blob/0.1.1/docs/data-transfer/Transfer%20Data.md
-
-    token_receiver_service_base_url: pycxids.edc.token_receiver_service that is used with EDC_RECEIVER_HTTP_ENDPOINT
-        where the EDC sends its received token to.
     """
 
-    def __init__(self, edc_data_managment_base_url: str, auth_key: str, token_receiver_service_base_url: str = None) -> None:
+    def __init__(self, edc_data_managment_base_url: str, auth_key: str) -> None:
         super().__init__(edc_data_managment_base_url=edc_data_managment_base_url, auth_key=auth_key)
-        self.token_receiver_service_base_url = token_receiver_service_base_url
 
     @staticmethod
     def catalog_contract_offer_into_negotiation_contract_offer(catalog_contract_offer, connector_address: str):
@@ -434,17 +429,10 @@ class EdcConsumer(EdcDataManagement):
         negotiation_data = self.wait_for_state(path=f"/v3/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)
         return negotiation_data
 
-    def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str,
-                    provider_participant_id: str = 'BPNLprovider',
-                    consumer_participant_id: str = 'BPNLconsumer'):
-
+    def transfer(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str, callback_service_url: str):
         """
         Probably we don't need to wait for the state to change, because we'll receive  the EDR token when everything is ok
         """
-        receiver_service_base_url = self.token_receiver_service_base_url
-        if not receiver_service_base_url:
-            receiver_service_base_url = RECEIVER_SERVICE_BASE_URL
-            print("token_receiver_service_base_url not given, using default from settings: {receiver_service_base_url}")
         transfer_request = {
             "@context": default_context,
             "@type": "edc:TransferRequest",
@@ -460,7 +448,7 @@ class EdcConsumer(EdcDataManagement):
             "edc:callbackAddresses": [
                 {
                     "edc:transactional": False,
-                    "edc:uri": f"{receiver_service_base_url}/datareference",
+                    "edc:uri": callback_service_url,
                     "edc:events": [
                         "transfer.process"
                     ]
@@ -470,151 +458,13 @@ class EdcConsumer(EdcDataManagement):
         data = self.post("/v3/transferprocesses", data=transfer_request)
         return data['@id']
 
-    def edr_start_process(self, provider_ids_endpoint, contract_offer, timeout = 30, asset_id: str = None,
-                                    provider_participant_id: str = 'BPNLprovider',
-                                    consumer_participant_id: str = 'BPNLconsumer'):
+    def edr(self, callback_service_url: str, timeout: int = 20):
         """
-        https://github.com/eclipse-tractusx/tractusx-edc/blob/main/docs/samples/edr-api-overview/edr-api-overview.md#edr-negotiation--contract-negotiation-and-transfer-process-in-a-single-request
-        https://app.swaggerhub.com/apis/eclipse-tractusx-bot/tractusx-edc/0.5.1#/Control%20Plane%20EDR%20Api/initiateEdrNegotiation
-        """
-        base_url_without_v2 = self.base_url.replace('/v2', '')
-        offer_id = contract_offer.get('@id')
-        data = {
-            "@context": {
-                "@vocab": "https://w3id.org/edc/v0.0.1/ns/",
-                "odrl": "http://www.w3.org/ns/odrl/2/"
-            },
-            "@type": "NegotiationInitiateRequestDto",
-            "connectorAddress": provider_ids_endpoint,
-            "protocol": "dataspace-protocol-http",
-            "connectorId": provider_participant_id, # TODO
-            "providerId": provider_participant_id, # TODO
-            #"consumerId": consumer_participant_id, # TODO
-            "offer": {
-                "offerId": offer_id,
-                "assetId": asset_id,
-                "policy": contract_offer,
-            }
-
-        }
-        r = requests.post(f"{base_url_without_v2}/edrs", json=data, headers=self.headers)
-        result = r.json()
-        return result
-
-    def edr_tp(self, transfer_id: str):
-        base_url_without_v2 = self.base_url.replace('/v2', '')
-        r = requests.get(f"{base_url_without_v2}/edrs/{transfer_id}", headers=self.headers)
-        result = r.json()
-        return result
-
-    def edr_for_negotiation(self, negotiation_id: str, timeout = 30):
-        """
-        Right now (0.5.1) the EDR api does not provide a way to identify the EDR for the initiated contract negotiation.
-        Thus, we need to do that manually for now.
-
-        Waits for timout seconds or state to be FINALIZED
-        """
-        agreement_id = self.agreement_for_negotiation(negotiation_id=negotiation_id, timeout=timeout)
-        edr_token = self.edr_token(agreement_id=agreement_id)
-        return edr_token
-
-    def agreement_for_negotiation(self, negotiation_id: str, timeout = 30):
-        """
-        Translates (and waits) from a negotiation_id to the agreement_id (once available).
-        Return: agreement_id
-        """
-        negotiation_data = self.wait_for_state(path=f"/contractnegotiations/{negotiation_id}", final_state='FINALIZED', timeout=timeout)
-        agreement_id = negotiation_data.get('edc:contractAgreementId')
-        return agreement_id
-
-    def edr_token(self, agreement_id = None, asset_id = None, timeout: int = 30):
-        base_url_without_v2 = self.base_url.replace('/v2', '')
-        params = {}
-        if agreement_id:
-            params['agreementId'] = agreement_id
-        if asset_id:
-            params['assetId'] = asset_id
-
-        transfers = None
-        # workaround
-        counter = 0
-        while True:
-            r = requests.get(f"{base_url_without_v2}/edrs", headers=self.headers, params=params)
-            result = r.json() # TODO: probably needs to be filtered for tx:edrState': 'NEGOTIATED'
-            if len(result):
-                transfers = result
-                break
-
-            counter = counter+1
-            if counter >= timeout:
-                return None
-            sleep(1)
-
-
-        if not transfers:
-            print(f"No transfers for asset_id: {asset_id} agreement_id: {agreement_id}")
-            return None
-        tp_id = transfers[0].get('edc:transferProcessId') # TODO: assuming ther can be only 1 valid element
-        edr = self.edr_tp(transfer_id=tp_id)
-        return edr
-
-    def transfer_and_wait_consumer_edr(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str, timeout = 30):
-        """
-        Fetches the EDR token from the token_receiver_service.
+        Multiple messages are posted to the callback_service_url. We need to check the content
+        with 'check_field_name' and 'field_value'
 
         """
-        if not self.token_receiver_service_base_url:
-            raise TokenReceiverServiceNotGiven()
-        transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint, asset_id=asset_id, agreement_id=agreement_id)
-        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/consumer", timeout=timeout)
-
-    def transfer_and_wait_provider_edr(self, provider_ids_endpoint: str, asset_id: str, agreement_id: str, timeout = 30):
-        """
-        Fetches the EDR token from the token_receiver_service.
-
-        """
-        if not self.token_receiver_service_base_url:
-            raise TokenReceiverServiceNotGiven()
-        transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint, asset_id=asset_id, agreement_id=agreement_id)
-        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/provider", timeout=timeout)
-
-    def edr_provider_wait(self, transfer_id: str, timeout = 30):
-        if not self.token_receiver_service_base_url:
-            raise TokenReceiverServiceNotGiven()
-        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/provider", timeout=timeout)
-
-    def edr_consumer_wait(self, transfer_id: str, timeout = 30):
-        if not self.token_receiver_service_base_url:
-            raise TokenReceiverServiceNotGiven()
-        return self._transfer_and_wait_url(token_receiver_service_url=f"{self.token_receiver_service_base_url}/{transfer_id}/token/consumer", timeout=timeout)
-
-    def _transfer_and_wait_url(self, token_receiver_service_url: str, timeout = 30):
-        params = {
-            'timeout' : timeout,
-        }
-        r = requests.get(token_receiver_service_url, params=params) # no authentication at the service required
-
-        if not r.ok:
-            print(f"{r.status_code} - {r.reason} - {r.content}")
-            return None
-
-        j = r.json()
-        return j
-
-    def negotiate_and_transfer(self, provider_ids_endpoint: str, asset_id: str,
-                               provider_participant_id: str,
-                               consumer_participant_id: str) -> str:
-        """
-        Returns the transer_id
-        """
-        catalog = self.get_catalog(provider_ids_endpoint=provider_ids_endpoint)
-        contract_offer = self.find_first_in_catalog(catalog=catalog, asset_id=asset_id)
-        negotiated_contract = self.negotiate_contract_and_wait(provider_ids_endpoint=provider_ids_endpoint,
-            contract_offer=contract_offer, asset_id=asset_id, provider_participant_id=provider_participant_id,
-            consumer_participant_id=consumer_participant_id)
-        agreement_id = negotiated_contract.get('edc:contractAgreementId', '')
-        print(f"agreementId: {agreement_id}")
-
-        transfer_id = self.transfer(provider_ids_endpoint=provider_ids_endpoint,
-            asset_id=asset_id, agreement_id=agreement_id, provider_participant_id=provider_participant_id, consumer_participant_id=consumer_participant_id)
-        return agreement_id, transfer_id
+        edc_transfer_data = wait_callback_result(id_url=callback_service_url, timeout=timeout,
+                                                 check_field_name='type', field_value='TransferProcessStarted')
+        consumer_edr = edc_transfer_data.get('payload', {}).get('dataAddress', {}).get('properties', {})
+        return consumer_edr
