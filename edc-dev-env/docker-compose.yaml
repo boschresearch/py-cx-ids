@@ -48,20 +48,3 @@ services:
       service: data-plane
     volumes:
       - ${CONSUMER_DATA_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/consumer/data-plane.properties}:/app/configuration.properties
-
-  # Third
-  third-control-plane:
-    extends:
-      file: docker-compose-edc.yaml
-      service: control-plane
-    volumes:
-      - ${THIRD_CONTROL_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/third/control-plane.properties}:/app/configuration.properties
-    environment:
-      # renamed in 0.3.0
-      - EDC_RECEIVER_HTTP_DYNAMIC_ENDPOINT=${THIRD_EDC_RECEIVER_HTTP_ENDPOINT:-http://third-receiver-service:8000/datareference}
-  third-data-plane:
-    extends:
-      file: docker-compose-edc.yaml
-      service: data-plane
-    volumes:
-      - ${THIRD_DATA_PLANE_CONFIGURATION_PROPERTIES_FILE:-./configs/third/data-plane.properties}:/app/configuration.properties

@@ -6,47 +6,8 @@ services:
     ports:
       - "127.0.0.1:8006:8080"
 
-  provider-receiver-service:
-    build: ./docker/receiver-service
-    environment:
-      - CONSUMER_EDC_BASE_URL=http://provider-control-plane:9193/api/v1/data
-      - CONSUMER_EDC_VALIDATION_ENDPOINT=http://provider-control-plane:9192/validation/token
-
-  receiver-service:
-    # token_receiver_service for 'consumer' EDC instance
-    build: ./docker/receiver-service
-    ports:
-      - "127.0.0.1:8003:8000"
-
-  third-receiver-service:
-    # token_receiver_service for 'third' EDC instance
-    build: ./docker/receiver-service
-    environment:
-      - CONSUMER_EDC_BASE_URL=http://third-control-plane:9193/api/v1/data
-      - CONSUMER_EDC_VALIDATION_ENDPOINT=http://third-control-plane:9192/validation/token
-
-  consumer-webhook-service:
-    build: ./docker/webhook-service
-    environment:
-      - CONSUMER_CONNECTOR_URN=urn:uuid:consumer
-      - CONSUMER_WEBHOOK=http://consumer-webhook-service:8000/webhook
-      - PRIVATE_KEY_FN=/private.key
-    volumes:
-      - ./vault_secrets/consumer.key:/private.key
-
-  third-webhook-service:
-    build: ./docker/webhook-service
-    environment:
-      - CONSUMER_CONNECTOR_URN=urn:uuid:third
-      - CONSUMER_WEBHOOK=http://third-webhook-service:8000/webhook
-      - PRIVATE_KEY_FN=/private.key
-    volumes:
-      - ./vault_secrets/third.key:/private.key
-
-  dummy-backend:
-    build: ./docker/dummy-backend
-    ports:
-      - "127.0.0.1:8002:8000"
+  callback-service:
+    build: ./docker/callback-service
 
   pycxids:
     # dummy container with installed pycxids
