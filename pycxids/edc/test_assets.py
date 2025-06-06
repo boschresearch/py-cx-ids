@@ -13,7 +13,6 @@ import requests
 import pytest
 from datetime import datetime
 
-from pycxids.core.callback_service import wait_callback_result
 from pycxids.edc.api import EdcConsumer, EdcProvider
 from pycxids.edc.settings import CALLBACK_SERVICE_BASE_URL, CONSUMER_EDC_API_KEY, CONSUMER_EDC_BASE_URL, PROVIDER_EDC_BASE_URL, PROVIDER_EDC_API_KEY, PROVIDER_IDS_ENDPOINT
 from pycxids.core.settings import settings

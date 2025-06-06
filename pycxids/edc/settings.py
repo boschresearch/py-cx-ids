@@ -43,4 +43,4 @@ assert API_WRAPPER_PASSWORD
 NR_OF_ASSETS = int(os.getenv('NR_OF_ASSETS', '1'))
 NR_OF_CALLS = int(os.getenv('NR_OF_CALLS', '100'))
 
-CALLBACK_SERVICE_BASE_URL = os.getenv('CALLBACK_SERVICE_BASE_URL', 'http://callback-service:8000')
+CALLBACK_SERVICE_BASE_URL = os.getenv('CALLBACK_SERVICE_BASE_URL', 'http://callback-service:8080')

@@ -31,12 +31,9 @@ def bdrs_bpn_directory():
     /bdrs -> https://bpn-did-resolution-service.int.demo.catena-x.net/api/directory
     """
     bdrs = {
-        "BPNL00000003CRHK": "did:web:dim-static-prod.dis-cloud-prod.cfapps.eu10-004.hana.ondemand.com:dim-hosted:2f45795c-d6cc-4038-96c9-63cedc0cd266:holder-iatp",
-        "BPNL00000007ZS71": "did:web:portal-backend.int.demo.catena-x.net:api:administration:staticdata:did:BPNL00000007ZS71",
-        "BPNL00000007ZS7X": "did:web:portal-backend.int.demo.catena-x.net:api:administration:staticdata:did:BPNL00000007ZS7X",
-        "BPNLprovider": "did:web:dev%3A13000:BPNLprovider",
-        "BPNLconsumer": "did:web:dev%3A13000:BPNLconsumer",
-        "BPNLissuer": "did:web:dev%3A13000:BPNLissuer",
+        "BPNLprovider": f"{DID_BASE}BPNLprovider",
+        "BPNLconsumer": f"{DID_BASE}BPNLconsumer",
+        "BPNLissuer": f"{DID_BASE}BPNLissuer",
     }
     return bdrs
 

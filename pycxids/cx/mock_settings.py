@@ -12,8 +12,8 @@ ISSUER_PRIVATE_KEY = os.getenv('ISSUER_PRIVATE_KEY', generate_seed())
 CONSUMER_PRIVATE_KEY = os.getenv('CONSUMER_PRIVATE_KEY', generate_seed())
 PROVIDER_PRIVATE_KEY = os.getenv('PROVIDER_PRIVATE_KEY', generate_seed())
 
-DID_BASE = os.getenv('DID_BASE', 'did:web:dev%3A13000:')
-IATP_CS_BASE_URL = os.getenv('IATP_CS_BASE_URL', 'http://dev:13000/cs')
+DID_BASE = os.getenv('DID_BASE', 'did:web:cx-services-mocks%3A8080:')
+IATP_CS_BASE_URL = os.getenv('IATP_CS_BASE_URL', 'http://cx-services-mocks:8080/cs')
 
 # https://catenax-ev.github.io/docs/next/standards/CX-0149-Dataspaceidentityandidentification#2211-membership-credential
 MEMBERSHIP_VC_TEMPLATE = {
