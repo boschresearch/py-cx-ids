@@ -31,9 +31,9 @@ def bdrs_bpn_directory():
     /bdrs -> https://bpn-did-resolution-service.int.demo.catena-x.net/api/directory
     """
     bdrs = {
-        "BPNLprovider": f"{DID_BASE}BPNLprovider",
-        "BPNLconsumer": f"{DID_BASE}BPNLconsumer",
-        "BPNLissuer": f"{DID_BASE}BPNLissuer",
+        "BPNLPROVIDER0000": f"{DID_BASE}BPNLPROVIDER0000",
+        "BPNLCONSUMER0000": f"{DID_BASE}BPNLCONSUMER0000",
+        "BPNLISSUER000000": f"{DID_BASE}BPNLISSUER000000",
     }
     return bdrs
 
@@ -45,7 +45,7 @@ def portal_edc_discovery(body = Body(...)):
     """
     bpn_endpoints = []
     for bpn in body:
-        if bpn == 'BPNLprovider':
+        if bpn == 'BPNLPROVIDER0000':
             bpn_endpoints.append(
                 {
                     'bpn': bpn,
@@ -53,7 +53,7 @@ def portal_edc_discovery(body = Body(...)):
                 }
             )
 
-        elif bpn == 'BPNLconsumer':
+        elif bpn == 'BPNLCONSUMER0000':
             bpn_endpoints.append(
                 {
                     'bpn': bpn,
@@ -98,11 +98,11 @@ def get_auth_header_payload(authorization: str):
 
 def bpn_to_private_key(bpn: str):
     seed = ''
-    if bpn == 'BPNLconsumer':
+    if bpn == 'BPNLCONSUMER0000':
         seed = CONSUMER_PRIVATE_KEY
-    elif bpn == 'BPNLprovider':
+    elif bpn == 'BPNLPROVIDER0000':
         seed = PROVIDER_PRIVATE_KEY
-    elif bpn == 'BPNLissuer':
+    elif bpn == 'BPNLISSUER000000':
         seed = ISSUER_PRIVATE_KEY
     else:
         assert "Given client_id not supported."
@@ -179,7 +179,7 @@ def credential_service_presentations_query(body: dict = Body(), authorization: s
         if not consumer_client_id:
             sub = auth_claims.get('sub')
             if sub and 'did:web:' in sub:
-                # Extract BPN from DID (e.g., "did:web:cx-services-mocks%3A8080:BPNLconsumer" → "BPNLconsumer")
+                # Extract BPN from DID (e.g., "did:web:cx-services-mocks%3A8080:BPNLCONSUMER0000" → "BPNLCONSUMER0000")
                 consumer_client_id = sub.split(':')[-1]
     
     assert consumer_client_id, "Please make sure client_id is set into the claims during the process. This is required to later create the correct VC/VPs."
@@ -188,7 +188,7 @@ def credential_service_presentations_query(body: dict = Body(), authorization: s
     vc['id'] = str(uuid4())
     vc['issuanceDate'] = '2022-06-16T18:56:59Z'
     vc['expirationDate'] = '2030-06-16T18:56:59Z'
-    vc['issuer'] = f"{DID_BASE}BPNLissuer"
+    vc['issuer'] = f"{DID_BASE}BPNLISSUER000000"
     vc['credentialSubject']['id'] = f"{DID_BASE}{consumer_client_id}"
     vc['credentialSubject']['holderIdentifier'] = consumer_client_id
     vc['credentialSubject']['memberOf'] = ""
@@ -196,7 +196,7 @@ def credential_service_presentations_query(body: dict = Body(), authorization: s
     jwt_vc = {
         "sub": f"{DID_BASE}{consumer_client_id}",
         #"jti": "",
-        "iss": f"{DID_BASE}BPNLissuer",
+        "iss": f"{DID_BASE}BPNLISSUER000000",
         #"nbf": 0,
         #"iat": 0,
         #"exp": 0,
