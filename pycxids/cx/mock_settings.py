@@ -34,29 +34,29 @@ MEMBERSHIP_VC_TEMPLATE = {
 }
 
 CS_PRESENTATION_RESPONSE_TEMPLATE = {
-  #"@context": ["https://w3id.org/dspace-dcp/v1.0/dcp.jsonld"],
-  "@context": ["https://w3id.org/tractusx-trust/v0.8"],
-  "type": "PresentationResponseMessage",
+  # Using embedded context with proper DCP namespace matching EDC expectations
+  "@context": {
+    "@version": 1.1,
+    "dcp": "https://w3id.org/dspace-dcp/v1.0/",
+    "presentation": {
+      "@id": "dcp:presentation",
+      "@type": "@json"
+    },
+    "presentationSubmission": {
+      "@id": "dcp:presentationSubmission",
+      "@type": "@json"
+    },
+    "PresentationResponseMessage": "dcp:PresentationResponseMessage"
+  },
+  "@type": "PresentationResponseMessage",
   "presentation": [] # those are the JWT ecoded VPs?!
 }
 
 did_document_template = {
     "id": "",
-    "service": [
-      {
-        "id": "dim:web:xxx",
-        "type": "CredentialService",
-        "serviceEndpoint": ""
-      }
-    ],
     "@context": [
       "https://www.w3.org/ns/did/v1"
     ],
-    "keyAgreement": [],
-    "authentication": [
-      "key1"
-    ],
-    "assertionMethod": [],
     "verificationMethod": [
       {
         "id": "key1",
@@ -68,6 +68,16 @@ did_document_template = {
           "crv": "secp256k1",
           "kty": "EC"
         }
+      }
+    ],
+    "authentication": [
+      "key1"
+    ],
+    "service": [
+      {
+        "id": "dim:web:xxx",
+        "type": "CredentialService",
+        "serviceEndpoint": ""
       }
     ]
   }

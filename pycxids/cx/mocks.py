@@ -82,10 +82,12 @@ def get_expiration_timestamp():
 def get_now_timestamp():
     return int(time.time())
 
-def create_dummy_token(claims:dict = {}):
+def create_dummy_token(claims:dict = {}, headers:dict = None):
     # TODO: check if "sub" is needed
     if "exp" not in claims:
         claims["exp"] = get_expiration_timestamp()
+    if headers:
+        return jwt.encode(claims, 'secret', 'HS256', headers=headers)
     return jwt.encode(claims, 'secret', 'HS256')
 
 def get_auth_header_payload(authorization: str):    
@@ -167,11 +169,19 @@ def credential_service_presentations_query(body: dict = Body(), authorization: s
     print(auth_claims)
     consumer_client_id = auth_claims.get('client_id')
     if not consumer_client_id:
-        # this is the case from the Provider corss-signed token
+        # this is the case from the Provider cross-signed token
         consumer_token = auth_claims.get('token')
-        consumer_token_jwt = decode(consumer_token, verify_signature=False)
-        consumer_client_id = consumer_token_jwt.get('payload', {}).get('client_id')
-        assert consumer_client_id, "Could not get the client_id from the Consumer from the Provider cross-signed token content"
+        if consumer_token:
+            consumer_token_jwt = decode(consumer_token, verify_signature=False)
+            consumer_client_id = consumer_token_jwt.get('payload', {}).get('client_id')
+        
+        # If client_id not in token, try extracting BPN from sub claim
+        if not consumer_client_id:
+            sub = auth_claims.get('sub')
+            if sub and 'did:web:' in sub:
+                # Extract BPN from DID (e.g., "did:web:cx-services-mocks%3A8080:BPNLconsumer" → "BPNLconsumer")
+                consumer_client_id = sub.split(':')[-1]
+    
     assert consumer_client_id, "Please make sure client_id is set into the claims during the process. This is required to later create the correct VC/VPs."
     # create dummy Membership VC
     vc = deepcopy(MEMBERSHIP_VC_TEMPLATE)
@@ -252,7 +262,18 @@ def dummy_auth_token(body = Body(...)):
         if param.startswith(b'client_id'):
             x = param.split(b'=')
             client_id = x[1]
-    token = create_dummy_token({'client_id': client_id.decode()})
+    client_id_str = client_id.decode()
+    token_headers = {
+        "alg": "HS256",
+        "typ": "JWT",
+        "kid": f"{DID_BASE}{client_id_str}#key1"
+    }
+    token = create_dummy_token({
+        'client_id': client_id_str,
+        'iss': f"{DID_BASE}{client_id_str}",
+        'sub': f"{DID_BASE}{client_id_str}",
+        'aud': 'iatp'
+    }, headers=token_headers)
     return {"access_token": token }
 
 @app.get('/{bpn}/did.json')
