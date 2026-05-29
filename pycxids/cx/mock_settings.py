@@ -33,6 +33,25 @@ MEMBERSHIP_VC_TEMPLATE = {
   }
 }
 
+# DataExchangeGovernanceCredential - required by FrameworkAgreement policy constraint
+DATA_EXCHANGE_GOVERNANCE_VC_TEMPLATE = {
+  "id": "uuid",
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://w3id.org/catenax/credentials/v1.0.0"
+  ],
+  "type": ["VerifiableCredential", "DataExchangeGovernanceCredential"],
+  "issuanceDate": "{creation date - format: 2022-06-16T18:56:59Z}",
+  "expirationDate": "{expiration date - format: 2022-06-16T18:56:59Z}",
+  "issuer": "{did issuer}",
+  "credentialSubject": {
+    "id": "{did holder}",
+    "holderIdentifier": "{bpn}",
+    "contractVersion": "1.0",
+    "contractTemplate": "https://public.catena-x.org/contracts/DataExchangeGovernance.v1.pdf"
+  }
+}
+
 CS_PRESENTATION_RESPONSE_TEMPLATE = {
   # Using embedded context with proper DCP namespace matching EDC expectations
   "@context": {

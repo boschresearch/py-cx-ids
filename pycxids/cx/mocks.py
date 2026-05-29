@@ -14,7 +14,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from pycxids.core.http_binding.crypto_utils import generate_ed25519_key, pub_key_to_jwk_v2
 from pycxids.core.jwt_decode import decode
-from pycxids.cx.mock_settings import CONSUMER_PRIVATE_KEY, CS_PRESENTATION_RESPONSE_TEMPLATE, DID_BASE, IATP_CS_BASE_URL, ISSUER_PRIVATE_KEY, MEMBERSHIP_VC_TEMPLATE, PROVIDER_PRIVATE_KEY, did_document_template
+from pycxids.cx.mock_settings import CONSUMER_PRIVATE_KEY, CS_PRESENTATION_RESPONSE_TEMPLATE, DATA_EXCHANGE_GOVERNANCE_VC_TEMPLATE, DID_BASE, IATP_CS_BASE_URL, ISSUER_PRIVATE_KEY, MEMBERSHIP_VC_TEMPLATE, PROVIDER_PRIVATE_KEY, did_document_template
 
 app = FastAPI(title="CX mocked services")
 
@@ -193,14 +193,18 @@ def credential_service_presentations_query(body: dict = Body(), authorization: s
     vc['credentialSubject']['holderIdentifier'] = consumer_client_id
     vc['credentialSubject']['memberOf'] = ""
 
+    # create dummy DataExchangeGovernance VC (required by FrameworkAgreement policy constraint)
+    vc_framework = deepcopy(DATA_EXCHANGE_GOVERNANCE_VC_TEMPLATE)
+    vc_framework['id'] = str(uuid4())
+    vc_framework['issuanceDate'] = '2022-06-16T18:56:59Z'
+    vc_framework['expirationDate'] = '2030-06-16T18:56:59Z'
+    vc_framework['issuer'] = f"{DID_BASE}BPNLISSUER000000"
+    vc_framework['credentialSubject']['id'] = f"{DID_BASE}{consumer_client_id}"
+    vc_framework['credentialSubject']['holderIdentifier'] = consumer_client_id
+
     jwt_vc = {
         "sub": f"{DID_BASE}{consumer_client_id}",
-        #"jti": "",
         "iss": f"{DID_BASE}BPNLISSUER000000",
-        #"nbf": 0,
-        #"iat": 0,
-        #"exp": 0,
-        #"nonce": "",
         "vc": vc
     }
     jwt_vc_header = {
@@ -209,8 +213,15 @@ def credential_service_presentations_query(body: dict = Body(), authorization: s
         "kid": f"{jwt_vc['iss']}#key1"
     }
 
+    jwt_vc_framework = {
+        "sub": f"{DID_BASE}{consumer_client_id}",
+        "iss": f"{DID_BASE}BPNLISSUER000000",
+        "vc": vc_framework
+    }
+
     issuer_key = generate_ed25519_key(seed=ISSUER_PRIVATE_KEY)
     jwt_vc_enc = jwt.encode(jwt_vc, issuer_key, algorithm="EdDSA", headers=jwt_vc_header)
+    jwt_vc_framework_enc = jwt.encode(jwt_vc_framework, issuer_key, algorithm="EdDSA", headers=jwt_vc_header)
 
     jwt_vp = {
         "iss": f"{DID_BASE}{consumer_client_id}",
@@ -231,7 +242,7 @@ def credential_service_presentations_query(body: dict = Body(), authorization: s
             ]
         }
     }
-    jwt_vp['vp']['verifiableCredential'] = [jwt_vc_enc]
+    jwt_vp['vp']['verifiableCredential'] = [jwt_vc_enc, jwt_vc_framework_enc]
     jwt_vp_header = {
         "alg": "EdDSA",
         "typ": "JWT",
