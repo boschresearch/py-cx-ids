@@ -302,17 +302,17 @@ def get_did_document(bpn:str):
 ######
 # catchall other calls
 ######
-@app.post('/{path:path}')
-async def post_all(request: Request, path: str):
-    print(path)
-    headers = request.headers.items()
-    print(json.dumps(headers, indent=4))
-    body = await request.body()
-    print(body)
+# @app.post('/{path:path}')
+# async def post_all(request: Request, path: str):
+#     print(path)
+#     headers = request.headers.items()
+#     print(json.dumps(headers, indent=4))
+#     body = await request.body()
+#     print(body)
 
-    return {}
-@app.get('/{path:path}')
-def get_all(request: Request, path: str):
-    print(path)
-    headers = request.headers.items()
-    print(json.dumps(headers, indent=4))
+#     return {}
+# @app.get('/{path:path}')
+# def get_all(request: Request, path: str):
+#     print(path)
+#     headers = request.headers.items()
+#     print(json.dumps(headers, indent=4))
